@@ -17,9 +17,15 @@
     "express": "^4.21.1",
     "express-session": "^1.18.1",
     "express-validator": "^7.2.0",
-    "mongoose": "^8.8.0"
+    "fs": "^0.0.1-security",
+    "json2csv": "^6.0.0-alpha.2",
+    "mongoose": "^8.8.0",
+    "my-mern-app": "file:..",
+    "path": "^0.12.7",
+    "url": "^0.11.4"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.7"
   },
   "type": "module"

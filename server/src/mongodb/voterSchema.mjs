@@ -8,6 +8,9 @@ const voterSchema=new mongoose.Schema({
     },
     votes:{
         type:mongoose.Schema.Types.Array,        
+    },
+    codeVotes:{
+        type:mongoose.Schema.Types.Array,
     }
 
 })

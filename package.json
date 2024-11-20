@@ -1,0 +1,15 @@
+{
+  "name": "my-mern-app",
+  "version": "1.0.0",
+  "homepage": "./",
+  "scripts": {
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "build:client": "cd client && npx vite build",
+    "build": "npm run build:client",
+    "start:server": "cross-env NODE_ENV=production node server/src/index.mjs",
+    "start": "npm run build && npm run start:server"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}

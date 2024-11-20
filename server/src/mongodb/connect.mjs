@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
-export default async function dbconfig() {
+export default async function dbconfig(connectionString) {
   await mongoose
-    .connect("mongodb://127.0.0.1:27018/votingsystem?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.3.1")
+    .connect(`${connectionString}`,{serverSelectionTimeoutMS: 5000,directConnection:true})
     .then(() =>console.log("connected to db"))
     .catch((err) => console.log(err));
 }

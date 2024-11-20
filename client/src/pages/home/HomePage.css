@@ -35,7 +35,16 @@
     padding: 1em 10em;
     border-radius: 1em;
     color: white;
-  
+    background-color: #790C18;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.vote-form button:hover {
+    background-color: #a40f22; /* Slightly lighter red on hover */
+    transform: scale(1.05); /* Slightly enlarge the button */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Add a shadow for depth */
 }
 
 @media (max-width: 500px) {

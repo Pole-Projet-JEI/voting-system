@@ -1,0 +1,82 @@
+version: '3'
+services:
+  backend1:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+    build:
+      context: ./server
+      dockerfile: Dockerfile  # Dockerfile for the backend
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongo:27017/votingsystem?replicaSet=rs0
+      - SESSION_SECRET=secret  
+    networks:
+      - app-network  # Connect MongoDB to this network
+    ports:
+      - "3000:3000"
+    volumes:
+      - dist_data:/app/client/dist  # Mount shared volume here
+    depends_on:
+      - mongo
+
+  backend2:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+    build:
+      context: ./server
+      dockerfile: Dockerfile  # Dockerfile for the backend
+    environment:
+      - PORT=3001  
+      - MONGO_URI=mongodb://mongo:27017/votingsystem?replicaSet=rs0
+      - SESSION_SECRET=secret
+    networks:
+      - app-network  # Connect MongoDB to this network
+    ports:
+      - "3001:3001"
+    volumes:
+      - dist_data:/app/client/dist  # Mount shared volume here
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile  # Dockerfile for the frontend (React Vite app)
+    networks:
+      - app-network  # Connect MongoDB to this network
+    ports:
+      - "80:80"  # Expose port 80 of Nginx (frontend)
+      - "443:443" # Expose HTTPS port (443)
+    volumes:
+      - dist_data:/app/client/dist  # Mount shared volume here
+      - /home/azureuser/voting.jeinsat.com:/etc/letsencrypt
+    env_file:
+      - ./client/.env
+    depends_on:
+      - backend1
+      - backend2  # Make sure backend starts before frontend
+
+  mongo:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    command: ["--replSet", "rs0","--bind_ip_all", "--port", "27017"] 
+    networks:
+      - app-network  # Connect MongoDB to this network
+    volumes: 
+      - "mongo_data:/data/db"
+      - "mongo_config:/data/configdb"
+
+networks:
+  app-network:
+    external: true
+
+volumes:
+  mongo_data:
+  mongo_config:
+  dist_data:
