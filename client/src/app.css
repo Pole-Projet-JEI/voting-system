@@ -1,7 +1,17 @@
-body {
+html{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent scrolling on body */
     font-family: 'JetBrains Mono';
 }
+#root {
+    height: 100%; 
+    width: 100%;
+    margin: 0;
+    padding: 0;
 
+}
 img{
     display: block;
 }
@@ -19,5 +29,7 @@ input {
     display: block;
     background: none;
     border: 2px solid white;
-    position: relative;
+    font-size: 16px;
+    
+    /* position: relative; */
 }

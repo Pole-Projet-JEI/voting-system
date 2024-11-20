@@ -1,4 +1,6 @@
-const baseURL = 'http://localhost:3000/';
+const baseURL = `${import.meta.env.VITE_API_URL}`;
+/* 
+const baseURL = 'http://localhost:3000/'; */
 const routes = {
     IS_CONNECTED : baseURL + 'isconnected',
     VERIFY_POSITION : baseURL + 'verifyPosition',

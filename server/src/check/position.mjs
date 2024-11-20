@@ -13,24 +13,39 @@ function getDistance(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-route.post("/verifyPosition",async(req,res)=>{
-    const eventLatitude = 36.8432034554802; // replace with your event's latitude
-    const eventLongitude = 10.197543447168602; // replace with your event's longitude
+route.post("/api/verifyPosition",async(req,res)=>{
+    let adjust=0;
+    const eventLatitude = 36.84273035215697                       //36.843155665949375;  replace with your event's latitude
+    const eventLongitude = 10.196764426268556                     //10.197701558429161; // replace with your event's longitude
+    const eventAccuracy=37;
 
     const userLatitude=req.body.latitude;
     const userLongitude=req.body.longitude;
-    const radius = 10;
-
+    const accuracy=req.body.accuracy
+    /* const radius = 10; */
+    //high radius for testing purposes
+    const radius = 3000;
+    if(accuracy>eventAccuracy){
+        adjust+=(accuracy-eventAccuracy)
+    }
+    const adjustedRadius=radius+adjust
+    
     const distance= await getDistance(userLatitude,userLongitude,eventLatitude,eventLongitude)
+    console.log("distance : ",distance)
+    console.log("adjusted : ",adjustedRadius);
+    console.log("accuracy :",accuracy)
 
-    if(distance<=radius){
+
+
+
+    if(distance<=adjustedRadius){
 
         res.status(201).json({valid:true})
 
     }
     else{
 
-        res.status(400).json({valid:false})
+        res.status(201).json({valid:false})
 
     }
 

@@ -5,43 +5,40 @@ import Voter from "../mongodb/voterSchema.mjs";
 
 const route = Router();
 
-route.post("/vote/:id",async(req,res)=>{
-    const teamId=req.params.id;
-    const vote=req.body.vote
-    const currentvote=await CurrentVote.find();
-    const id=currentvote[0].teamID
-    if(req.cookies.connectionCookie && teamId==id ){
-        const user=await Voter.findOne({code:req.cookies.connectionCookie.code});
-        const length=user.votes.length;
-        const total=currentvote[0].voteNumber;
+route.post("/api/vote/:id",async(req,res)=>{
+     const teamId=req.params.id; 
+     const vote=req.body.vote
+    /* const currentvote=await CurrentVote.find();
+    const id=currentvote[0].teamID  */ 
+    if(req.cookies.connectionCookie /* && teamId==id  */){
+    /*     const user=await Voter.findOne({code:req.cookies.connectionCookie.code});
         const exist=user.votes.find(element => element == teamId)!== undefined;
-        console.log(exist)
+         */
 
-        if(length>=0.75*total && !exist){
+       /*  if(!exist){
+            const team=await Team.findOne({id:id});
+            const nyes=team.nyes;
+            const nno=team.nno;
             if(vote=="yes"){
-                const nyes=await Team.findOne({id:id})
-                await Team.updateOne({id:id},{$set:{nyes:parseInt(nyes.nyes)+1}})
+                const score=(nyes+1)/(nno+nyes+1)
+                await Team.updateOne({id:id},{$set:{nyes:parseInt(nyes)+1}})
+                await Team.updateOne({id:id},{$set:{score:score}});
             }
             else{
-                const nno=await Team.findOne({id:id})
-                await Team.updateOne({id:id},{$set:{nno:parseInt(nno.nno)+1}})
-    
-    
-            }
-            await Voter.updateOne({code:req.cookies.connectionCookie.code},{$push:{votes:parseInt(teamId)}})
+                const score=nyes/(nno+1+nyes)
+                await Team.updateOne({id:id},{$set:{nno:parseInt(nno)+1}})
+               
+                await Team.updateOne({id:id},{$set:{score:score}});
+            } */
+           await Voter.updateOne({code:req.cookies.connectionCookie.code},{$push:{votes:parseInt(teamId),codeVotes:vote}});
+           
+            
             return res.status(201).json({voted:true})
         }
        
         else{
             return res.status(201).json({voted:false});
         }
-
-
-    }
-    else{
-        return res.status(201).json({voted:false});
-    }
-
 })
 
 
