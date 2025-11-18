@@ -66,19 +66,6 @@ app.use(sendingVoteRouter);
 app.use(currentVoteRouter);
 app.use(hasVotedRouter);
 
-// Serve React frontend
-/* const __dirname = dirname(fileURLToPath(import.meta.url)); // Resolve the current directory
-const distPath = path.join(__dirname, '../client/dist'); // Adjusted path to find the dist folder
-console.log("Serving React from:", distPath);
-
-app.use(express.static(distPath));
-
-// Catch-all route for frontend
-app.get("*", (req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
-
-console.log(path.join(distPath, "index.html")); */
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

@@ -1,9 +1,6 @@
 services:
   backend1:
     deploy:
-      resources:
-        limits:
-          cpus: "0.5"
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -23,9 +20,6 @@ services:
 
     # backend2:
     #   deploy:
-    #     resources:
-    #       limits:
-    #         cpus: "0.4"
     #   build:
     #     context: ./server
     #     dockerfile: Dockerfile # Dockerfile for the backend
