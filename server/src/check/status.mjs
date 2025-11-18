@@ -1,10 +1,12 @@
 import { Router } from "express";
+import Voter from "../mongodb/voterSchema.mjs";
 const route = Router();
 
 route.get("/api/isconnected", async (req, res) => {
   const { connectionCookie } = req.cookies;
 
-  if (!connectionCookie.code) {
+  // Fix: Add null check to prevent crash
+  if (!connectionCookie?.code) {
     return res.json({ connected: false });
   }
 
