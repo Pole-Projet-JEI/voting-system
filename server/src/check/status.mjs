@@ -1,4 +1,5 @@
 import { Router } from "express";
+import Voter from "../mongodb/voterSchema.mjs";
 const route = Router();
 
 route.get("/api/isconnected", async (req, res) => {

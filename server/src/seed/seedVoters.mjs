@@ -1,8 +1,6 @@
-// seed.js - MongoDB shell script to populate initial voter codes
-db = db.getSiblingDB("votingsystem");
+import Voter from "../mongodb/voterSchema.mjs";
 
-// Array of pre-generated voter codes
-const oldCodes = [
+const voterCodes = [
   "W01LG",
   "6HVZ0",
   "RQSBT",
@@ -604,17 +602,29 @@ const oldCodes = [
   "M20FI",
   "H6BHD",
 ];
-try {
-  // Insert voters with pre-generated codes
-  oldCodes.forEach(function (code) {
-    db.voters.insertOne({
-      code: code,
-      votes: [],
-      codeVotes: [],
-    });
-  });
 
-  print("£££ Seeded " + oldCodes.length + " voter codes successfully!");
-} catch (error) {
-  print(" ******** Error seeding database: " + error);
+export async function seedVoters() {
+  try {
+    const count = await Voter.countDocuments();
+
+    if (count === 0) {
+      console.log("📦 Seeding voter database...");
+
+      const documents = voterCodes.map((code) => ({
+        code,
+        votes: [],
+        codeVotes: [],
+      }));
+
+      await Voter.insertMany(documents);
+      console.log(`✅ Successfully seeded ${documents.length} voter codes`);
+    } else {
+      console.log(
+        `✓ Database already contains ${count} voters - skipping seed`
+      );
+    }
+  } catch (error) {
+    console.error("❌ Error seeding voters:", error);
+    throw error;
+  }
 }

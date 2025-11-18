@@ -111,14 +111,18 @@ export default function HomePage() {
 
   const voteSubmitHandler = async (event, userVote) => {
     event.preventDefault();
+
+    if (!state.userVote) {
+      alert("Please select Yes or No before submitting");
+      return;
+    }
     try {
       const response = voteForId(state.teamId, { vote: userVote });
-      if (true) {
-        dispatch({ type: "SET_HAS_VOTED", payload: true });
-        dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
-      }
+      dispatch({ type: "SET_HAS_VOTED", payload: true });
+      dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
     } catch (error) {
       console.error("Error submitting vote", error);
+      alert("Failed to submit vote. Please try again.");
     }
   };
 
@@ -130,6 +134,11 @@ export default function HomePage() {
         await fetchTeamId();
         await checkHasVoted();
         setIsLocationChecked(true);
+
+        // for test - nahi baed
+        //dispatch({ type: "SET_TEAM_ID", payload: 63563 });
+        //dispatch({ type: "SET_MODE", payload: "voteIsOpen" })
+        
       } catch (error) {
         setIsLocationChecked(true);
         console.error("Error during initialization:", error);
@@ -137,7 +146,7 @@ export default function HomePage() {
     };
 
     initializePage();
-  }, []); // Empty dependency array ensures this runs once on component mount
+  }, []); // empty ensures this runs once on component mount
 
   useEffect(() => {
     const eventSource = new EventSource(routes.SEND_VOTE, {
@@ -168,25 +177,38 @@ export default function HomePage() {
       </h1>
       <form
         className="vote-form"
-        onSubmit={(event) => voteSubmitHandler(event, state.userVote)}
+        onSubmit={(event) => voteSubmitHandler(event)}
       >
+        <div className="vote-buttons">
+          <button
+            name="vote-yes"
+            id="vote-yes"
+            type="button"
+            className={
+              state.userVote === "yes" ? "vote-option selected" : "vote-option"
+            }
+            onClick={() => dispatch({ type: "SET_USER_VOTE", payload: "yes" })}
+          >
+            Yes
+          </button>
+          <button
+            name="vote-no"
+            id="vote-no"
+            type="button"
+            className={
+              state.userVote === "no" ? "vote-option selected" : "vote-option"
+            }
+            onClick={() => dispatch({ type: "SET_USER_VOTE", payload: "no" })}
+          >
+            No
+          </button>
+        </div>
         <button
-          name="vote-yes"
-          id="vote-yes"
           type="submit"
-          onClick={() => dispatch({ type: "SET_USER_VOTE", payload: "yes" })}
-          style={{ backgroundColor: "#5F5A66" }}
+          className="submit-vote-button"
+          disabled={!state.userVote}
         >
-          Yes
-        </button>
-        <button
-          name="vote-no"
-          id="vote-no"
-          type="submit"
-          onClick={() => dispatch({ type: "SET_USER_VOTE", payload: "no" })}
-          style={{ backgroundColor: "#4D4855" }}
-        >
-          No
+          Submit Vote
         </button>
       </form>
       {/* <p style={{ fontSize: '1.5em', fontWeight: '700' }}>01:45</p> */}

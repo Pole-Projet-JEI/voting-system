@@ -15,6 +15,7 @@ import Voter from "./mongodb/voterSchema.mjs";
 import fs from "fs";
 import { Parser } from "json2csv";
 import path from "path";
+import { seedVoters } from "./seed/seedVoters.mjs";
 
 const corsOptions = {
   origin: [
@@ -52,6 +53,9 @@ app.use(
 );
 
 dbconfig(mongoUri);
+
+// Seed database on startup if empty
+seedVoters().catch((err) => console.error("Seeding failed:", err));
 
 // Routers
 app.use(statusRouter);
