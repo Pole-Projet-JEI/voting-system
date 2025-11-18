@@ -617,14 +617,14 @@ export async function seedVoters() {
       }));
 
       await Voter.insertMany(documents);
-      console.log(`✅ Successfully seeded ${documents.length} voter codes`);
+      console.log(`VVVVVVVVVVV Successfully seeded ${documents.length} voter codes`);
     } else {
       console.log(
-        `✓ Database already contains ${count} voters - skipping seed`
+        `Database already contains ${count} voters - skipping seed`
       );
     }
   } catch (error) {
-    console.error("❌ Error seeding voters:", error);
+    console.error("XXXXXXXXXXX Error seeding voters:", error);
     throw error;
   }
 }
