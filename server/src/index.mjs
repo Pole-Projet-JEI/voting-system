@@ -7,12 +7,13 @@ import statusRouter from "./check/status.mjs";
 import registerRouter from "./register/register.mjs";
 import positionRouter from "./check/position.mjs";
 import votingRouter from "./vote/voting.mjs";
-import sendingVoteRouter from "./vote/sendvote.mjs";
-import currentVoteRouter from "./check/prensentingteam.mjs";
+import sendingVoteRouter from "./vote/send-vote.mjs";
+import currentVoteRouter from "./check/prensenting-team.mjs";
 import hasVotedRouter from "./check/hasvoted.mjs";
+import adminRouter from "./admin/apis.mjs";
 import dotenv from "dotenv";
 import path from "path";
-import { seedVoters } from "./seed/seedVoters.mjs";
+import { seedVoters } from "./seed/seed-voters.mjs";
 import { requireAuth } from "./middleware/auth-cookie.mjs";
 
 const corsOptions = {
@@ -59,6 +60,9 @@ app.use(registerRouter); // /api/register - public registration
 app.use(positionRouter); // /api/verifyPosition - location check
 app.use(sendingVoteRouter); // /api/sendvote - SSE stream (public)
 app.use(currentVoteRouter); // /api/currentteam - anyone can view
+
+// (TODO: add admin authentication middleware for admin routes)
+app.use(adminRouter);
 
 // Protected routes (authentication required)
 app.use(requireAuth, votingRouter); // /api/vote/:id - requires auth
