@@ -1,5 +1,4 @@
 import { Router } from "express";
-import CurrentVote from "../mongodb/currentVoteSchema.mjs";
 
 const route = Router();
 const changeStream = CurrentVote.watch([], {
@@ -18,11 +17,10 @@ route.get("/api/sendvote", async (req, res) => {
     //const voterId = Date.now() + Math;
     changeStream.on("change", async (change) => {
       try {
-            console.log("------");
-            
-            
-            console.log("THE CHANGE stream\n",change)
-            console.log("------")
+        console.log("------");
+
+        console.log("THE CHANGE stream\n", change);
+        console.log("------");
         if (change.updateDescription.updatedFields.teamID) {
           const teamID = change.fullDocument.teamID;
           if (teamID !== -1) {
