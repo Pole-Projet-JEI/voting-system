@@ -22,11 +22,6 @@ const teamSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
-    score: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
     presented: {
       type: Boolean,
       default: false, 

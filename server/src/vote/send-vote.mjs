@@ -1,5 +1,4 @@
 import { Router } from "express";
-import CurrentVote from "../mongodb/currentVoteSchema.mjs";
 
 const route = Router();
 const changeStream = CurrentVote.watch([], {
@@ -12,17 +11,16 @@ route.get("/api/sendvote", async (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no"); // Disable buffering for SSE
+    res.setHeader("X-Accel-Buffering", "no");
 
     // Watch for changes in the CurrentVote collection
     //const voterId = Date.now() + Math;
     changeStream.on("change", async (change) => {
       try {
-            console.log("------");
-            
-            
-            console.log("THE CHANGE stream\n",change)
-            console.log("------")
+        console.log("------");
+
+        console.log("THE CHANGE stream\n", change);
+        console.log("------");
         if (change.updateDescription.updatedFields.teamID) {
           const teamID = change.fullDocument.teamID;
           if (teamID !== -1) {

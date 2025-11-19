@@ -1,42 +1,68 @@
 import { Router } from "express";
-import CurrentVote from "../mongodb/currentVoteSchema.mjs";
-import Voter from "../mongodb/voterSchema.mjs";
+import Team from "../mongodb/teamSchema.mjs";
 
 const route = Router();
 
+/**
+ * Check if voter has voted for current presenting team
+ */
 route.get("/api/hasvoted", async (req, res) => {
   try {
-    // Get the current team ID from the database
-    const team = await CurrentVote.find();
-    if (team.length === 0) {
-      return res.status(404).json({ message: "No teams found" });
+    const voter = req.voter;
+
+    const presentingTeam = await Team.findOne({ presenting: true });
+
+    if (!presentingTeam) {
+      return res.json({
+        hasVoted: false,
+        message: "No team is currently presenting",
+      });
     }
-    const currentTeamID = team[0].teamID;
 
-    // Get the code from cookies
-    const code = req.cookies.connectionCookie?.code;
+    const teamId = presentingTeam._id.toString();
 
-    // If code exists, check if the user has already voted
-    if (code) {
-      const user = await Voter.findOne({ code: code });
+    const hasVoted = voter.votes.has(teamId);
 
-      // Check if the user has voted for the current team
-      if (!user) {
-        return res.status(201).json({ message: "User not found" });
-      }
-
-      const hasVoted = user.votes.includes(currentTeamID); // Check if the teamID exists in the user's votes
-
-      return res.status(200).json({ hasVoted: hasVoted });
-    } else {
-      return res.sendStatus(200); // If no code in cookies, return status 200
-    }
+    return res.json({
+      hasVoted,
+      teamId,
+      vote: hasVoted ? voter.votes.get(teamId).vote : null,
+      votedAt: hasVoted ? voter.votes.get(teamId).votedAt : null,
+    });
   } catch (error) {
-    console.error("Error in /api/hasvoted:", error); // Log the error for debugging
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    console.error("Error checking vote status:", error);
+    return res.status(500).json({
+      hasVoted: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 });
+
+/*
+
+route.get("/api/hasvoted/:teamId", async (req, res) => {
+  try {
+    const voter = req.voter; // From requireAuth middleware
+    const { teamId } = req.params;
+
+    // Check if voter has voted for this specific team
+    const hasVoted = voter.votes.has(teamId);
+
+    return res.json({
+      hasVoted,
+      teamId,
+      vote: hasVoted ? voter.votes.get(teamId).vote : null,
+      votedAt: hasVoted ? voter.votes.get(teamId).votedAt : null,
+    });
+  } catch (error) {
+    console.error("Error checking vote status:", error);
+    return res.status(500).json({
+      hasVoted: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+}); */
 
 export default route;
