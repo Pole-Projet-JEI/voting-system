@@ -8,7 +8,7 @@ import registerRouter from "./register/register.mjs";
 import positionRouter from "./check/position.mjs";
 import votingRouter from "./vote/voting.mjs";
 import sendingVoteRouter from "./vote/sendvote.mjs";
-import currentVoteRouter from "./check/currentvote.mjs";
+import currentVoteRouter from "./check/prensentingteam.mjs";
 import hasVotedRouter from "./check/hasvoted.mjs";
 import dotenv from "dotenv";
 import path from "path";

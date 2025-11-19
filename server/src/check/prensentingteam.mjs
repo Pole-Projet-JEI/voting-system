@@ -3,7 +3,7 @@ import Team from "../mongodb/teamSchema.mjs";
 
 const route = Router();
 
-route.get("/api/currentteam", async (req, res) => {
+route.get("/api/presentingteam", async (req, res) => {
   try {
     const presentingTeam = await Team.findOne({ presenting: true });
 

@@ -5,7 +5,6 @@ const route = Router();
 route.get("/api/isconnected", async (req, res) => {
   const { connectionCookie } = req.cookies;
 
-  // Fix: Add null check to prevent crash
   if (!connectionCookie?.code) {
     return res.json({ connected: false });
   }
@@ -18,7 +17,7 @@ route.get("/api/isconnected", async (req, res) => {
     }
 
     return res.json({ connected: false });
-  } catch {
+  } catch (error) {
     console.error("Error checking voter connection:", error);
     return res.status(500).json({ connected: false, error: "Database error" });
   }
