@@ -19,6 +19,8 @@ export const requireAuth = async (req, res, next) => {
         message: "Invalid voter code",
       });
     }
+
+    req.voter = voter;
     req.voterCode = connectionCookie.code;
 
     next();

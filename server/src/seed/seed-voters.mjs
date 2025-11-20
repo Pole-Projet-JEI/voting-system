@@ -1,5 +1,6 @@
 import Voter from "../mongodb/voterSchema.mjs";
-import voterCodes from "./codes.mjs"
+import { voterCodes } from "./codes.mjs";
+
 export async function seedVoters() {
   try {
     const count = await Voter.countDocuments();

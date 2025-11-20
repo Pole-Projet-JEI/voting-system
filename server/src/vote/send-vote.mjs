@@ -3,7 +3,6 @@ import Team from "../mongodb/teamSchema.mjs";
 
 const route = Router();
 
-
 const changeStream = Team.watch(
   [
     {
@@ -31,13 +30,13 @@ changeStream.on("change", async (change) => {
     if (change.fullDocument?.presenting === true) {
       data = JSON.stringify({
         teamID: change.fullDocument._id,
-        name: change.fullDocument.name,
+        teamName: change.fullDocument.teamName,
         description: change.fullDocument.description,
       });
     }
     // If presenting changed to false (stopped presenting)
     else if (change.fullDocument?.presenting === false) {
-      data = JSON.stringify({ teamID: null, stopped: true });
+      data = JSON.stringify({ teamID: null, teamName: null, stopped: true });
     }
 
     // Broadcast to all connected clients
@@ -63,7 +62,6 @@ route.get("/api/sendvote", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
 
-    
     clients.add(res);
     console.log(`Client connected. Total clients: ${clients.size}`);
 
