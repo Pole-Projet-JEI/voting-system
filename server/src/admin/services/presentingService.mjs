@@ -13,9 +13,21 @@ export async function changePresentingTeam(newTeamId) {
   session.startTransaction();
 
   try {
+    // Check if the team to be presented already has presented
+    const teamToPresent = await Team.findById(newTeamId).session(session);
+
+    if (!teamToPresent) {
+      throw new Error("Team not found");
+    }
+
+    if (teamToPresent.presented) {
+      throw new Error("Team has already presented");
+    }
+
     const currentPresentingTeam = await Team.findOne({
       presenting: true,
     }).session(session);
+
     if (currentPresentingTeam) {
       await Team.updateOne(
         { _id: currentPresentingTeam._id },
@@ -39,10 +51,6 @@ export async function changePresentingTeam(newTeamId) {
       },
       { session, new: true }
     );
-
-    if (!newPresentingTeam) {
-      throw new Error("Team not found");
-    }
 
     await session.commitTransaction();
     return newPresentingTeam;

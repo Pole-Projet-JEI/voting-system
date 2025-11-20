@@ -3,19 +3,22 @@ import Team from "../mongodb/teamSchema.mjs";
 
 const route = Router();
 
-route.get("/api/presentingteam", async (req, res) => {
+route.get("/api/currentteam", async (req, res) => {
   try {
     const presentingTeam = await Team.findOne({ presenting: true });
 
     if (!presentingTeam) {
-      return res
-        .status(404)
-        .json({ message: "No team is currently presenting" });
+      return res.status(200).json({
+        teamID: null,
+        teamName: null,
+        description: null,
+        message: "No team is currently presenting",
+      });
     }
 
     return res.status(200).json({
       teamID: presentingTeam._id,
-      name: presentingTeam.name,
+      teamName: presentingTeam.teamName,
       description: presentingTeam.description,
     });
   } catch (error) {

@@ -1,0 +1,21 @@
+/* Override GlobalLayout styles for admin page */
+body:has(.admin-page) {
+  background: white !important;
+  background-image: none !important;
+  overflow: hidden !important;
+}
+
+body:has(.admin-page)::before {
+  display: none !important;
+  background: none !important;
+}
+
+.admin-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 9999;
+}

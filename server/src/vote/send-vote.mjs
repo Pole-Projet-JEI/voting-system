@@ -1,11 +1,60 @@
 import { Router } from "express";
+import Team from "../mongodb/teamSchema.mjs";
 
 const route = Router();
-const changeStream = CurrentVote.watch([], {
-  fullDocument: "updateLookup",
+
+const changeStream = Team.watch(
+  [
+    {
+      $match: {
+        "updateDescription.updatedFields.presenting": { $exists: true },
+      },
+    },
+  ],
+  {
+    fullDocument: "updateLookup",
+  }
+);
+
+const clients = new Set();
+
+// Listen to change stream once and broadcast to all clients
+changeStream.on("change", async (change) => {
+  try {
+    console.log("------");
+    console.log("Presenting status changed:", change);
+    console.log("------");
+
+    let data;
+    // If a team's presenting status changed to true, send the team info
+    if (change.fullDocument?.presenting === true) {
+      data = JSON.stringify({
+        teamID: change.fullDocument._id,
+        teamName: change.fullDocument.teamName,
+        description: change.fullDocument.description,
+      });
+    }
+    // If presenting changed to false (stopped presenting)
+    else if (change.fullDocument?.presenting === false) {
+      data = JSON.stringify({ teamID: null, teamName: null, stopped: true });
+    }
+
+    // Broadcast to all connected clients
+    if (data) {
+      clients.forEach((client) => {
+        try {
+          client.write(`data: ${data}\n\n`);
+        } catch (err) {
+          console.error("Error writing to client:", err);
+          clients.delete(client);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error processing change event:", error);
+  }
 });
 
-const voters = new Map();
 route.get("/api/sendvote", async (req, res) => {
   try {
     res.setHeader("Content-Type", "text/event-stream");
@@ -13,31 +62,17 @@ route.get("/api/sendvote", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
 
-    // Watch for changes in the CurrentVote collection
-    //const voterId = Date.now() + Math;
-    changeStream.on("change", async (change) => {
-      try {
-        console.log("------");
+    clients.add(res);
+    console.log(`Client connected. Total clients: ${clients.size}`);
 
-        console.log("THE CHANGE stream\n", change);
-        console.log("------");
-        if (change.updateDescription.updatedFields.teamID) {
-          const teamID = change.fullDocument.teamID;
-          if (teamID !== -1) {
-            res.write(`data: ${teamID}\n\n`);
-          } else {
-            res.write(`data: ${-1}\n\n`);
-          }
-        }
-      } catch (error) {
-        console.error("Error processing change event:", error);
-        res.write(`data: {"error": "Error processing change event"}\n\n`);
-      }
-    });
+    // Send initial connection confirmation
+    res.write(`data: ${JSON.stringify({ connected: true })}\n\n`);
 
+    // Remove client when disconnected
     req.on("close", () => {
-      console.log("Client disconnected, closing change stream.");
-      res.end(); // we close the SSE
+      clients.delete(res);
+      console.log(`Client disconnected. Total clients: ${clients.size}`);
+      res.end();
     });
   } catch (error) {
     console.error("Error in /api/sendvote:", error);

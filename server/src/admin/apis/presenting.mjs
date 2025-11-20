@@ -24,7 +24,7 @@ route.post("/api/admin/presenting", async (req, res) => {
 
     return res.json({
       success: true,
-      message: `Team "${newPresentingTeam.name}" is now presenting`,
+      message: `Team "${newPresentingTeam.teamName}" is now presenting`,
       team: newPresentingTeam,
     });
   } catch (error) {
@@ -32,6 +32,10 @@ route.post("/api/admin/presenting", async (req, res) => {
 
     if (error.message === "Team not found") {
       return res.status(404).json({ message: "Team not found" });
+    }
+
+    if (error.message === "Team has already presented") {
+      return res.status(400).json({ message: "Team has already presented" });
     }
 
     return res.status(500).json({
@@ -85,7 +89,7 @@ route.delete("/api/admin/presenting", async (req, res) => {
 
     return res.json({
       success: true,
-      message: `Team "${previousTeam.name}" is no longer presenting`,
+      message: `Team "${previousTeam.teamName}" is no longer presenting`,
       team: previousTeam,
     });
   } catch (error) {

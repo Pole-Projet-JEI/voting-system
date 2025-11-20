@@ -2,7 +2,6 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import Team from "../mongodb/teamSchema.mjs";
 import Voter from "../mongodb/voterSchema.mjs";
-import CurrentVote from "../mongodb/currentVoteSchema.mjs";
 
 const route = Router();
 
@@ -23,8 +22,11 @@ route.post("/api/vote/:id", async (req, res) => {
       });
     }
 
-    const currentVote = await CurrentVote.findOne().session(session);
-    if (!currentVote || currentVote.teamID.toString() !== teamId) {
+    // Check if this team is currently presenting
+    const presentingTeam = await Team.findOne({ presenting: true }).session(
+      session
+    );
+    if (!presentingTeam || presentingTeam._id.toString() !== teamId) {
       await session.abortTransaction();
       return res.status(400).json({
         voted: false,

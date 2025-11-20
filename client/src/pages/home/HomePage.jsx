@@ -11,13 +11,14 @@ import {
   voteForId,
   checkConnection,
   verifyPosition,
-} from "../../service/api";
+} from "../../service/userApi";
 import { routes } from "../../service/apiRoutes";
 
 axios.defaults.withCredentials = true;
 
 const initialState = {
-  teamId: -1,
+  teamId: null,
+  teamName: null,
   hasVoted: false,
   userVote: null,
   mode: "voteIsClosed", // 'voteIsOpen', 'thankYouForVoting'
@@ -27,6 +28,8 @@ const reducer = (state, action) => {
   switch (action.type) {
     case "SET_TEAM_ID":
       return { ...state, teamId: action.payload };
+    case "SET_TEAM_NAME":
+      return { ...state, teamName: action.payload };
     case "SET_HAS_VOTED":
       return { ...state, hasVoted: action.payload };
     case "SET_USER_VOTE":
@@ -44,16 +47,19 @@ export default function HomePage() {
   const [locationAllowed, setLocationAllowed] = useState(false);
   const navigate = useNavigate();
 
-  // Async functions
-  const fetchTeamId = async () => {
+  const fetchTeam = async () => {
     try {
       const result = await getCurrentTeam();
       dispatch({ type: "SET_TEAM_ID", payload: result.teamID });
-      result.teamID == -1
-        ? dispatch({ type: "SET_MODE", payload: "voteIsClosed" })
-        : dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
+      dispatch({ type: "SET_TEAM_NAME", payload: result.teamName });
+
+      if (!result.teamID) {
+        dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
+      }
+      // If there IS a team presenting, the mode will be set by checkHasVoted()
     } catch (error) {
-      console.error("Error fetching team ID", error);
+      console.error("Error fetching team:", error);
+      dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
     }
   };
 
@@ -103,26 +109,41 @@ export default function HomePage() {
       if (result.hasVoted) {
         dispatch({ type: "SET_HAS_VOTED", payload: true });
         dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
+      } else {
+        // User hasn't voted - open voting if team is presenting
+        const teamResult = await getCurrentTeam();
+        if (teamResult.teamID) {
+          dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
+        }
       }
     } catch (error) {
       console.error("Error checking vote status", error);
     }
   };
 
-  const voteSubmitHandler = async (event, userVote) => {
+  const voteSubmitHandler = async (event) => {
     event.preventDefault();
 
     if (!state.userVote) {
       alert("Please select Yes or No before submitting");
       return;
     }
+
     try {
-      const response = voteForId(state.teamId, { vote: userVote });
-      dispatch({ type: "SET_HAS_VOTED", payload: true });
-      dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
+      const response = await voteForId(state.teamId, { vote: state.userVote });
+
+      if (response.voted) {
+        dispatch({ type: "SET_HAS_VOTED", payload: true });
+        dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
+      } else {
+        alert(response.message || "Failed to submit vote");
+      }
     } catch (error) {
       console.error("Error submitting vote", error);
-      alert("Failed to submit vote. Please try again.");
+      const errorMessage =
+        error.response?.data?.message ||
+        "Failed to submit vote. Please try again.";
+      alert(errorMessage);
     }
   };
 
@@ -131,14 +152,9 @@ export default function HomePage() {
       try {
         await checkPosition();
         await verifyConnection();
-        await fetchTeamId();
+        await fetchTeam();
         await checkHasVoted();
         setIsLocationChecked(true);
-
-        // for test - nahi baed
-        //dispatch({ type: "SET_TEAM_ID", payload: 63563 });
-        //dispatch({ type: "SET_MODE", payload: "voteIsOpen" })
-        
       } catch (error) {
         setIsLocationChecked(true);
         console.error("Error during initialization:", error);
@@ -152,33 +168,73 @@ export default function HomePage() {
     const eventSource = new EventSource(routes.SEND_VOTE, {
       withCredentials: true,
     });
-    eventSource.onmessage = (event) => {
-      const newTeamId = parseInt(event.data, 10);
-      dispatch({ type: "SET_TEAM_ID", payload: newTeamId });
-      dispatch({ type: "SET_HAS_VOTED", payload: false });
-      newTeamId == -1
-        ? dispatch({ type: "SET_MODE", payload: "voteIsClosed" })
-        : dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
+
+    eventSource.onmessage = async (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        // Handle connection confirmation
+        if (data.connected) {
+          console.log("SSE connected");
+          return;
+        }
+
+        const newTeamId = data.teamID;
+        const newTeamName = data.teamName;
+
+        dispatch({ type: "SET_TEAM_ID", payload: newTeamId });
+        dispatch({ type: "SET_TEAM_NAME", payload: newTeamName });
+
+        // Reset vote selection
+        dispatch({ type: "SET_USER_VOTE", payload: null });
+
+        // Check if user already voted for this new team
+        if (newTeamId) {
+          const voteStatus = await didUserVote();
+          if (voteStatus.hasVoted) {
+            dispatch({ type: "SET_HAS_VOTED", payload: true });
+            dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
+          } else {
+            dispatch({ type: "SET_HAS_VOTED", payload: false });
+            dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
+          }
+        } else {
+          // No team presenting
+          dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
+        }
+      } catch (error) {
+        console.error("Error processing SSE message:", error);
+      }
     };
+
     eventSource.onerror = () => {
-      console.log("Connection lost. Reconnecting...");
-      window.location.reload();
+      console.log("SSE connection lost. Will retry...");
+      eventSource.close();
+
+      // Don't reload immediately - check if online first
+      if (navigator.onLine) {
+        setTimeout(() => window.location.reload(), 3000);
+      } else {
+        // Wait for network to come back
+        window.addEventListener(
+          "online",
+          () => {
+            window.location.reload();
+          },
+          { once: true }
+        );
+      }
     };
 
     return () => eventSource.close();
   }, []);
 
-  // UI Components
   const VoteOpen = (
     <div className="home-container vote-form-container">
       <h1 className="vote-open-title">
-        Your vote for team{" "}
-        <span style={{ color: "#790C18" }}>{state.teamId}</span>
+        Your vote for <span style={{ color: "#790C18" }}>{state.teamName}</span>
       </h1>
-      <form
-        className="vote-form"
-        onSubmit={(event) => voteSubmitHandler(event)}
-      >
+      <form className="vote-form" onSubmit={voteSubmitHandler}>
         <div className="vote-buttons">
           <button
             name="vote-yes"

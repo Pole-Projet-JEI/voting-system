@@ -1,11 +1,5 @@
 import { Router } from "express";
-import {
-  getAllTeams,
-  getTeamById,
-  getAllVoters,
-  getVoterStats,
-  getTeamStats,
-} from "../services/visualizationService.mjs";
+import { getAllTeams } from "../services/visualizationService.mjs";
 
 const route = Router();
 
