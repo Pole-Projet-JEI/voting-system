@@ -21,6 +21,7 @@ const corsOptions = {
     "https://voting.jeinsat.com",
     "http://localhost:80",
     "http://localhost",
+    "http://10.48.123.216"
   ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true, // Allows cookies to be sent between frontend and backend
