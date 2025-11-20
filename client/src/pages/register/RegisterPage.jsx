@@ -39,7 +39,7 @@ export default function RegisterPage() {
       <img src={jeiLogo} alt="JEILogo" width="100px" height="50px" />
       <div className="title-container">
         <h1 className="title-1">Hack for good</h1>
-        <h1 className="title-2">3.0</h1>
+        <h1 className="title-2">4.0</h1>
       </div>
       <h2 style={{ fontSize: "1em", color: "rgba(255,255,255,0.55)" }}>
         Voting System
