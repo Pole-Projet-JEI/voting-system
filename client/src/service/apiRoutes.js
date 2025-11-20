@@ -13,6 +13,8 @@ const routes = {
   // Admin routes
   ADMIN_TEAMS: baseURL + "admin/teams",
   ADMIN_PRESENTING: baseURL + "admin/presenting",
+  ADMIN_TEAM: baseURL + "admin/team",
+  ADMIN_TEAM_BY_ID: baseURL + "admin/team/:id",
 };
 
 export { baseURL, routes };

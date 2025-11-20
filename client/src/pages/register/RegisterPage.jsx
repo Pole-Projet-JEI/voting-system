@@ -1,9 +1,9 @@
 import "./RegisterPage.css";
 import jeiLogo from "../../assets/jei2.png";
 import { useEffect, useState } from "react";
-import { registerUser } from "../../service/api";
+import { registerUser } from "../../service/userApi";
 import { useNavigate } from "react-router-dom";
-import { checkConnection } from "../../service/api";
+import { checkConnection } from "../../service/userApi";
 export default function RegisterPage() {
   const [userInput, setUserInput] = useState("");
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export default function RegisterPage() {
     try {
       const result = await registerUser(userInput);
       navigate("/home");
-      console.log(result);
+      console.log("register result:",result);
     } catch (error) {
       console.log(error);
     }

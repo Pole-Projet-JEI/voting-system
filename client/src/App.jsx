@@ -14,11 +14,11 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route element={<GlobalLayout />}>
             <Route path="/test" />
             <Route path="/home" element={<HomePage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/admin" element={<AdminPage />} />
             <Route path="/*" element={<Error404Page />} />
           </Route>
         </Routes>
