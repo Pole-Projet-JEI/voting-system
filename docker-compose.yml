@@ -4,6 +4,8 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
+    env_file:
+      - ./server/.env
     environment:
       - PORT=3000
       - MONGO_URI=mongodb://mongo:27017/votingsystem?replicaSet=rs0
