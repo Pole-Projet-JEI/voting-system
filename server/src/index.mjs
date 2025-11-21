@@ -88,12 +88,14 @@ app.use(currentVoteRouter); // /api/currentteam - anyone can view
 app.use(adminLoginRouter);
 app.use(adminLogoutRouter);
 
+// Voter auth routes - MUST come before admin routes to prevent middleware conflicts
+app.use(requireAuth, votingRouter);
+app.use(requireAuth, hasVotedRouter);
+
+// Admin routes
 app.use(requireAdmin, presentingRouter);
 app.use(requireAdmin, visualizationRouter);
 app.use(requireAdmin, teamManagementRouter);
-
-app.use(requireAuth, votingRouter);
-app.use(requireAuth, hasVotedRouter); 
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

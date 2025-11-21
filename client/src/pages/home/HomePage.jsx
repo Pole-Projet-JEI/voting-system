@@ -7,10 +7,8 @@ import checkIcon from "../../assets/check-icon.png";
 import {
   didUserVote,
   getCurrentTeam,
-  sendVote,
   voteForId,
   checkConnection,
-  verifyPosition,
 } from "../../service/userApi";
 import { routes } from "../../service/apiRoutes";
 
@@ -43,8 +41,6 @@ const reducer = (state, action) => {
 
 export default function HomePage() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [isLocationChecked, setIsLocationChecked] = useState(false); // Track geolocation status
-  const [locationAllowed, setLocationAllowed] = useState(false);
   const navigate = useNavigate();
 
   const fetchTeam = async () => {
@@ -63,40 +59,10 @@ export default function HomePage() {
     }
   };
 
-  const checkPosition = async () => {
-    // GEOLOCATION DISABLED - Skip position verification
-    setLocationAllowed(true);
-    return Promise.resolve();
-
-    /* COMMENTED OUT - Re-enable for production with GPS verification
-        return new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const userLatitude = position.coords.latitude;
-                    const userLongitude = position.coords.longitude;
-                    const accuracy=position.coords.accuracy;
-                    const result = await verifyPosition({ latitude: userLatitude, longitude: userLongitude,accuracy:accuracy });
-                    if (!result.valid) {
-                        setLocationAllowed(false);
-                        reject("Invalid position");
-                    } else {
-                        setLocationAllowed(true);
-                        resolve();
-                    }
-                },
-                (error) => {
-                    console.error("Geolocation error:", error);
-                    reject("Geolocation error");
-                },
-                { enableHighAccuracy: true, timeout: 1000 * 120, maximumAge: 0 }
-            );
-        });
-        */
-  };
-
   const verifyConnection = async () => {
     try {
       const result = await checkConnection();
+      console.log(result);
       if (!result.connected) navigate("/register");
     } catch (error) {
       console.error("Error verifying connection", error);
@@ -150,19 +116,16 @@ export default function HomePage() {
   useEffect(() => {
     const initializePage = async () => {
       try {
-        await checkPosition();
         await verifyConnection();
         await fetchTeam();
         await checkHasVoted();
-        setIsLocationChecked(true);
       } catch (error) {
-        setIsLocationChecked(true);
         console.error("Error during initialization:", error);
       }
     };
 
     initializePage();
-  }, []); // empty ensures this runs once on component mount
+  }, []);
 
   useEffect(() => {
     const eventSource = new EventSource(routes.SEND_VOTE, {
@@ -287,26 +250,6 @@ export default function HomePage() {
     </div>
   );
 
-  // Wait until location check is complete before rendering the vote UI
-  if (!isLocationChecked) {
-    return <div>Loading...</div>; // Display a loading message or spinner
-  }
-
-  // Render based on mode
-  if (locationAllowed === false)
-    return (
-      <div>
-        <h1
-          style={{
-            fontSize: "1em",
-            textAlign: "center",
-          }}
-        >
-          Voting is only available inside the auditorium. Please enter the venue
-          to proceed.
-        </h1>
-      </div>
-    );
   if (state.mode === "voteIsOpen") return VoteOpen;
   if (state.mode === "thankYouForVoting") return ThankYouForYourVote;
   return VoteClosed;
