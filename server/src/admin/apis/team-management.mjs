@@ -7,11 +7,6 @@ import {
 
 const route = Router();
 
-/**
- * Create a new team
- * POST /api/admin/team
- * Body: { teamName: string, description?: string }
- */
 route.post("/api/admin/team", async (req, res) => {
   try {
     const { teamName, description } = req.body;
@@ -46,11 +41,6 @@ route.post("/api/admin/team", async (req, res) => {
   }
 });
 
-/**
- * Update a team
- * PUT /api/admin/team/:id
- * Body: { teamName?: string, description?: string }
- */
 route.put("/api/admin/team/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -94,10 +84,6 @@ route.put("/api/admin/team/:id", async (req, res) => {
   }
 });
 
-/**
- * Delete a team
- * DELETE /api/admin/team/:id
- */
 route.delete("/api/admin/team/:id", async (req, res) => {
   try {
     const { id } = req.params;

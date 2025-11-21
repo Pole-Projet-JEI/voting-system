@@ -10,29 +10,51 @@ import votingRouter from "./vote/voting.mjs";
 import sendingVoteRouter from "./vote/send-vote.mjs";
 import currentVoteRouter from "./check/prensenting-team.mjs";
 import hasVotedRouter from "./check/hasvoted.mjs";
-import adminRouter from "./admin/apis.mjs";
+import presentingRouter from "./admin/apis/presenting.mjs";
+import visualizationRouter from "./admin/apis/visualization.mjs";
+import teamManagementRouter from "./admin/apis/team-management.mjs";
+import adminLoginRouter from "./admin/apis/auth/login.mjs";
+import adminLogoutRouter from "./admin/apis/auth/logout.mjs";
 import dotenv from "dotenv";
 import path from "path";
 import { seedVoters } from "./seed/seed-voters.mjs";
 import { requireAuth } from "./middleware/auth-cookie.mjs";
-
-const corsOptions = {
-  origin: [
-    "https://voting.jeinsat.com",
-    "http://localhost:80",
-    "http://localhost",
-    "http://10.48.123.216"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true, // Allows cookies to be sent between frontend and backend
-};
+import { requireAdmin } from "./admin/middleware/requireAdmin.mjs";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
-
 dotenv.config();
+
+const NODE_ENV = process.env.NODE_ENV || "development";
+const IS_PROD = NODE_ENV === "production";
+const IS_STAGING = NODE_ENV === "staging";
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "localhost";
 const mongoUri = process.env.MONGO_URI;
 const sessionSecret = process.env.SESSION_SECRET;
+
+console.log(` Starting server in ${NODE_ENV} mode`);
+console.log(` Host: ${HOST}`);
+
+const getAllowedOrigins = () => {
+  if (IS_PROD) {
+    return [`https://${HOST}`, `http://${HOST}`];
+  } else if (IS_STAGING) {
+    return [`http://${HOST}`, `http://${HOST}:80`];
+  } else {
+    return [
+      "http://localhost:80",
+      "http://localhost",
+      `http://${HOST}:80`,
+      `http://${HOST}`,
+    ];
+  }
+};
+
+const corsOptions = {
+  origin: getAllowedOrigins(),
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
 
 const app = express();
 app.use(cors(corsOptions));
@@ -41,19 +63,20 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   session({
-    secret: `${sessionSecret}`,
+    secret: sessionSecret,
     saveUninitialized: false,
     resave: false,
     cookie: {
       maxAge: 1000 * 60 * 60 * 24,
-      secure: false,
+      secure: IS_PROD,
+      httpOnly: true,
+      sameSite: IS_PROD || IS_STAGING ? "strict" : "lax",
     },
   })
 );
 
 dbconfig(mongoUri);
 
-// Seed database on startup if empty
 seedVoters().catch((err) => console.error("Seeding failed:", err));
 
 app.use(statusRouter); // /api/isconnected - checks cookie manually
@@ -62,12 +85,15 @@ app.use(positionRouter); // /api/verifyPosition - location check
 app.use(sendingVoteRouter); // /api/sendvote - SSE stream (public)
 app.use(currentVoteRouter); // /api/currentteam - anyone can view
 
-// (TODO: add admin authentication middleware for admin routes)
-app.use(adminRouter);
+app.use(adminLoginRouter);
+app.use(adminLogoutRouter);
 
-// Protected routes (authentication required)
-app.use(requireAuth, votingRouter); // /api/vote/:id - requires auth
-app.use(requireAuth, hasVotedRouter); // /api/hasvoted - requires auth
+app.use(requireAdmin, presentingRouter);
+app.use(requireAdmin, visualizationRouter);
+app.use(requireAdmin, teamManagementRouter);
+
+app.use(requireAuth, votingRouter);
+app.use(requireAuth, hasVotedRouter); 
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

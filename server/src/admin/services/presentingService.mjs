@@ -1,19 +1,11 @@
 import Team from "../../mongodb/teamSchema.mjs";
 import mongoose from "mongoose";
 
-/**
- * Change the presenting team
- * - Sets current presenting team to presented: true, presenting: false
- * - Sets new team to presenting: true
- * @param {string} newTeamId - The ID of the new team to present
- * @returns {Promise<Object>} - The new presenting team
- */
 export async function changePresentingTeam(newTeamId) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Check if the team to be presented already has presented
     const teamToPresent = await Team.findById(newTeamId).session(session);
 
     if (!teamToPresent) {
@@ -56,25 +48,17 @@ export async function changePresentingTeam(newTeamId) {
     return newPresentingTeam;
   } catch (error) {
     await session.abortTransaction();
-    throw error;
+    console.error(error);
+    return { error: error.message || "Failed to set presenting team" };
   } finally {
     session.endSession();
   }
 }
 
-/**
- * Get the current presenting team
- * @returns {Promise<Object|null>} - The presenting team or null
- */
 export async function getCurrentPresentingTeam() {
   return await Team.findOne({ presenting: true });
 }
 
-/**
- * Stop presenting (no team presenting)
- * - Sets current presenting team to presented: true, presenting: false
- * @returns {Promise<Object|null>} - The team that was presenting
- */
 export async function stopPresenting() {
   const currentPresentingTeam = await Team.findOne({ presenting: true });
 

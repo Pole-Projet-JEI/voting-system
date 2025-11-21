@@ -600,4 +600,5 @@ const voterCodes = [
   "cLzp08Bt7",
   "CmbSgR6xi",
 ];
-console.log(voterCodes.length);
+
+export { voterCodes };
