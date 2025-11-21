@@ -12,12 +12,12 @@ export default function RegisterPage() {
     const isConnected = async () => {
       try {
         const result = await checkConnection();
-        console.log(result);
+        // console.log(result);
         if (result.connected) {
           navigate("/home");
         }
       } catch (error) {
-        console.log(error);
+        // console.log(error);
       }
     };
     isConnected();
@@ -28,9 +28,9 @@ export default function RegisterPage() {
     try {
       const result = await registerUser(userInput);
       navigate("/home");
-      console.log("register result:",result);
+      // console.log("register result:",result);
     } catch (error) {
-      console.log(error);
+      // console.log(error);
     }
   };
 

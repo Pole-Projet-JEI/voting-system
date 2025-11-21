@@ -155,6 +155,8 @@ export default function HomePage() {
         await fetchTeam();
         await checkHasVoted();
         setIsLocationChecked(true);
+        // console.log(isLocationChecked);
+        // console.log("bye");
       } catch (error) {
         setIsLocationChecked(true);
         console.error("Error during initialization:", error);
@@ -173,9 +175,8 @@ export default function HomePage() {
       try {
         const data = JSON.parse(event.data);
 
-        // Handle connection confirmation
         if (data.connected) {
-          console.log("SSE connected");
+          // console.log("SSE connected");
           return;
         }
 
@@ -208,7 +209,7 @@ export default function HomePage() {
     };
 
     eventSource.onerror = () => {
-      console.log("SSE connection lost. Will retry...");
+      // console.log("SSE connection lost. Will retry...");
       eventSource.close();
 
       // Don't reload immediately - check if online first

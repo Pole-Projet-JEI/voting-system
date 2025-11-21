@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getAllTeams,
   getPresentingTeam,
@@ -7,6 +8,7 @@ import {
   createTeam,
   updateTeam,
   deleteTeam,
+  adminLogout,
 } from "../../service/adminApi";
 import { Button } from "../../components/ui/button";
 import {
@@ -20,16 +22,18 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  LogOut,
 } from "lucide-react";
-import { PresentingTeamCard } from "./components/PresentingTeamCard";
-import { StatCard } from "./components/StatCard";
-import { TeamCard } from "./components/TeamCard";
-import { AddTeamForm } from "./components/AddTeamForm";
+import { PresentingTeamCard } from "../../components/adminComponents/PresentingTeamCard";
+import { StatCard } from "../../components/adminComponents/StatCard";
+import { TeamCard } from "../../components/adminComponents/TeamCard";
+import { AddTeamForm } from "../../components/adminComponents/AddTeamForm";
 import { useTeamFilters } from "./hooks/useTeamFilters";
 import "./AdminPage.css";
 
 function AdminPage() {
-  // Override body styles for admin page
+  const navigate = useNavigate();
+
   useEffect(() => {
     document.body.style.background = "white";
     document.body.style.overflow = "hidden";
@@ -50,14 +54,22 @@ function AdminPage() {
   const [newTeamDescription, setNewTeamDescription] = useState("");
   const [editingTeam, setEditingTeam] = useState(null);
 
-  // Use filter hook
   const { sortOrder, setSortOrder, filteredAndSortedTeams } =
     useTeamFilters(teams);
 
-  // Fetch all data
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await adminLogout();
+      navigate("/admin/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      navigate("/admin/login");
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -70,7 +82,6 @@ function AdminPage() {
       setTeams(teamsData.teams || []);
       setPresentingTeam(presentingData.team);
 
-      // Calculate stats from teams data
       const totalTeams = teamsData.teams?.length || 0;
       const presentedTeams =
         teamsData.teams?.filter((t) => t.presented).length || 0;
@@ -78,7 +89,7 @@ function AdminPage() {
         teamsData.teams?.filter((t) => t.presenting).length || 0;
 
       setStats({
-        voters: null, // No voter stats endpoint available
+        voters: null,
         teams: {
           totalTeams,
           presentedTeams,
@@ -96,17 +107,13 @@ function AdminPage() {
     }
   };
 
-  // Set a team as presenting
   const handleSetPresenting = async (teamId) => {
     try {
-      console.log("Setting presenting team:", teamId);
       const response = await setPresentingTeamAPI(teamId);
-      console.log("Response from setPresentingTeam:", response);
 
-      // Show success message
       if (response && response.success) {
         alert(`✓ ${response.message}`);
-        await fetchData(); // Refresh data
+        await fetchData();
       } else {
         console.warn("Unexpected response format:", response);
         alert("✗ Unexpected response from server");
@@ -114,37 +121,32 @@ function AdminPage() {
     } catch (error) {
       console.error("Error setting presenting team:", error);
 
-      // Extract error message from response
       const errorMessage =
         error.response?.data?.message || "Failed to set presenting team";
       alert(`✗ Error: ${errorMessage}`);
     }
   };
 
-  // Stop presenting
   const handleStopPresenting = async () => {
     try {
       const response = await stopPresentingTeam();
 
-      // Show success message
       if (response && response.success) {
         alert(`✓ ${response.message}`);
-        fetchData(); // Refresh data
+        fetchData();
       } else if (response && response.message) {
         alert(`ℹ ${response.message}`);
-        fetchData(); // Refresh data anyway
+        fetchData();
       }
     } catch (error) {
       console.error("Error stopping presentation:", error);
 
-      // Extract error message from response
       const errorMessage =
         error.response?.data?.message || "Failed to stop presentation";
       alert(`✗ Error: ${errorMessage}`);
     }
   };
 
-  // Create a new team
   const handleCreateTeam = async (e) => {
     e.preventDefault();
 
@@ -161,7 +163,7 @@ function AdminPage() {
         setNewTeamName("");
         setNewTeamDescription("");
         setShowAddTeamForm(false);
-        fetchData(); // Refresh data
+        fetchData();
       }
     } catch (error) {
       console.error("Error creating team:", error);
@@ -171,7 +173,6 @@ function AdminPage() {
     }
   };
 
-  // Update a team
   const handleUpdateTeam = async (teamId, updates) => {
     try {
       const response = await updateTeam(teamId, updates);
@@ -179,7 +180,7 @@ function AdminPage() {
       if (response && response.success) {
         alert(`✓ ${response.message}`);
         setEditingTeam(null);
-        fetchData(); // Refresh data
+        fetchData();
       }
     } catch (error) {
       console.error("Error updating team:", error);
@@ -189,7 +190,6 @@ function AdminPage() {
     }
   };
 
-  // Delete a team
   const handleDeleteTeam = async (teamId, teamName) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete team "${teamName}"?`
@@ -202,7 +202,7 @@ function AdminPage() {
 
       if (response && response.success) {
         alert(`✓ ${response.message}`);
-        fetchData(); // Refresh data
+        fetchData();
       }
     } catch (error) {
       console.error("Error deleting team:", error);
@@ -212,7 +212,6 @@ function AdminPage() {
     }
   };
 
-  // Start editing a team
   const startEditingTeam = (team) => {
     setEditingTeam({
       id: team._id,
@@ -221,7 +220,6 @@ function AdminPage() {
     });
   };
 
-  // Get filter button appearance
   const getFilterButton = () => {
     const baseClass = "cursor-pointer transition-all";
     switch (sortOrder) {
@@ -244,7 +242,7 @@ function AdminPage() {
           icon: ArrowUpDown,
           variant: "outline",
           text: "Sort by Votes",
-          className: `${baseClass} border-gray-300 hover:bg-gray-100`,
+          className: `${baseClass} border-gray-600 hover:bg-gray-100 text-gray-900 hover:text-gray-900`,
         };
     }
   };
@@ -295,12 +293,23 @@ function AdminPage() {
       {/* Sidebar */}
       <aside className="w-80 bg-gradient-to-b from-slate-900 to-slate-800 text-white overflow-y-auto shadow-xl">
         <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-3 mb-2">
-            <BarChart3 className="h-8 w-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Admin Panel</h1>
-              <p className="text-sm text-slate-300">Voting Dashboard</p>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-8 w-8" />
+              <div>
+                <h1 className="text-2xl font-bold">Admin Panel</h1>
+                <p className="text-sm text-slate-300">Voting Dashboard</p>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-white hover:bg-white/10"
+              title="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import GlobalLayout from "./shared/components/app-layout/GlobalLayout";
@@ -6,15 +5,26 @@ import HomePage from "./pages/home/HomePage";
 import "./app.css";
 import RegisterPage from "./pages/register/RegisterPage";
 import AdminPage from "./pages/admin/AdminPage";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import ProtectedAdminRoute from "./components/adminComponents/ProtectedAdminRoute";
 import Error404Page from "./pages/error/Error404Page";
 import { Navigate } from "react-router-dom";
+
 function App() {
   return (
     <React.Fragment>
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedAdminRoute>
+                <AdminPage />
+              </ProtectedAdminRoute>
+            }
+          />
           <Route element={<GlobalLayout />}>
             <Route path="/test" />
             <Route path="/home" element={<HomePage />} />

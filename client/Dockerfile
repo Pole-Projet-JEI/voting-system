@@ -13,7 +13,7 @@ COPY . .
 # Build the app using Vite (this assumes a Vite React project)
 RUN npm run build
 
-# Step 2: Serve the app using Nginx
+# Step 2: Serve the app using Ngi
 FROM nginx:alpine
 
 # Create the /etc/letsencrypt directory
