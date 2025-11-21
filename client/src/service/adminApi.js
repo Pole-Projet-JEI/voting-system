@@ -29,15 +29,15 @@ export const getPresentingTeam = async () => {
 };
 
 export const setPresentingTeam = async (teamId) => {
-  console.log("setPresentingTeam called with teamId:", teamId);
-  console.log("Route:", routes.ADMIN_PRESENTING);
+  // console.log("setPresentingTeam called with teamId:", teamId);
+  // console.log("Route:", routes.ADMIN_PRESENTING);
 
   try {
     const response = await adminClient.post(routes.ADMIN_PRESENTING, {
       teamId,
     });
-    console.log("Full response:", response);
-    console.log("Response data:", response.data);
+    // console.log("Full response:", response);
+    // console.log("Response data:", response.data);
     return response.data;
   } catch (error) {
     console.error("Error setting presenting team - ERROR CAUGHT:", error);
@@ -88,6 +88,40 @@ export const deleteTeam = async (teamId) => {
     return response.data;
   } catch (error) {
     console.error("Error deleting team:", error);
+    throw error;
+  }
+};
+
+export const adminLogin = async (secretKey) => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_LOGIN, {
+      secretKey,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error logging in:", error);
+    throw error;
+  }
+};
+
+export const adminLogout = async () => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_LOGOUT);
+    return response.data;
+  } catch (error) {
+    console.error("Error logging out:", error);
+    throw error;
+  }
+};
+
+export const checkAdminAuth = async () => {
+  try {
+    const response = await adminClient.get(routes.ADMIN_TEAMS);
+    return { authenticated: true };
+  } catch (error) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      return { authenticated: false };
+    }
     throw error;
   }
 };

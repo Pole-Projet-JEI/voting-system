@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 
 export const useTeamFilters = (teams) => {
-  const [sortOrder, setSortOrder] = useState("default"); // 'default', 'yes-desc', 'yes-asc'
+  const [sortOrder, setSortOrder] = useState("yes-desc"); // 'default', '', 'yes-asc'
 
   const filteredAndSortedTeams = useMemo(() => {
     let result = [...teams];
@@ -14,7 +14,6 @@ export const useTeamFilters = (teams) => {
         result.sort((a, b) => a.nyes - b.nyes);
         break;
       default:
-        // Keep default order (by creation date or as received from API)
         break;
     }
 

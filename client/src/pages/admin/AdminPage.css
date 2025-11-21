@@ -1,4 +1,3 @@
-/* Override GlobalLayout styles for admin page */
 body:has(.admin-page) {
   background: white !important;
   background-image: none !important;
