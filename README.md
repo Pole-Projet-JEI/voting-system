@@ -11,6 +11,8 @@ A real-time voting application built with React, Node.js, Express, and MongoDB. 
 - 🐳 Docker containerization
 - 📱 Responsive design
 - 🔒 Secure session management
+- ⚖️ Load balancing with multiple backend instances
+- 🧪 Comprehensive K6 load testing suite
 
 ## Tech Stack
 
@@ -89,8 +91,19 @@ voting-system/
 │   │   └── index.mjs      # Server entry point
 │   └── Dockerfile         # Backend Docker image
 │
-├── docker-compose.yml     # Docker Compose configuration
-└── DEPLOYMENT.md          # Comprehensive deployment guide
+├── k6-tests/              # K6 load testing suite
+│   ├── k6-voter-flow.js   # Voter registration + voting test
+│   ├── k6-sse-test.js     # SSE connection stress test
+│   ├── k6-admin-test.js   # Admin operations test
+│   ├── k6-mixed-workload.js  # Real-world mixed traffic
+│   ├── extract-voter-codes.mjs  # Helper script
+│   └── run-all-tests.sh   # Interactive test runner
+│
+├── docker-compose.yml     # Standard Docker Compose config
+├── docker-compose.lb.yml  # Load-balanced configuration
+├── nginx-lb.conf          # Nginx load balancer config
+├── DEPLOYMENT.md          # Deployment and load balancing guide
+└── LOAD_TESTING.md        # K6 load testing documentation
 ```
 
 ## Environment Variables
@@ -141,13 +154,57 @@ VITE_API_URL=https://voting.jeinsat.com/api
 
 The application is designed to scale horizontally. For 600+ concurrent users:
 
-1. **Multiple Backend Instances**: Run 3-4 backend instances behind Nginx
+1. **Multiple Backend Instances**: Run 2-4 backend instances behind Nginx load balancer
 2. **MongoDB Session Store**: Use MongoDB for shared session storage
-3. **Redis Pub/Sub**: Use Redis for cross-instance SSE broadcasting
-4. **Connection Pooling**: Optimize MongoDB connection pool
-5. **Load Balancing**: Configure Nginx with least-connections algorithm
+3. **Connection Pooling**: Optimize MongoDB connection pool
+4. **Load Balancing**: Configure Nginx with least-connections algorithm
+5. **SSE Optimization**: Handle 100+ concurrent SSE connections per instance
 
-See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for detailed scaling instructions.
+### Quick Load Balanced Deployment
+
+```bash
+# Deploy with load balancer (2 backend instances)
+docker compose -f docker-compose.lb.yml up -d --build
+
+# Verify load balancing
+docker logs nginx-loadbalancer
+docker stats backend1 backend2
+
+# Test with k6
+cd k6-tests
+k6 run k6-mixed-workload.js
+```
+
+**Architecture:**
+
+```
+                     ┌──────────────┐
+                     │   Frontend   │
+                     │  (Port 3080) │
+                     └──────┬───────┘
+                            │
+                     ┌──────▼───────┐
+                     │ Nginx Load   │
+                     │   Balancer   │
+                     │  (Port 3000) │
+                     └──────┬───────┘
+                            │
+                ┌───────────┴───────────┐
+                │                       │
+         ┌──────▼──────┐         ┌─────▼───────┐
+         │  Backend 1  │         │  Backend 2  │
+         │ (Port 3000) │         │ (Port 3001) │
+         └──────┬──────┘         └─────┬───────┘
+                │                      │
+                └──────────┬───────────┘
+                           │
+                    ┌──────▼──────┐
+                    │   MongoDB   │
+                    │   Replica   │
+                    └─────────────┘
+```
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for detailed scaling and load balancing instructions, and **[LOAD_TESTING.md](./LOAD_TESTING.md)** for comprehensive load testing guide.
 
 ## Development
 
@@ -182,6 +239,8 @@ docker-compose build
 
 ## Testing
 
+### Unit/Integration Tests
+
 ```bash
 # Run tests (if available)
 npm test
@@ -189,6 +248,68 @@ npm test
 # Check health endpoint
 curl http://localhost:3000/health
 ```
+
+### Load Testing with K6
+
+Comprehensive load testing suite to validate performance and scalability.
+
+**Quick Start:**
+
+```bash
+# Install k6
+brew install k6  # macOS
+# OR
+sudo apt install k6  # Ubuntu
+
+# Extract voter codes
+cd k6-tests
+node extract-voter-codes.mjs
+
+# Run voter flow test
+k6 run k6-voter-flow.js
+
+# Interactive test runner
+./run-all-tests.sh
+```
+
+**Available Tests:**
+
+| Test | Purpose | Duration |
+|------|---------|----------|
+| `k6-voter-flow.js` | Registration + voting flow | 7 min |
+| `k6-sse-test.js` | SSE connection stress test | 8 min |
+| `k6-admin-test.js` | Admin operations | 5 min |
+| `k6-mixed-workload.js` | Real-world simulation (recommended) | 10 min |
+
+**Load Balancing Setup:**
+
+Deploy with multiple backend instances for testing:
+
+```bash
+# Deploy with 2 backend instances + nginx load balancer
+docker compose -f docker-compose.lb.yml up -d --build
+
+# Run load test
+cd k6-tests
+k6 run k6-mixed-workload.js
+
+# Monitor load distribution
+docker stats backend1 backend2
+```
+
+**Example Results:**
+
+```
+✓ registration status 200
+✓ vote status 200
+
+checks.........................: 98.45%  ✓ 1969 ✗ 31
+http_req_duration..............: avg=456ms p(95)=1.2s p(99)=1.8s
+http_reqs......................: 2000    66.66/s
+vote_success_rate..............: 97.50%  ✓ 975 ✗ 25
+```
+
+For complete load testing documentation, benchmarks, and best practices, see **[LOAD_TESTING.md](./LOAD_TESTING.md)**.
 
 ## Monitoring
 
@@ -211,13 +332,23 @@ Common issues and solutions are documented in **[DEPLOYMENT.md](./DEPLOYMENT.md#
 
 [Add your license here]
 
+## Documentation
+
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Deployment guide with load balancing setup
+- **[LOAD_TESTING.md](./LOAD_TESTING.md)** - K6 load testing guide with benchmarks
+
 ## Support
 
 For deployment issues, refer to **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
+
+For load testing and performance tuning, see **[LOAD_TESTING.md](./LOAD_TESTING.md)**.
 
 For other issues, please open an issue in the repository.
 
 ---
 
-**For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md)**
+**Quick Links:**
+- [Deployment Guide](./DEPLOYMENT.md)
+- [Load Testing Guide](./LOAD_TESTING.md)
+- [K6 Tests](./k6-tests/)
 
