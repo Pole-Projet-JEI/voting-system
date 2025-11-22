@@ -5,7 +5,7 @@ export default async function dbconfig(connectionString) {
     .connect(`${connectionString}`, {
       serverSelectionTimeoutMS: 5000,
       directConnection: true,
-      maxPoolSize: 20, 
+      maxPoolSize: 50, 
       minPoolSize: 10,
       retryWrites: true, 
       retryReads: true,
