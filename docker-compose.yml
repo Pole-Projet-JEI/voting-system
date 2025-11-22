@@ -45,8 +45,7 @@ services:
     networks:
       - app-network # Connect MongoDB to this network
     ports:
-      - "80:80"
-      - "443:443" # Expose HTTPS port (443)
+      - "3080:80"  # Use port 3080 for the frontend
     volumes:
       - dist_data:/app/client/dist # Mount shared volume here
       - /home/azureuser/voting.jeinsat.com:/etc/letsencrypt
