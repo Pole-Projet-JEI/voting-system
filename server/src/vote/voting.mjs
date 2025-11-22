@@ -1,5 +1,4 @@
 import { Router } from "express";
-import mongoose from "mongoose";
 import Team from "../mongodb/teamSchema.mjs";
 import Voter from "../mongodb/voterSchema.mjs";
 import { requireAuth } from "../middleware/auth-cookie.mjs";
@@ -7,67 +6,64 @@ import { requireAuth } from "../middleware/auth-cookie.mjs";
 const route = Router();
 
 route.post("/api/vote/:id", requireAuth, async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const teamId = req.params.id;
+  const { vote } = req.body;
+  const voterCode = req.voterCode;
+
+  if (!["yes", "no"].includes(vote)) {
+    return res.status(400).json({
+      voted: false,
+      message: "Vote must be 'yes' or 'no'",
+    });
+  }
 
   try {
-    const teamId = req.params.id;
-    const { vote } = req.body;
-    const voterCode = req.voterCode;
+    // 1. Pre-validate before transaction - check if team is presenting
+    const presentingTeam = await Team.findOne(
+      { _id: teamId, presenting: true },
+      { _id: 1 }
+    ).lean(); // Single query, no transaction needed
 
-    if (!["yes", "no"].includes(vote)) {
-      await session.abortTransaction();
-      return res.status(400).json({
-        voted: false,
-        message: "Vote must be 'yes' or 'no'",
-      });
-    }
-
-    // Check if this team is currently presenting
-    const presentingTeam = await Team.findOne({ presenting: true }).session(
-      session
-    );
-    if (!presentingTeam || presentingTeam._id.toString() !== teamId) {
-      await session.abortTransaction();
+    if (!presentingTeam) {
       return res.status(400).json({
         voted: false,
         message: "This team is not currently presenting",
       });
     }
 
-    const team = await Team.findById(teamId).session(session);
-    if (!team) {
-      await session.abortTransaction();
+    // 2. Use optimistic concurrency control instead of transactions
+    const voter = await Voter.findOneAndUpdate(
+      {
+        code: voterCode,
+        [`votes.${teamId}`]: { $exists: false }, // Atomic duplicate check
+      },
+      {
+        $set: { [`votes.${teamId}`]: { vote, votedAt: new Date() } },
+      },
+      { new: true }
+    );
+
+    if (!voter) {
+      // Either voter doesn't exist or already voted
+      const existingVoter = await Voter.findOne({ code: voterCode });
+      if (existingVoter?.votes.has(teamId)) {
+        return res.status(400).json({
+          voted: false,
+          message: "You have already voted for this team",
+          existingVote: existingVoter.votes.get(teamId).vote,
+        });
+      }
       return res.status(404).json({
         voted: false,
-        message: "Team not found",
+        message: "Voter not found",
       });
     }
 
-    const voter = await Voter.findOne({ code: voterCode }).session(session);
-    if (voter.votes.has(teamId)) {
-      await session.abortTransaction();
-      return res.status(400).json({
-        voted: false,
-        message: "You have already voted for this team",
-        existingVote: voter.votes.get(teamId).vote,
-      });
-    }
-
-    const updateField = vote === "yes" ? "nyes" : "nno";
+    // 3. Increment team vote atomically (no transaction needed)
     await Team.updateOne(
       { _id: teamId },
-      { $inc: { [updateField]: 1 } },
-      { session }
+      { $inc: { [vote === "yes" ? "nyes" : "nno"]: 1 } }
     );
-
-    await Voter.updateOne(
-      { code: voterCode },
-      { $set: { [`votes.${teamId}`]: { vote, votedAt: new Date() } } },
-      { session }
-    );
-
-    await session.commitTransaction();
 
     return res.status(200).json({
       voted: true,
@@ -75,16 +71,12 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
       vote: vote,
     });
   } catch (error) {
-    await session.abortTransaction();
     console.error("Error recording vote:", error);
-
     return res.status(500).json({
       voted: false,
       message: "Server error",
       error: error.message,
     });
-  } finally {
-    session.endSession();
   }
 });
 
