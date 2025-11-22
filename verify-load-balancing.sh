@@ -53,7 +53,8 @@ fi
 echo ""
 echo -e "${YELLOW}2. Clearing logs to measure fresh distribution...${NC}"
 sudo docker compose -f docker-compose.lb.yml restart backend1 backend2
-sleep 5
+echo -e "${CYAN}  Waiting for backends to start...${NC}"
+sleep 8
 echo -e "${GREEN}✓ Logs cleared${NC}"
 
 echo ""
@@ -70,8 +71,19 @@ echo ""
 echo -e "${YELLOW}4. Analyzing distribution...${NC}"
 sleep 2
 
-B1_REGISTER=$(sudo docker logs voting-backend1-1 2>&1 | grep -c "GET /api/isconnected" || echo 0)
-B2_REGISTER=$(sudo docker logs voting-backend2-1 2>&1 | grep -c "GET /api/isconnected" || echo 0)
+# Check nginx-lb logs to see which backend served requests
+# Nginx logs show: "GET /api/isconnected" and upstream: "backend1:3000" or "backend2:3001"
+NGINX_LOGS=$(sudo docker logs nginx-loadbalancer 2>&1)
+
+B1_REGISTER=$(echo "$NGINX_LOGS" | grep "GET /api/isconnected" | grep -c "backend1:3000" || echo 0)
+B2_REGISTER=$(echo "$NGINX_LOGS" | grep "GET /api/isconnected" | grep -c "backend2:3001" || echo 0)
+
+# If nginx doesn't show upstream, count from backend logs directly
+if [ "$B1_REGISTER" -eq 0 ] && [ "$B2_REGISTER" -eq 0 ]; then
+    echo -e "${CYAN}  Checking backend logs directly...${NC}"
+    B1_REGISTER=$(sudo docker logs voting-backend1-1 2>&1 | grep -c "/api/isconnected" || echo 0)
+    B2_REGISTER=$(sudo docker logs voting-backend2-1 2>&1 | grep -c "/api/isconnected" || echo 0)
+fi
 
 TOTAL=$((B1_REGISTER + B2_REGISTER))
 
