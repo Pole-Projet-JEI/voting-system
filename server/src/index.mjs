@@ -18,8 +18,6 @@ import adminLogoutRouter from "./admin/apis/auth/logout.mjs";
 import dotenv from "dotenv";
 import path from "path";
 import { seedVoters } from "./seed/seed-voters.mjs";
-import { requireAuth } from "./middleware/auth-cookie.mjs";
-import { requireAdmin } from "./admin/middleware/requireAdmin.mjs";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 dotenv.config();
@@ -75,13 +73,16 @@ app.use(currentVoteRouter); // /api/currentteam - anyone can view
 app.use(adminLoginRouter);
 app.use(adminLogoutRouter);
 
-app.use(requireAdmin, presentingRouter);
-app.use(requireAdmin, visualizationRouter);
-app.use(requireAdmin, teamManagementRouter);
 
-app.use(requireAuth, votingRouter);
-app.use(requireAuth, hasVotedRouter); 
+// Voter auth routes (middleware applied at router level)
+app.use(votingRouter);
+app.use(hasVotedRouter);
+// Admin routes (middleware applied at router level)
+app.use(presentingRouter);
+app.use(visualizationRouter);
+app.use(teamManagementRouter);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://0.0.0.0:${PORT}`);
+
 });

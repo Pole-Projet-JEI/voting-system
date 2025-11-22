@@ -9,7 +9,6 @@ export const JWT_SECRET =
   process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex");
 export const JWT_EXPIRY = process.env.JWT_EXPIRY || "24h";
 
-// Validate on startup
 if (!ADMIN_KEYS[0]) {
   console.error("❌ ADMIN_SECRET_KEY or ADMIN_KEYS must be set in .env");
   process.exit(1);

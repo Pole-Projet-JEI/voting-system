@@ -11,6 +11,9 @@ const routes = {
   HAS_VOTED: baseURL + "hasvoted",
 
   // Admin routes
+  ADMIN_AUTH: baseURL + "admin/auth",
+  ADMIN_LOGIN: baseURL + "admin/login",
+  ADMIN_LOGOUT: baseURL + "admin/logout",
   ADMIN_TEAMS: baseURL + "admin/teams",
   ADMIN_PRESENTING: baseURL + "admin/presenting",
   ADMIN_TEAM: baseURL + "admin/team",

@@ -12,40 +12,48 @@ const apiClient = axios.create({
 export const checkConnection = async () => {
   try {
     const response = await apiClient.get(routes.IS_CONNECTED);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error in checkConnection:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Connection check failed",
+    };
   }
 };
 
 export const verifyPosition = async (positionData) => {
   try {
     const response = await apiClient.post(routes.VERIFY_POSITION, positionData);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error in verifyPosition:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Position verification failed",
+    };
   }
 };
 
 export const registerUser = async (userData) => {
   try {
     const response = await apiClient.post(routes.REGISTER, { code: userData });
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error in registerUser:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Registration failed",
+    };
   }
 };
 
 export const sendVote = async (voteData) => {
   try {
     const response = await apiClient.post(routes.SEND_VOTE, voteData);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error in sendVote:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to send vote",
+    };
   }
 };
 
@@ -53,29 +61,35 @@ export const voteForId = async (id, voteData) => {
   try {
     const url = routes.VOTE.replace(":id", id);
     const response = await apiClient.post(url, voteData);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error(`Error voting for ID ${id}:`, error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || `Failed to vote for ID ${id}`,
+    };
   }
 };
 
 export const getCurrentTeam = async () => {
   try {
     const response = await apiClient.get(routes.GET_CURRENT_VOTE);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error getting team id", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to get current team",
+    };
   }
 };
 
 export const didUserVote = async () => {
   try {
     const response = await apiClient.get(routes.HAS_VOTED);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error fetching has voted value", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to check vote status",
+    };
   }
 };

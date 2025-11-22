@@ -124,6 +124,30 @@
   }
 }
 
+@media (max-width: 488px) {
+  .home-container {
+    padding: 1.5em 1.5em;
+  }
+
+  .vote-open-title {
+    font-size: 1.5em;
+  }
+
+  .home-vote-closed-message {
+    font-size: 1.2em;
+  }
+
+  .vote-option {
+    padding: 1em 1.5em;
+    font-size: 1em;
+  }
+
+  .submit-vote-button {
+    padding: 0.8em 1.5em;
+    font-size: 1.1em;
+  }
+}
+
 @media (max-width: 320px) {
   .home-container {
     gap: 1em;

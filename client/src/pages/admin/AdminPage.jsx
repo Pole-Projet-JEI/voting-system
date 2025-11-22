@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getAllTeams,
   getPresentingTeam,
@@ -7,6 +8,7 @@ import {
   createTeam,
   updateTeam,
   deleteTeam,
+  adminLogout,
 } from "../../service/adminApi";
 import { Button } from "../../components/ui/button";
 import {
@@ -20,6 +22,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  LogOut,
 } from "lucide-react";
 import { PresentingTeamCard } from "./components/PresentingTeamCard";
 import { StatCard } from "./components/StatCard";
@@ -29,6 +32,7 @@ import { useTeamFilters } from "./hooks/useTeamFilters";
 import "./AdminPage.css";
 
 function AdminPage() {
+  const navigate = useNavigate();
   // Override body styles for admin page
   useEffect(() => {
     document.body.style.background = "white";
@@ -60,87 +64,63 @@ function AdminPage() {
   }, []);
 
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [teamsData, presentingData] = await Promise.all([
-        getAllTeams(),
-        getPresentingTeam(),
-      ]);
+    setLoading(true);
 
-      setTeams(teamsData.teams || []);
-      setPresentingTeam(presentingData.team);
+    const [teamsResult, presentingResult] = await Promise.all([
+      getAllTeams(),
+      getPresentingTeam(),
+    ]);
 
-      // Calculate stats from teams data
-      const totalTeams = teamsData.teams?.length || 0;
-      const presentedTeams =
-        teamsData.teams?.filter((t) => t.presented).length || 0;
-      const currentlyPresenting =
-        teamsData.teams?.filter((t) => t.presenting).length || 0;
-
-      setStats({
-        voters: null, // No voter stats endpoint available
-        teams: {
-          totalTeams,
-          presentedTeams,
-          notYetPresented: totalTeams - presentedTeams,
-          currentlyPresenting,
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching admin data:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to load admin data";
-      alert(`✗ Error: ${errorMessage}`);
-    } finally {
+    if (!teamsResult.success || !presentingResult.success) {
+      alert(`✗ Error: ${teamsResult.error || presentingResult.error}`);
       setLoading(false);
+      return;
     }
+
+    setTeams(teamsResult.data.teams || []);
+    setPresentingTeam(presentingResult.data.team);
+
+    // Calculate stats from teams data
+    const totalTeams = teamsResult.data.teams?.length || 0;
+    const presentedTeams =
+      teamsResult.data.teams?.filter((t) => t.presented).length || 0;
+    const currentlyPresenting =
+      teamsResult.data.teams?.filter((t) => t.presenting).length || 0;
+
+    setStats({
+      voters: null,
+      teams: {
+        totalTeams,
+        presentedTeams,
+        notYetPresented: totalTeams - presentedTeams,
+        currentlyPresenting,
+      },
+    });
+
+    setLoading(false);
   };
 
   // Set a team as presenting
   const handleSetPresenting = async (teamId) => {
-    try {
-      console.log("Setting presenting team:", teamId);
-      const response = await setPresentingTeamAPI(teamId);
-      console.log("Response from setPresentingTeam:", response);
+    const result = await setPresentingTeamAPI(teamId);
 
-      // Show success message
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        await fetchData(); // Refresh data
-      } else {
-        console.warn("Unexpected response format:", response);
-        alert("✗ Unexpected response from server");
-      }
-    } catch (error) {
-      console.error("Error setting presenting team:", error);
-
-      // Extract error message from response
-      const errorMessage =
-        error.response?.data?.message || "Failed to set presenting team";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      await fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
   // Stop presenting
   const handleStopPresenting = async () => {
-    try {
-      const response = await stopPresentingTeam();
+    const result = await stopPresentingTeam();
 
-      // Show success message
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        fetchData(); // Refresh data
-      } else if (response && response.message) {
-        alert(`ℹ ${response.message}`);
-        fetchData(); // Refresh data anyway
-      }
-    } catch (error) {
-      console.error("Error stopping presentation:", error);
-
-      // Extract error message from response
-      const errorMessage =
-        error.response?.data?.message || "Failed to stop presentation";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
@@ -153,39 +133,29 @@ function AdminPage() {
       return;
     }
 
-    try {
-      const response = await createTeam(newTeamName, newTeamDescription);
+    const result = await createTeam(newTeamName, newTeamDescription);
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        setNewTeamName("");
-        setNewTeamDescription("");
-        setShowAddTeamForm(false);
-        fetchData(); // Refresh data
-      }
-    } catch (error) {
-      console.error("Error creating team:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to create team";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      setNewTeamName("");
+      setNewTeamDescription("");
+      setShowAddTeamForm(false);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
   // Update a team
   const handleUpdateTeam = async (teamId, updates) => {
-    try {
-      const response = await updateTeam(teamId, updates);
+    const result = await updateTeam(teamId, updates);
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        setEditingTeam(null);
-        fetchData(); // Refresh data
-      }
-    } catch (error) {
-      console.error("Error updating team:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to update team";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      setEditingTeam(null);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
@@ -197,18 +167,13 @@ function AdminPage() {
 
     if (!confirmed) return;
 
-    try {
-      const response = await deleteTeam(teamId);
+    const result = await deleteTeam(teamId);
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        fetchData(); // Refresh data
-      }
-    } catch (error) {
-      console.error("Error deleting team:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete team";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
@@ -244,7 +209,7 @@ function AdminPage() {
           icon: ArrowUpDown,
           variant: "outline",
           text: "Sort by Votes",
-          className: `${baseClass} border-gray-300 hover:bg-gray-100`,
+          className: `${baseClass} border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700`,
         };
     }
   };
@@ -278,6 +243,18 @@ function AdminPage() {
       teamName: editingTeam.teamName,
       description: editingTeam.description,
     });
+  };
+
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await adminLogout();
+      navigate("/admin/login");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Redirect anyway since token might be expired
+      navigate("/admin/login");
+    }
   };
 
   if (loading) {
@@ -333,6 +310,18 @@ function AdminPage() {
             title="Pending"
             value={stats.teams?.notYetPresented || 0}
           />
+        </div>
+
+        {/* Logout Button */}
+        <div className="p-6 mt-auto">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="w-full border-white/20 text-white hover:bg-white/10"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </aside>
 

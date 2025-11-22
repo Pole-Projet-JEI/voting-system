@@ -2,9 +2,31 @@ import { Router } from "express";
 import {
   validateAdminKey,
   generateAdminToken,
+  verifyAdminToken,
 } from "../../services/authService.mjs";
 
 const route = Router();
+
+// Lightweight auth check - just validates token, no data fetching
+route.get("/api/admin/auth", (req, res) => {
+  const token = req.cookies?.adminToken;
+
+  if (!token) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  try {
+    const decoded = verifyAdminToken(token);
+
+    if (!decoded || decoded.role !== "admin") {
+      return res.status(401).json({ authenticated: false });
+    }
+
+    return res.json({ authenticated: true, admin: true });
+  } catch (error) {
+    return res.status(401).json({ authenticated: false });
+  }
+});
 
 route.post("/api/admin/login", async (req, res) => {
   try {

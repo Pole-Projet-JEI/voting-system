@@ -21,10 +21,7 @@ const clients = new Set();
 // Listen to change stream once and broadcast to all clients
 changeStream.on("change", async (change) => {
   try {
-    console.log("------");
-    console.log("Presenting status changed:", change);
-    console.log("------");
-
+    console.log("added someone")
     let data;
     // If a team's presenting status changed to true, send the team info
     if (change.fullDocument?.presenting === true) {
