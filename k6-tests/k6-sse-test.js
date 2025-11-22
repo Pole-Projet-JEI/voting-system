@@ -33,8 +33,7 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
 
 export function setup() {
-  console.log(`🚀 Starting SSE connection test against ${BASE_URL}`);
-  console.log(`📡 Testing Server-Sent Events load balancing and stability`);
+  console.log(`SSE Connection Test: ${BASE_URL}`);
 }
 
 export default function() {
@@ -60,15 +59,11 @@ export default function() {
   } else {
     sseErrors.add(1);
     sseSuccessRate.add(false);
-    console.error(`❌ SSE connection failed: ${res.status}`);
   }
-  
-  // Small delay before reconnecting
   sleep(1);
 }
 
 export function teardown() {
-  console.log(`\n✅ SSE test completed`);
-  console.log(`📊 Total SSE connections established: check summary above`);
+  console.log('SSE test completed');
 }
 

@@ -33,32 +33,21 @@ const ADMIN_KEY = __ENV.ADMIN_KEY;
 
 export function setup() {
   if (!ADMIN_KEY) {
-    throw new Error('ADMIN_KEY environment variable is required. Use: k6 run --env ADMIN_KEY=your_key k6-admin-test.js');
+    throw new Error('ADMIN_KEY required. Use: k6 run --env ADMIN_KEY=your_key k6-admin-test.js');
   }
   
-  console.log(`🚀 Starting admin operations test against ${BASE_URL}`);
-  
-  // Admin login
   const loginRes = http.post(
     `${BASE_URL}/api/admin/login`,
     JSON.stringify({ secretKey: ADMIN_KEY }),
     { headers: { 'Content-Type': 'application/json' } }
   );
   
-  if (loginRes.status !== 200) {
-    throw new Error(`Admin login failed: ${loginRes.status} - ${loginRes.body}`);
+  if (loginRes.status !== 200 || !loginRes.cookies.adminToken) {
+    throw new Error(`Admin login failed: ${loginRes.status}`);
   }
   
-  const adminCookie = loginRes.cookies.adminToken;
-  if (!adminCookie) {
-    throw new Error('Admin cookie not received after login');
-  }
-  
-  console.log(`✅ Admin authenticated successfully`);
-  
-  return {
-    adminCookie: adminCookie[0].value,
-  };
+  console.log(`Admin Operations Test: ${BASE_URL}`);
+  return { adminCookie: loginRes.cookies.adminToken[0].value };
 }
 
 export default function(data) {
@@ -129,15 +118,11 @@ export default function(data) {
 }
 
 export function teardown(data) {
-  console.log(`\n✅ Admin operations test completed`);
-  
-  // Logout
   const headers = {
     'Content-Type': 'application/json',
     'Cookie': `adminToken=${data.adminCookie}`,
   };
-  
   http.post(`${BASE_URL}/api/admin/logout`, null, { headers });
-  console.log(`🚪 Admin logged out`);
+  console.log('Admin test completed');
 }
 

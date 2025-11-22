@@ -69,21 +69,15 @@ let globalTeamID = null;
 let globalAdminCookie = null;
 
 export function setup() {
-  console.log(`🚀 Starting MIXED WORKLOAD test against ${BASE_URL}`);
-  console.log(`📊 Simulating real-world traffic patterns:`);
-  console.log(`   - 70% Voter operations (register + vote)`);
-  console.log(`   - 20% SSE connections (real-time updates)`);
-  console.log(`   - 10% Admin operations`);
+  console.log(`Mixed Workload Test: 70% voters, 20% SSE, 10% admin`);
   
-  // Get presenting team
   const teamRes = http.get(`${BASE_URL}/api/currentteam`);
   if (teamRes.status === 200) {
     const data = teamRes.json();
     globalTeamID = data.teamID;
-    console.log(`✅ Testing with team: ${data.teamName}`);
+    console.log(`Team: ${data.teamName}`);
   }
   
-  // Admin login
   const loginRes = http.post(
     `${BASE_URL}/api/admin/login`,
     JSON.stringify({ secretKey: ADMIN_KEY }),
@@ -92,21 +86,13 @@ export function setup() {
   
   if (loginRes.status === 200 && loginRes.cookies.adminToken) {
     globalAdminCookie = loginRes.cookies.adminToken[0].value;
-    console.log(`✅ Admin authenticated`);
   }
   
-  return {
-    teamID: globalTeamID,
-    adminCookie: globalAdminCookie,
-  };
+  return { teamID: globalTeamID, adminCookie: globalAdminCookie };
 }
 
-// Voter flow: register + vote
 export function voterFlow(data) {
-  if (!data.teamID) {
-    console.error('No presenting team available');
-    return;
-  }
+  if (!data.teamID) return;
   
   const code = voterCodes[Math.floor(Math.random() * voterCodes.length)];
   
@@ -161,7 +147,6 @@ export function voterFlow(data) {
   sleep(1);
 }
 
-// SSE connection
 export function sseConnection() {
   const res = http.get(`${BASE_URL}/api/sendvote`, {
     headers: {
@@ -186,11 +171,8 @@ export function sseConnection() {
   sleep(30);
 }
 
-// Admin operations
 export function adminFlow(data) {
-  if (!data.adminCookie) {
-    return;
-  }
+  if (!data.adminCookie) return;
   
   const headers = {
     'Content-Type': 'application/json',
@@ -227,13 +209,11 @@ export function adminFlow(data) {
 }
 
 export function teardown(data) {
-  console.log(`\n✅ Mixed workload test completed`);
-  console.log(`📊 Check the summary above for detailed metrics by flow type`);
-  
   if (data.adminCookie) {
     http.post(`${BASE_URL}/api/admin/logout`, null, {
       headers: { 'Cookie': `adminToken=${data.adminCookie}` }
     });
   }
+  console.log('Mixed workload test completed');
 }
 
