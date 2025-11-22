@@ -47,7 +47,7 @@ echo -e "  Number of users: ${NUM_USERS}"
 echo -e "  ALL LAUNCHING SIMULTANEOUSLY"
 echo -e "  Team ID: ${TEAM_ID}"
 echo -e "  Team Name: ${TEAM_NAME}"
-echo -e "  Vote choice: ${VOTE_CHOICE}"
+echo -e "  Vote distribution: 50% yes, 50% no"
 echo -e "${BLUE}==========================================${NC}\n"
 
 # Get voter codes
@@ -73,6 +73,14 @@ vote_user() {
     
     local cookie_file="${TEMP_DIR}/cookies_${user_num}.txt"
     
+    # Determine vote choice: 50% yes, 50% no
+    local vote_choice
+    if [ $((user_num % 2)) -eq 0 ]; then
+        vote_choice="yes"
+    else
+        vote_choice="no"
+    fi
+    
     # Register
     register_response=$(curl -s -w "\n%{http_code}" \
         -X POST "${BASE_URL}/api/register" \
@@ -92,7 +100,7 @@ vote_user() {
     vote_response=$(curl -s -w "\n%{http_code}" \
         -X POST "${BASE_URL}/api/vote/${TEAM_ID}" \
         -H "Content-Type: application/json" \
-        -d "{\"vote\":\"${VOTE_CHOICE}\"}" \
+        -d "{\"vote\":\"${vote_choice}\"}" \
         -b "${cookie_file}" 2>/dev/null)
     
     vote_status=$(echo "${vote_response}" | tail -n1)
@@ -112,15 +120,15 @@ vote_user() {
 }
 
 export -f vote_user
-export BASE_URL TEAM_ID VOTE_CHOICE TEMP_DIR RESULTS_FILE GREEN RED NC
+export BASE_URL TEAM_ID TEMP_DIR RESULTS_FILE GREEN RED NC
 
 echo -e "${YELLOW}Launching ${NUM_USERS} requests SIMULTANEOUSLY...${NC}\n"
 test_start=$(date +%s%N)
 
-# Launch ALL requests at the EXACT same time using background jobs
+# Launch ALL requests at the EXACT same time using child processes
 pids=()
 for i in $(seq 0 $((${#VOTER_CODES[@]} - 1))); do
-    vote_user "${VOTER_CODES[$i]}" "$i" &
+    (vote_user "${VOTER_CODES[$i]}" "$i") &
     pids+=($!)
 done
 
@@ -179,7 +187,7 @@ REPORT_FILE="stress-test-report-$(date +%Y%m%d-%H%M%S).txt"
     echo "  Number of users: ${NUM_USERS}"
     echo "  Concurrency: ALL SIMULTANEOUS"
     echo "  Team ID: ${TEAM_ID}"
-    echo "  Vote choice: ${VOTE_CHOICE}"
+    echo "  Vote distribution: 50% yes, 50% no"
     echo ""
     echo "Results:"
     echo "  Total requests: ${total_requests}"

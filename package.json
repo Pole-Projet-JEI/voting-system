@@ -10,6 +10,8 @@
     "start": "npm run build && npm run start:server"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3"
+    "@playwright/test": "^1.56.1",
+    "cross-env": "^7.0.3",
+    "playwright": "^1.56.1"
   }
 }
