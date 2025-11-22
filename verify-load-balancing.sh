@@ -71,19 +71,17 @@ echo ""
 echo -e "${YELLOW}4. Analyzing distribution...${NC}"
 sleep 2
 
-# Check nginx-lb logs to see which backend served requests
-# Nginx logs show: "GET /api/isconnected" and upstream: "backend1:3000" or "backend2:3001"
-NGINX_LOGS=$(sudo docker logs nginx-loadbalancer 2>&1)
+# Count from backend logs directly - simpler and more reliable
+B1_COUNT=$(sudo docker logs voting-backend1-1 2>&1 | grep "/api/isconnected" | wc -l)
+B2_COUNT=$(sudo docker logs voting-backend2-1 2>&1 | grep "/api/isconnected" | wc -l)
 
-B1_REGISTER=$(echo "$NGINX_LOGS" | grep "GET /api/isconnected" | grep -c "backend1:3000" || echo 0)
-B2_REGISTER=$(echo "$NGINX_LOGS" | grep "GET /api/isconnected" | grep -c "backend2:3001" || echo 0)
+# Clean the output (remove all whitespace and newlines)
+B1_REGISTER=$(echo "$B1_COUNT" | tr -d '[:space:]')
+B2_REGISTER=$(echo "$B2_COUNT" | tr -d '[:space:]')
 
-# If nginx doesn't show upstream, count from backend logs directly
-if [ "$B1_REGISTER" -eq 0 ] && [ "$B2_REGISTER" -eq 0 ]; then
-    echo -e "${CYAN}  Checking backend logs directly...${NC}"
-    B1_REGISTER=$(sudo docker logs voting-backend1-1 2>&1 | grep -c "/api/isconnected" || echo 0)
-    B2_REGISTER=$(sudo docker logs voting-backend2-1 2>&1 | grep -c "/api/isconnected" || echo 0)
-fi
+# Ensure they are numbers (default to 0 if empty)
+B1_REGISTER=${B1_REGISTER:-0}
+B2_REGISTER=${B2_REGISTER:-0}
 
 TOTAL=$((B1_REGISTER + B2_REGISTER))
 
@@ -97,12 +95,20 @@ echo -e "  Total:     ${CYAN}$TOTAL${NC} requests"
 echo ""
 
 if [ "$TOTAL" -eq 0 ]; then
-    echo -e "${RED}✗ No requests logged! Check nginx-lb configuration${NC}"
+    echo -e "${RED}✗ No requests logged!${NC}"
+    echo -e "${YELLOW}Debug: Check backend logs with:${NC}"
+    echo -e "${CYAN}sudo docker logs voting-backend1-1 | tail -10${NC}"
     exit 1
 fi
 
-B1_PERCENT=$((B1_REGISTER * 100 / TOTAL))
-B2_PERCENT=$((B2_REGISTER * 100 / TOTAL))
+# Calculate percentages safely
+if [ "$TOTAL" -gt 0 ]; then
+    B1_PERCENT=$((B1_REGISTER * 100 / TOTAL))
+    B2_PERCENT=$((B2_REGISTER * 100 / TOTAL))
+else
+    B1_PERCENT=0
+    B2_PERCENT=0
+fi
 
 echo -e "  Backend 1: ${CYAN}${B1_PERCENT}%${NC}"
 echo -e "  Backend 2: ${CYAN}${B2_PERCENT}%${NC}"
