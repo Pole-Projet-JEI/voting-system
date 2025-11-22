@@ -2,10 +2,11 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import Team from "../mongodb/teamSchema.mjs";
 import Voter from "../mongodb/voterSchema.mjs";
+import { requireAuth } from "../middleware/auth-cookie.mjs";
 
 const route = Router();
 
-route.post("/api/vote/:id", async (req, res) => {
+route.post("/api/vote/:id", requireAuth, async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 

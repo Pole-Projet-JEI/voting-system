@@ -1,12 +1,10 @@
 import { Router } from "express";
 import Team from "../mongodb/teamSchema.mjs";
+import { requireAuth } from "../middleware/auth-cookie.mjs";
 
 const route = Router();
 
-/**
- * Check if voter has voted for current presenting team
- */
-route.get("/api/hasvoted", async (req, res) => {
+route.get("/api/hasvoted", requireAuth, async (req, res) => {
   try {
     const voter = req.voter;
 

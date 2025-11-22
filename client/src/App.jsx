@@ -6,6 +6,8 @@ import HomePage from "./pages/home/HomePage";
 import "./app.css";
 import RegisterPage from "./pages/register/RegisterPage";
 import AdminPage from "./pages/admin/AdminPage";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 import Error404Page from "./pages/error/Error404Page";
 import { Navigate } from "react-router-dom";
 function App() {
@@ -14,7 +16,19 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route
+            path="/admin"
+            element={<Navigate to="/admin/login" replace />}
+          />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminPage />
+              </ProtectedRoute>
+            }
+          />
           <Route element={<GlobalLayout />}>
             <Route path="/test" />
             <Route path="/home" element={<HomePage />} />
