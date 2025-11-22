@@ -58,18 +58,14 @@
   background-color: #520911; /* Darker shade for feedback */
 }
 
-@media (max-width: 320px) {
-  .register-form-container {
-    padding: 2em 2em;
-  }
-}
-
 @media (max-width: 488px) {
   .title-container {
     gap: 0;
+    font-size: 0.9em;
   }
   .register-form-container {
     min-width: unset;
+    padding: 1.5em 2em;
   }
   #unique-code {
     font-size: 1em;
@@ -77,5 +73,44 @@
   }
   #unique-code::placeholder {
     font-size: 0.9em;
+  }
+}
+
+@media (max-width: 320px) {
+  .register-form-container {
+    padding: 1.5em 1.5em;
+  }
+  .title-container {
+    font-size: 0.85em;
+  }
+}
+
+@media (max-width: 250px) {
+  .register-form-container {
+    padding: 1em 1em;
+    gap: 0.8em;
+  }
+  .title-container {
+    font-size: 0.7em;
+    gap: 5px;
+  }
+  .title-container h1 {
+    font-size: 1.2em;
+  }
+  #unique-code {
+    font-size: 0.85em;
+    padding: 0.7em 0.8em;
+    min-width: 100px;
+  }
+  #unique-code::placeholder {
+    font-size: 0.8em;
+  }
+  #register-form-submit {
+    padding: 0.3em;
+    right: 3%;
+  }
+  #register-form-submit svg {
+    width: 18px;
+    height: 18px;
   }
 }
