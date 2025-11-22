@@ -10,14 +10,9 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const isConnected = async () => {
-      try {
-        const result = await checkConnection();
-        // console.log(result);
-        if (result.connected) {
-          navigate("/home");
-        }
-      } catch (error) {
-        // console.log(error);
+      const result = await checkConnection();
+      if (result.success && result.data.connected) {
+        navigate("/home");
       }
     };
     isConnected();
@@ -25,12 +20,11 @@ export default function RegisterPage() {
 
   const submitHandler = async (event) => {
     event.preventDefault();
-    try {
-      const result = await registerUser(userInput);
+    const result = await registerUser(userInput);
+    if (result.success) {
       navigate("/home");
-      // console.log("register result:",result);
-    } catch (error) {
-      // console.log(error);
+    } else {
+      alert(result.error || "Registration failed");
     }
   };
 

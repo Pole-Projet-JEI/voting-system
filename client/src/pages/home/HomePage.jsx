@@ -44,46 +44,40 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   const fetchTeam = async () => {
-    try {
-      const result = await getCurrentTeam();
-      dispatch({ type: "SET_TEAM_ID", payload: result.teamID });
-      dispatch({ type: "SET_TEAM_NAME", payload: result.teamName });
+    const result = await getCurrentTeam();
+    if (result.success) {
+      dispatch({ type: "SET_TEAM_ID", payload: result.data.teamID });
+      dispatch({ type: "SET_TEAM_NAME", payload: result.data.teamName });
 
-      if (!result.teamID) {
+      if (!result.data.teamID) {
         dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
       }
       // If there IS a team presenting, the mode will be set by checkHasVoted()
-    } catch (error) {
-      console.error("Error fetching team:", error);
+    } else {
       dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
     }
   };
 
   const verifyConnection = async () => {
-    try {
-      const result = await checkConnection();
-      console.log(result);
-      if (!result.connected) navigate("/register");
-    } catch (error) {
-      console.error("Error verifying connection", error);
+    const result = await checkConnection();
+    if (result.success && !result.data.connected) {
+      navigate("/register");
     }
   };
 
   const checkHasVoted = async () => {
-    try {
-      const result = await didUserVote();
-      if (result.hasVoted) {
+    const result = await didUserVote();
+    if (result.success) {
+      if (result.data.hasVoted) {
         dispatch({ type: "SET_HAS_VOTED", payload: true });
         dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
       } else {
         // User hasn't voted - open voting if team is presenting
         const teamResult = await getCurrentTeam();
-        if (teamResult.teamID) {
+        if (teamResult.success && teamResult.data.teamID) {
           dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
         }
       }
-    } catch (error) {
-      console.error("Error checking vote status", error);
     }
   };
 
@@ -95,33 +89,25 @@ export default function HomePage() {
       return;
     }
 
-    try {
-      const response = await voteForId(state.teamId, { vote: state.userVote });
+    const response = await voteForId(state.teamId, { vote: state.userVote });
 
-      if (response.voted) {
+    if (response.success) {
+      if (response.data.voted) {
         dispatch({ type: "SET_HAS_VOTED", payload: true });
         dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
       } else {
-        alert(response.message || "Failed to submit vote");
+        alert(response.data.message || "Failed to submit vote");
       }
-    } catch (error) {
-      console.error("Error submitting vote", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to submit vote. Please try again.";
-      alert(errorMessage);
+    } else {
+      alert(response.error || "Failed to submit vote. Please try again.");
     }
   };
 
   useEffect(() => {
     const initializePage = async () => {
-      try {
-        await verifyConnection();
-        await fetchTeam();
-        await checkHasVoted();
-      } catch (error) {
-        console.error("Error during initialization:", error);
-      }
+      await verifyConnection();
+      await fetchTeam();
+      await checkHasVoted();
     };
 
     initializePage();
@@ -154,7 +140,7 @@ export default function HomePage() {
         // Check if user already voted for this new team
         if (newTeamId) {
           const voteStatus = await didUserVote();
-          if (voteStatus.hasVoted) {
+          if (voteStatus.success && voteStatus.data.hasVoted) {
             dispatch({ type: "SET_HAS_VOTED", payload: true });
             dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
           } else {
