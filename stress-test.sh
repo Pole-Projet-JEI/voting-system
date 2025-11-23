@@ -176,7 +176,7 @@ fi
 echo -e "${BLUE}==========================================${NC}\n"
 
 # Save detailed results
-REPORT_FILE="stress-test-report-$(date +%Y%m%d-%H%M%S).txt"
+REPORT_FILE="performance-testing/stress-test-report-$(date +%Y%m%d-%H%M%S).txt"
 {
     echo "TRUE PARALLEL Stress Test Report"
     echo "Generated: $(date)"

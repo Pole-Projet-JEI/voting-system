@@ -10,7 +10,6 @@ function ProtectedRoute({ children }) {
     const checkAuth = async () => {
       const result = await checkAdminAuth();
 
-      console.log("Auth check result:", result);
 
       if (result.success && result.data.authenticated) {
         setIsAuthenticated(true);
