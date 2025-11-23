@@ -598,7 +598,7 @@ const voterCodes = [
   "8vzHOLBoC",
   "SkUQjfOjS",
   "cLzp08Bt7",
-  "CmbSgR6xi",
+  "CmbSgR6xi"
 ];
 
 export { voterCodes };
