@@ -1,5 +1,5 @@
 services:
-  backend1:
+  backend:
     deploy:
     build:
       context: ./server
@@ -11,6 +11,8 @@ services:
       - MONGO_URI=mongodb://admin:${MONGO_PASSWORD}@mongo:27017/votingsystem?replicaSet=rs0&authSource=admin
     networks:
       - app-network
+    ports:
+      - "127.0.0.1:3000:3000"
     depends_on:
       mongo:
         condition: service_healthy
@@ -23,7 +25,7 @@ services:
     networks:
       - app-network # Connect MongoDB to this network
     ports:
-      - "3080:80" # Use port 3080 for the frontend
+      - "127.0.0.1:3080:80" # Use port 3080 for the frontend
     env_file:
       - ./client/.env
     depends_on:
@@ -32,7 +34,7 @@ services:
     restart: unless-stopped
 
   mongo:
-    image: mongo:7.0
+    image: mongo@sha256:f4d54619262ae3bc6a0a8efbebcef970b87b8ad70697479a75ce308a6f400158
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     networks:
       - app-network
@@ -45,7 +47,7 @@ services:
     restart: unless-stopped
     healthcheck:
       test: |
-        mongosh -u admin -p ${MONGO_PASSWORD} --authenticationDatabase admin --quiet --eval "
+        mongosh -u admin -p "$${MONGO_INITDB_ROOT_PASSWORD}" --authenticationDatabase admin --quiet --eval "
           try {
             var status = rs.status();
             if (status.myState === 1) {
@@ -71,7 +73,7 @@ services:
         "
       interval: 10s
       timeout: 10s
-      start_period: 5s
+      start_period: 12s
       retries: 30
 
 networks:

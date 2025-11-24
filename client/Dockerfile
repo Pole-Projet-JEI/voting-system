@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # Step 2: Serve the app using Nginx
-FROM nginx:alpine
+FROM nginx@sha256:1beed3ca46acebe9d3fb62e9067f03d05d5bfa97a00f30938a0a3580563272ad
 
 # Create the /etc/letsencrypt directory
 RUN mkdir -p /etc/letsencrypt
