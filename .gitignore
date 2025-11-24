@@ -38,3 +38,5 @@ build/
 tmp/
 temp/
 *.tmp
+
+.env
