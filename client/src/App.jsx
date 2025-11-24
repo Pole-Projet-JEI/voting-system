@@ -17,7 +17,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route
-            path="/admin"
+            path="/jvaFHT7xvivJPJqc1QBRWhfayoj"
             element={<Navigate to="/jvaFHT7xvivJPJqc1QBRWhfayoj/login" replace />}
           />
           <Route path="/jvaFHT7xvivJPJqc1QBRWhfayoj/login" element={<AdminLoginPage />} />
