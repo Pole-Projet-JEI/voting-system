@@ -18,11 +18,11 @@ function App() {
           <Route path="/" element={<Navigate to="/home" replace />} />
           <Route
             path="/admin"
-            element={<Navigate to="/admin/login" replace />}
+            element={<Navigate to="/jvaFHT7xvivJPJqc1QBRWhfayoj/login" replace />}
           />
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/jvaFHT7xvivJPJqc1QBRWhfayoj/login" element={<AdminLoginPage />} />
           <Route
-            path="/admin/dashboard"
+            path="/jvaFHT7xvivJPJqc1QBRWhfayoj/dashboard"
             element={
               <ProtectedRoute>
                 <AdminPage />

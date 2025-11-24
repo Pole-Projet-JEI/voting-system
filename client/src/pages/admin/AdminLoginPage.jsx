@@ -50,7 +50,7 @@ function AdminLoginPage() {
     const result = await adminLogin(secretKey);
 
     if (result.success) {
-      navigate("/admin/dashboard");
+      navigate("/jvaFHT7xvivJPJqc1QBRWhfayoj/dashboard");
     } else {
       setError(result.error);
     }

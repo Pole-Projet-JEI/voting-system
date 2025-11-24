@@ -1,6 +1,5 @@
 services:
   backend1:
-    deploy:
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -8,7 +7,7 @@ services:
       - ./server/.env
     environment:
       - PORT=3000
-      - MONGO_URI=mongodb://admin:${MONGO_PASSWORD}@mongo:27017/votingsystem?replicaSet=rs0&authSource=admin
+      - MONGO_URI=mongodb://mongo:27017/votingsystem?replicaSet=rs0
     networks:
       - app-network
     ports:
@@ -23,9 +22,9 @@ services:
       context: ./client
       dockerfile: Dockerfile
     networks:
-      - app-network # Connect MongoDB to this network
+      - app-network
     ports:
-      - "127.0.0.1:3080:80" # Use port 3080 for the frontend
+      - "127.0.0.1:3080:80"
     env_file:
       - ./client/.env
     depends_on:
@@ -35,47 +34,39 @@ services:
 
   mongo:
     image: mongo@sha256:f4d54619262ae3bc6a0a8efbebcef970b87b8ad70697479a75ce308a6f400158
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017","--auth", "--keyFile", "/etc/secrets/mongo-keyfile"]
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     networks:
       - app-network
     volumes:
       - "mongo_data:/data/db"
       - "mongo_config:/data/configdb"
-      - "./mongo-keyfile:/etc/secrets/mongo-keyfile:ro"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
     restart: unless-stopped
     healthcheck:
       test: |
-        mongosh -u admin -p "$${MONGO_INITDB_ROOT_PASSWORD}" --authenticationDatabase admin --quiet --eval "
+        mongosh --quiet --eval "
           try {
             var status = rs.status();
             if (status.myState === 1) {
-              print('PRIMARY');
               quit(0);
             } else {
-              print('Not PRIMARY yet');
               quit(1);
             }
           } catch (e) {
             if (e.message.includes('no replset config')) {
-              print('Initializing replica set...');
               rs.initiate({
                 _id: 'rs0',
                 members: [{ _id: 0, host: 'mongo:27017' }]
               });
               quit(0);
             } else {
-              print('Error: ' + e.message);
               quit(1);
             }
           }
-        "
+        " || exit 1
       interval: 10s
-      timeout: 10s
-      start_period: 12s
-      retries: 30
+      timeout: 5s
+      start_period: 30s
+      retries: 10
 
 networks:
   app-network:

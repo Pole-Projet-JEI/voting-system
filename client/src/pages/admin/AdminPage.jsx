@@ -249,11 +249,11 @@ function AdminPage() {
   const handleLogout = async () => {
     try {
       await adminLogout();
-      navigate("/admin/login");
+      navigate("/jvaFHT7xvivJPJqc1QBRWhfayoj/login");
     } catch (error) {
       console.error("Error during logout:", error);
       // Redirect anyway since token might be expired
-      navigate("/admin/login");
+      navigate("/jvaFHT7xvivJPJqc1QBRWhfayoj/login");
     }
   };
 
