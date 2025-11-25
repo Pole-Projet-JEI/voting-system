@@ -34,7 +34,7 @@ services:
 
   mongo:
     image: mongo@sha256:f4d54619262ae3bc6a0a8efbebcef970b87b8ad70697479a75ce308a6f400158
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017","--quiet"]
     networks:
       - app-network
     volumes:
