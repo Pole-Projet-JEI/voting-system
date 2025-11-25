@@ -13,6 +13,7 @@ export default function RegisterPage() {
       const result = await checkConnection();
       if (result.success && result.data.connected) {
         navigate("/home");
+
       }
     };
     isConnected();
@@ -25,6 +26,7 @@ export default function RegisterPage() {
       navigate("/home");
     } else {
       alert("Registration failed, Wrong Code");
+
     }
   };
 

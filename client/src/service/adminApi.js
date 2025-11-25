@@ -69,11 +69,14 @@ export const getPresentingTeam = async () => {
 };
 
 export const setPresentingTeam = async (teamId) => {
+
   try {
     const response = await adminClient.post(routes.ADMIN_PRESENTING, {
       teamId,
     });
+
     return { success: true, data: response.data };
+
   } catch (error) {
     return {
       success: false,
@@ -132,5 +135,39 @@ export const deleteTeam = async (teamId) => {
       success: false,
       error: error.response?.data?.message || "Failed to delete team",
     };
+  }
+};
+
+export const adminLogin = async (secretKey) => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_LOGIN, {
+      secretKey,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error logging in:", error);
+    throw error;
+  }
+};
+
+export const adminLogout = async () => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_LOGOUT);
+    return response.data;
+  } catch (error) {
+    console.error("Error logging out:", error);
+    throw error;
+  }
+};
+
+export const checkAdminAuth = async () => {
+  try {
+    const response = await adminClient.get(routes.ADMIN_TEAMS);
+    return { authenticated: true };
+  } catch (error) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      return { authenticated: false };
+    }
+    throw error;
   }
 };

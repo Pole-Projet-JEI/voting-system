@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
@@ -88,10 +89,12 @@ function AdminLoginPage() {
                 placeholder="Enter admin secret key"
                 className="w-full relative z-50 pointer-events-auto"
                 disabled={loading}
+
               />
             </div>
 
             {error && (
+
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 {error}
               </div>
@@ -99,6 +102,7 @@ function AdminLoginPage() {
 
             <Button
               type="submit"
+
               className="w-full bg-slate-900 hover:bg-slate-800 relative z-50 pointer-events-auto"
               disabled={loading}
             >

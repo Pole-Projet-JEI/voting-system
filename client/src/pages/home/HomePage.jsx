@@ -108,6 +108,7 @@ export default function HomePage() {
       await verifyConnection();
       await fetchTeam();
       await checkHasVoted();
+
     };
 
     initializePage();
@@ -122,9 +123,8 @@ export default function HomePage() {
       try {
         const data = JSON.parse(event.data);
 
-        // Handle connection confirmation
         if (data.connected) {
-          console.log("SSE connected");
+          // console.log("SSE connected");
           return;
         }
 
@@ -157,7 +157,7 @@ export default function HomePage() {
     };
 
     eventSource.onerror = () => {
-      console.log("SSE connection lost. Will retry...");
+      // console.log("SSE connection lost. Will retry...");
       eventSource.close();
 
       // If user is actively on the page, reload

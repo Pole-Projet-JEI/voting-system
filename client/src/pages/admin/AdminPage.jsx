@@ -24,16 +24,18 @@ import {
   ArrowDown,
   LogOut,
 } from "lucide-react";
-import { PresentingTeamCard } from "./components/PresentingTeamCard";
-import { StatCard } from "./components/StatCard";
-import { TeamCard } from "./components/TeamCard";
-import { AddTeamForm } from "./components/AddTeamForm";
+import { PresentingTeamCard } from "../../components/adminComponents/PresentingTeamCard";
+import { StatCard } from "../../components/adminComponents/StatCard";
+import { TeamCard } from "../../components/adminComponents/TeamCard";
+import { AddTeamForm } from "../../components/adminComponents/AddTeamForm";
 import { useTeamFilters } from "./hooks/useTeamFilters";
 import "./AdminPage.css";
 
 function AdminPage() {
   const navigate = useNavigate();
+
   // Override body styles for admin page
+
   useEffect(() => {
     document.body.style.background = "white";
     document.body.style.overflow = "hidden";
@@ -54,16 +56,25 @@ function AdminPage() {
   const [newTeamDescription, setNewTeamDescription] = useState("");
   const [editingTeam, setEditingTeam] = useState(null);
 
-  // Use filter hook
   const { sortOrder, setSortOrder, filteredAndSortedTeams } =
     useTeamFilters(teams);
 
-  // Fetch all data
   useEffect(() => {
     fetchData();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await adminLogout();
+      navigate("/admin/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      navigate("/admin/login");
+    }
+  };
+
   const fetchData = async () => {
+ prod
     setLoading(true);
 
     const [teamsResult, presentingResult] = await Promise.all([
@@ -73,6 +84,7 @@ function AdminPage() {
 
     if (!teamsResult.success || !presentingResult.success) {
       alert(`✗ Error: ${teamsResult.error || presentingResult.error}`);
+in
       setLoading(false);
       return;
     }
@@ -100,7 +112,6 @@ function AdminPage() {
     setLoading(false);
   };
 
-  // Set a team as presenting
   const handleSetPresenting = async (teamId) => {
     const result = await setPresentingTeamAPI(teamId);
 
@@ -109,10 +120,10 @@ function AdminPage() {
       await fetchData();
     } else {
       alert(`✗ Error: ${result.error}`);
+
     }
   };
 
-  // Stop presenting
   const handleStopPresenting = async () => {
     const result = await stopPresentingTeam();
 
@@ -124,7 +135,6 @@ function AdminPage() {
     }
   };
 
-  // Create a new team
   const handleCreateTeam = async (e) => {
     e.preventDefault();
 
@@ -143,10 +153,10 @@ function AdminPage() {
       fetchData();
     } else {
       alert(`✗ Error: ${result.error}`);
+
     }
   };
 
-  // Update a team
   const handleUpdateTeam = async (teamId, updates) => {
     const result = await updateTeam(teamId, updates);
 
@@ -159,7 +169,6 @@ function AdminPage() {
     }
   };
 
-  // Delete a team
   const handleDeleteTeam = async (teamId, teamName) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete team "${teamName}"?`
@@ -177,7 +186,6 @@ function AdminPage() {
     }
   };
 
-  // Start editing a team
   const startEditingTeam = (team) => {
     setEditingTeam({
       id: team._id,
@@ -186,7 +194,6 @@ function AdminPage() {
     });
   };
 
-  // Get filter button appearance
   const getFilterButton = () => {
     const baseClass = "cursor-pointer transition-all";
     switch (sortOrder) {
@@ -272,12 +279,23 @@ function AdminPage() {
       {/* Sidebar */}
       <aside className="w-80 bg-gradient-to-b from-slate-900 to-slate-800 text-white overflow-y-auto shadow-xl">
         <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-3 mb-2">
-            <BarChart3 className="h-8 w-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Admin Panel</h1>
-              <p className="text-sm text-slate-300">Voting Dashboard</p>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <BarChart3 className="h-8 w-8" />
+              <div>
+                <h1 className="text-2xl font-bold">Admin Panel</h1>
+                <p className="text-sm text-slate-300">Voting Dashboard</p>
+              </div>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-white hover:bg-white/10"
+              title="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 

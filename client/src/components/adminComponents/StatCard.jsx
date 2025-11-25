@@ -1,9 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 export const StatCard = ({ icon: Icon, title, value }) => (
   <Card className="bg-white/10 border-white/20 text-white backdrop-blur hover:bg-white/15 transition-all">

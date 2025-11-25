@@ -1,12 +1,12 @@
-import { Button } from "../../../components/ui/button";
+import { Button } from "../ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card";
-import { Input } from "../../../components/ui/input";
+} from "../ui/card";
+import { Input } from "../ui/input";
 import { Plus } from "lucide-react";
 
 export const AddTeamForm = ({
