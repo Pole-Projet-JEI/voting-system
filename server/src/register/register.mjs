@@ -21,7 +21,7 @@ route.post("/api/register", async (req, res) => {
     );
     return res.status(201).json({ status: "succeeded" });
   } else {
-    return res.status(201).json({ status: "failed" });
+    return res.status(400).json({ status: "failed",message:"Invalid code" });
   }
 });
 

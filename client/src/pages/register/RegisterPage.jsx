@@ -24,7 +24,7 @@ export default function RegisterPage() {
     if (result.success) {
       navigate("/home");
     } else {
-      alert(result.error || "Registration failed");
+      alert("Registration failed, Wrong Code");
     }
   };
 

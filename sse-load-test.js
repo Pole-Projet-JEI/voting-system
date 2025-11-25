@@ -9,7 +9,7 @@ import readline from "readline";
 
 // Configuration
 const config = {
-  BASE_URL: process.env.BASE_URL || "http://voting.jeinsat.com",
+  BASE_URL: process.env.BASE_URL || "https://voting.jeinsat.com",
   NUM_CLIENTS: parseInt(process.env.NUM_CLIENTS) || 50,
   DURATION_MS: parseInt(process.env.DURATION_MS) || 60000,
   RECONNECT_DELAY: parseInt(process.env.RECONNECT_DELAY) || 3000,

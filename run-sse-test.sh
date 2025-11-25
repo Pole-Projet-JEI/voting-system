@@ -23,7 +23,7 @@ if [ -f .env.ssetest ]; then
 fi
 
 # Defaults
-BASE_URL="${BASE_URL:-http://voting.jeinsat.com}"
+BASE_URL="${BASE_URL:-https://voting.jeinsat.com}"
 NUM_CLIENTS="${NUM_CLIENTS:-50}"
 DURATION_MS="${DURATION_MS:-60000}"
 RECONNECT_DELAY="${RECONNECT_DELAY:-3000}"

@@ -4,8 +4,7 @@ export default async function dbconfig(connectionString) {
   await mongoose
     .connect(`${connectionString}`, {
       serverSelectionTimeoutMS: 5000,
-      directConnection: true,
-      maxPoolSize: 50, 
+      maxPoolSize: 60, 
       minPoolSize: 10,
       retryWrites: true, 
       retryReads: true,

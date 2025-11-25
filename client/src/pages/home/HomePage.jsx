@@ -224,7 +224,7 @@ export default function HomePage() {
     <div className="home-container">
       <img src={hourGlass} alt="hourglass" width="80px" />
       <div className="home-vote-closed-message">
-        <p>The team is still presenting; voting will open soon</p>
+        <p>Voting is now closed - get ready for the next team!</p>
       </div>
     </div>
   );

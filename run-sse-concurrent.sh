@@ -11,7 +11,7 @@ if [ -f .env.ssetest ]; then
 fi
 
 # Configuration - Override from environment if provided
-BASE_URL="${BASE_URL:-http://voting.jeinsat.com}"
+BASE_URL="${BASE_URL:-https://voting.jeinsat.com}"
 TOTAL_CLIENTS="${TOTAL_CLIENTS:-${NUM_CLIENTS:-600}}"  # Use TOTAL_CLIENTS or NUM_CLIENTS
 NUM_INSTANCES="${NUM_INSTANCES:-10}"  # Number of parallel processes
 DURATION_MS="${DURATION_MS:-60000}"

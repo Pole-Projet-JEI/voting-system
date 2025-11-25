@@ -36,7 +36,16 @@ export const verifyPosition = async (positionData) => {
 export const registerUser = async (userData) => {
   try {
     const response = await apiClient.post(routes.REGISTER, { code: userData });
-    return { success: true, data: response.data };
+    
+    // Check the status field in the response body
+    if (response.data.status === "succeeded") {
+      return { success: true, data: response.data };
+    } else {
+      return {
+        success: false,
+        error: response.data.message || "Invalid code",
+      };
+    }
   } catch (error) {
     return {
       success: false,
