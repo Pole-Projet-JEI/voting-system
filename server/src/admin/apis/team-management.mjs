@@ -4,8 +4,11 @@ import {
   deleteTeam,
   updateTeam,
 } from "../services/teamManagementService.mjs";
+import { requireAdmin } from "../middleware/requireAdmin.mjs";
 
 const route = Router();
+
+route.use(requireAdmin);
 
 route.post("/api/admin/team", async (req, res) => {
   try {
@@ -41,7 +44,7 @@ route.post("/api/admin/team", async (req, res) => {
   }
 });
 
-route.put("/api/admin/team/:id", async (req, res) => {
+route.put("/api/admin/team/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { teamName, description } = req.body;
@@ -84,7 +87,7 @@ route.put("/api/admin/team/:id", async (req, res) => {
   }
 });
 
-route.delete("/api/admin/team/:id", async (req, res) => {
+route.delete("/api/admin/team/:id", requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 

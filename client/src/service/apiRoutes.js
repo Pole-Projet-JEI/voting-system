@@ -1,4 +1,6 @@
 const baseURL = `${import.meta.env.VITE_API_URL}`;
+/* 
+const baseURL = 'http://localhost:3000/api/'; */
 
 const routes = {
   IS_CONNECTED: baseURL + "isconnected",
@@ -8,6 +10,10 @@ const routes = {
   VOTE: baseURL + "vote/:id",
   GET_CURRENT_VOTE: baseURL + "currentteam",
   HAS_VOTED: baseURL + "hasvoted",
+
+
+  // Admin routes
+  ADMIN_AUTH: baseURL + "admin/auth",
 
   ADMIN_LOGIN: baseURL + "admin/login",
   ADMIN_LOGOUT: baseURL + "admin/logout",

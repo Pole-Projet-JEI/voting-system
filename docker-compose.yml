@@ -1,105 +1,79 @@
 services:
   backend1:
-    deploy:
     build:
       context: ./server
       dockerfile: Dockerfile
     env_file:
       - ./server/.env
+
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongo:27017/votingsystem?replicaSet=rs0
+
     networks:
       - app-network
     ports:
-      - "3000:3000"
-    volumes:
-      - dist_data:/app/client/dist
+      - "127.0.0.1:3000:3000"
     depends_on:
       mongo:
         condition: service_healthy
-
-    # backend2:
-    #   deploy:
-    #   build:
-    #     context: ./server
-    #     dockerfile: Dockerfile # Dockerfile for the backend
-    #   environment:
-    #     - PORT=3001
-    #     - MONGO_URI=mongodb://mongo:27017/votingsystem?replicaSet=rs0
-    #     - SESSION_SECRET=secret
-    #   networks:
-    #     - app-network # Connect MongoDB to this network
-    #   ports:
-    #     - "3001:3001"
-    #   volumes:
-    #     - dist_data:/app/client/dist # Mount shared volume here
-    #   depends_on:
-    #     mongo:
-    #       condition: service_healthy
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./client
       dockerfile: Dockerfile
     networks:
-      - app-network # Connect MongoDB to this network
+      - app-network
     ports:
-      - "80:80"
-      - "443:443" # Expose HTTPS port (443)
-    volumes:
-      - dist_data:/app/client/dist # Mount shared volume here
-      - /home/azureuser/voting.jeinsat.com:/etc/letsencrypt
+      - "127.0.0.1:3080:80"
     env_file:
       - ./client/.env
     depends_on:
       backend1:
         condition: service_started
-      #- backend2
+    restart: unless-stopped
 
   mongo:
-    image: mongo:8.0
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    image: mongo@sha256:f4d54619262ae3bc6a0a8efbebcef970b87b8ad70697479a75ce308a6f400158
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017","--quiet"]
     networks:
-      - app-network # Connect MongoDB to this network
+      - app-network
     volumes:
       - "mongo_data:/data/db"
       - "mongo_config:/data/configdb"
+    restart: unless-stopped
     healthcheck:
       test: |
         mongosh --quiet --eval "
           try {
             var status = rs.status();
             if (status.myState === 1) {
-              print('PRIMARY');
               quit(0);
             } else {
-              print('Not PRIMARY yet');
               quit(1);
             }
           } catch (e) {
             if (e.message.includes('no replset config')) {
-              print('Initializing replica set...');
               rs.initiate({
                 _id: 'rs0',
                 members: [{ _id: 0, host: 'mongo:27017' }]
               });
               quit(0);
             } else {
-              print('Error: ' + e.message);
               quit(1);
             }
           }
-        "
+        " || exit 1
       interval: 10s
-      timeout: 10s
-      start_period: 0s
-      retries: 30
+      timeout: 5s
+      start_period: 30s
+      retries: 10
 
 networks:
   app-network:
+    driver: bridge
 
 volumes:
   mongo_data:
   mongo_config:
-  dist_data:

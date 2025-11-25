@@ -8,52 +8,92 @@ const adminClient = axios.create({
   withCredentials: true,
 });
 
+export const checkAdminAuth = async () => {
+  try {
+    const response = await adminClient.get(routes.ADMIN_AUTH);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Authentication check failed",
+    };
+  }
+};
+
+export const adminLogin = async (secretKey) => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_LOGIN, { secretKey });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Login failed",
+    };
+  }
+};
+
+export const adminLogout = async () => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_LOGOUT);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Logout failed",
+    };
+  }
+};
+
 export const getAllTeams = async () => {
   try {
     const response = await adminClient.get(routes.ADMIN_TEAMS);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error fetching teams:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to fetch teams",
+    };
   }
 };
 
 export const getPresentingTeam = async () => {
   try {
     const response = await adminClient.get(routes.ADMIN_PRESENTING);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error fetching presenting team:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to fetch presenting team",
+    };
   }
 };
 
 export const setPresentingTeam = async (teamId) => {
-  // console.log("setPresentingTeam called with teamId:", teamId);
-  // console.log("Route:", routes.ADMIN_PRESENTING);
 
   try {
     const response = await adminClient.post(routes.ADMIN_PRESENTING, {
       teamId,
     });
-    // console.log("Full response:", response);
-    // console.log("Response data:", response.data);
-    return response.data;
+
+    return { success: true, data: response.data };
+
   } catch (error) {
-    console.error("Error setting presenting team - ERROR CAUGHT:", error);
-    console.error("Error response:", error.response);
-    console.error("Error message:", error.message);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to set presenting team",
+    };
   }
 };
 
 export const stopPresentingTeam = async () => {
   try {
     const response = await adminClient.delete(routes.ADMIN_PRESENTING);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error stopping presentation:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to stop presentation",
+    };
   }
 };
 
@@ -63,10 +103,12 @@ export const createTeam = async (teamName, description = "") => {
       teamName,
       description,
     });
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error creating team:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to create team",
+    };
   }
 };
 
@@ -74,10 +116,12 @@ export const updateTeam = async (teamId, updates) => {
   try {
     const url = routes.ADMIN_TEAM_BY_ID.replace(":id", teamId);
     const response = await adminClient.put(url, updates);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error updating team:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to update team",
+    };
   }
 };
 
@@ -85,10 +129,12 @@ export const deleteTeam = async (teamId) => {
   try {
     const url = routes.ADMIN_TEAM_BY_ID.replace(":id", teamId);
     const response = await adminClient.delete(url);
-    return response.data;
+    return { success: true, data: response.data };
   } catch (error) {
-    console.error("Error deleting team:", error);
-    throw error;
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to delete team",
+    };
   }
 };
 

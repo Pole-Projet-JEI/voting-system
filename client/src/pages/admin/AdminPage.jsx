@@ -34,6 +34,8 @@ import "./AdminPage.css";
 function AdminPage() {
   const navigate = useNavigate();
 
+  // Override body styles for admin page
+
   useEffect(() => {
     document.body.style.background = "white";
     document.body.style.overflow = "hidden";
@@ -72,78 +74,64 @@ function AdminPage() {
   };
 
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [teamsData, presentingData] = await Promise.all([
-        getAllTeams(),
-        getPresentingTeam(),
-      ]);
+ prod
+    setLoading(true);
 
-      setTeams(teamsData.teams || []);
-      setPresentingTeam(presentingData.team);
+    const [teamsResult, presentingResult] = await Promise.all([
+      getAllTeams(),
+      getPresentingTeam(),
+    ]);
 
-      const totalTeams = teamsData.teams?.length || 0;
-      const presentedTeams =
-        teamsData.teams?.filter((t) => t.presented).length || 0;
-      const currentlyPresenting =
-        teamsData.teams?.filter((t) => t.presenting).length || 0;
-
-      setStats({
-        voters: null,
-        teams: {
-          totalTeams,
-          presentedTeams,
-          notYetPresented: totalTeams - presentedTeams,
-          currentlyPresenting,
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching admin data:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to load admin data";
-      alert(`✗ Error: ${errorMessage}`);
-    } finally {
+    if (!teamsResult.success || !presentingResult.success) {
+      alert(`✗ Error: ${teamsResult.error || presentingResult.error}`);
+in
       setLoading(false);
+      return;
     }
+
+    setTeams(teamsResult.data.teams || []);
+    setPresentingTeam(presentingResult.data.team);
+
+    // Calculate stats from teams data
+    const totalTeams = teamsResult.data.teams?.length || 0;
+    const presentedTeams =
+      teamsResult.data.teams?.filter((t) => t.presented).length || 0;
+    const currentlyPresenting =
+      teamsResult.data.teams?.filter((t) => t.presenting).length || 0;
+
+    setStats({
+      voters: null,
+      teams: {
+        totalTeams,
+        presentedTeams,
+        notYetPresented: totalTeams - presentedTeams,
+        currentlyPresenting,
+      },
+    });
+
+    setLoading(false);
   };
 
   const handleSetPresenting = async (teamId) => {
-    try {
-      const response = await setPresentingTeamAPI(teamId);
+    const result = await setPresentingTeamAPI(teamId);
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        await fetchData();
-      } else {
-        console.warn("Unexpected response format:", response);
-        alert("✗ Unexpected response from server");
-      }
-    } catch (error) {
-      console.error("Error setting presenting team:", error);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      await fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
 
-      const errorMessage =
-        error.response?.data?.message || "Failed to set presenting team";
-      alert(`✗ Error: ${errorMessage}`);
     }
   };
 
   const handleStopPresenting = async () => {
-    try {
-      const response = await stopPresentingTeam();
+    const result = await stopPresentingTeam();
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        fetchData();
-      } else if (response && response.message) {
-        alert(`ℹ ${response.message}`);
-        fetchData();
-      }
-    } catch (error) {
-      console.error("Error stopping presentation:", error);
-
-      const errorMessage =
-        error.response?.data?.message || "Failed to stop presentation";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
@@ -155,38 +143,29 @@ function AdminPage() {
       return;
     }
 
-    try {
-      const response = await createTeam(newTeamName, newTeamDescription);
+    const result = await createTeam(newTeamName, newTeamDescription);
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        setNewTeamName("");
-        setNewTeamDescription("");
-        setShowAddTeamForm(false);
-        fetchData();
-      }
-    } catch (error) {
-      console.error("Error creating team:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to create team";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      setNewTeamName("");
+      setNewTeamDescription("");
+      setShowAddTeamForm(false);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
+
     }
   };
 
   const handleUpdateTeam = async (teamId, updates) => {
-    try {
-      const response = await updateTeam(teamId, updates);
+    const result = await updateTeam(teamId, updates);
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        setEditingTeam(null);
-        fetchData();
-      }
-    } catch (error) {
-      console.error("Error updating team:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to update team";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      setEditingTeam(null);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
@@ -197,18 +176,13 @@ function AdminPage() {
 
     if (!confirmed) return;
 
-    try {
-      const response = await deleteTeam(teamId);
+    const result = await deleteTeam(teamId);
 
-      if (response && response.success) {
-        alert(`✓ ${response.message}`);
-        fetchData();
-      }
-    } catch (error) {
-      console.error("Error deleting team:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to delete team";
-      alert(`✗ Error: ${errorMessage}`);
+    if (result.success) {
+      alert(`✓ ${result.data.message}`);
+      fetchData();
+    } else {
+      alert(`✗ Error: ${result.error}`);
     }
   };
 
@@ -242,7 +216,7 @@ function AdminPage() {
           icon: ArrowUpDown,
           variant: "outline",
           text: "Sort by Votes",
-          className: `${baseClass} border-gray-600 hover:bg-gray-100 text-gray-900 hover:text-gray-900`,
+          className: `${baseClass} border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700`,
         };
     }
   };
@@ -276,6 +250,18 @@ function AdminPage() {
       teamName: editingTeam.teamName,
       description: editingTeam.description,
     });
+  };
+
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await adminLogout();
+      navigate("/jvaFHT7xvivJPJqc1QBRWhfayoj/login");
+    } catch (error) {
+      console.error("Error during logout:", error);
+      // Redirect anyway since token might be expired
+      navigate("/jvaFHT7xvivJPJqc1QBRWhfayoj/login");
+    }
   };
 
   if (loading) {
@@ -342,6 +328,18 @@ function AdminPage() {
             title="Pending"
             value={stats.teams?.notYetPresented || 0}
           />
+        </div>
+
+        {/* Logout Button */}
+        <div className="p-6 mt-auto">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            className="w-full border-white/20 text-white hover:bg-white/10"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
       </aside>
 

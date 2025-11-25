@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { getAllTeams } from "../services/visualizationService.mjs";
+import { requireAdmin } from "../middleware/requireAdmin.mjs";
 
 const route = Router();
 
-route.get("/api/admin/teams", async (req, res) => {
+route.get("/api/admin/teams", requireAdmin, async (req, res) => {
   try {
     const teams = await getAllTeams();
 

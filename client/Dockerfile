@@ -13,8 +13,8 @@ COPY . .
 # Build the app using Vite (this assumes a Vite React project)
 RUN npm run build
 
-# Step 2: Serve the app using Ngi
-FROM nginx:alpine
+FROM nginx@sha256:1beed3ca46acebe9d3fb62e9067f03d05d5bfa97a00f30938a0a3580563272ad
+
 
 # Create the /etc/letsencrypt directory
 RUN mkdir -p /etc/letsencrypt
@@ -23,8 +23,8 @@ RUN mkdir -p /etc/letsencrypt
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy the custom React Router Nginx configuration to /etc/nginx/conf.d/
-# Use dev config by default (without SSL), can be overridden for production
-COPY default.dev.conf /etc/nginx/conf.d/default.conf
+# Use production config (with SSL support)
+COPY default.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80 for the frontend app
 EXPOSE 80

@@ -5,10 +5,8 @@ const route = Router();
 
 route.post("/api/register", async (req, res) => {
   const userCode = req.body.code;
-  console.log(userCode);
 
   const user = await Voter.findOne({ code: userCode });
-  console.log(user);
 
   if (user) {
     res.cookie(
@@ -23,7 +21,7 @@ route.post("/api/register", async (req, res) => {
     );
     return res.status(201).json({ status: "succeeded" });
   } else {
-    return res.status(201).json({ status: "failed" });
+    return res.status(400).json({ status: "failed",message:"Invalid code" });
   }
 });
 

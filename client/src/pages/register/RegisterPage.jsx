@@ -10,14 +10,10 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const isConnected = async () => {
-      try {
-        const result = await checkConnection();
-        // console.log(result);
-        if (result.connected) {
-          navigate("/home");
-        }
-      } catch (error) {
-        // console.log(error);
+      const result = await checkConnection();
+      if (result.success && result.data.connected) {
+        navigate("/home");
+
       }
     };
     isConnected();
@@ -25,12 +21,12 @@ export default function RegisterPage() {
 
   const submitHandler = async (event) => {
     event.preventDefault();
-    try {
-      const result = await registerUser(userInput);
+    const result = await registerUser(userInput);
+    if (result.success) {
       navigate("/home");
-      // console.log("register result:",result);
-    } catch (error) {
-      // console.log(error);
+    } else {
+      alert("Registration failed, Wrong Code");
+
     }
   };
 
@@ -38,7 +34,7 @@ export default function RegisterPage() {
     <div className="register-form-container">
       <img src={jeiLogo} alt="JEILogo" width="100px" height="50px" />
       <div className="title-container">
-        <h1 className="title-1">Hack for good</h1>
+        <h1 className="title-G">Hack for Good</h1>
         <h1 className="title-2">4.0</h1>
       </div>
       <h2 style={{ fontSize: "1em", color: "rgba(255,255,255,0.55)" }}>

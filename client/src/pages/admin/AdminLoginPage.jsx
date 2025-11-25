@@ -1,155 +1,134 @@
-import React, { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminLogin } from "../../service/adminApi";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../../components/ui/card";
-import { KeyRound, LogIn } from "lucide-react";
+import { Lock, LogIn } from "lucide-react";
+import { adminLogin } from "../../service/adminApi";
 
-const AdminLoginPage = () => {
-  const [secretKey, setSecretKey] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+function AdminLoginPage() {
   const navigate = useNavigate();
+  const [secretKey, setSecretKey] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  // Override global body styles
+  useEffect(() => {
+    document.body.style.background = "none";
+    document.body.style.backgroundImage = "none";
+    document.body.style.overflow = "auto";
+
+    // Hide the ::before overlay
+    const style = document.createElement("style");
+    style.id = "admin-login-override";
+    style.innerHTML = `
+      body::before {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.body.style.background = "";
+      document.body.style.backgroundImage = "";
+      document.body.style.overflow = "";
+      const styleEl = document.getElementById("admin-login-override");
+      if (styleEl) styleEl.remove();
+    };
+  }, []);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!secretKey.trim()) {
+      setError("Secret key is required");
+      return;
+    }
+
     setLoading(true);
 
-    try {
-      await adminLogin(secretKey);
-      navigate("/admin");
-    } catch (err) {
-      if (err.response?.status === 401) {
-        setError("Invalid admin key. Please try again.");
-      } else {
-        setError("An error occurred. Please try again later.");
-      }
-      console.error("Login error:", err);
-    } finally {
-      setLoading(false);
+    const result = await adminLogin(secretKey);
+
+    if (result.success) {
+      navigate("/jvaFHT7xvivJPJqc1QBRWhfayoj/dashboard");
+    } else {
+      setError(result.error);
     }
+
+    setLoading(false);
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background: "linear-gradient(to bottom right, #f9fafb, #f3f4f6)",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-      }}
-    >
-      <Card
-        className="w-full max-w-md"
-        style={{ background: "white", color: "#1f2937" }}
-      >
-        <CardHeader className="space-y-1" style={{ background: "white" }}>
-          <div className="flex items-center justify-center mb-4">
-            <div
-              style={{
-                background: "#2563eb",
-                padding: "12px",
-                borderRadius: "9999px",
-              }}
-            >
-              <KeyRound className="w-8 h-8" style={{ color: "white" }} />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative z-10">
+      <div className="w-full max-w-md p-8 relative z-20">
+        <div className="bg-white rounded-lg shadow-2xl p-8 relative z-30">
+          <div className="flex flex-col items-center mb-8">
+            <div className="bg-slate-900 p-4 rounded-full mb-4">
+              <Lock className="h-8 w-8 text-white" />
             </div>
+            <h1 className="text-3xl font-bold text-gray-900">Admin Login</h1>
+            <p className="text-gray-500 mt-2">
+              Enter your secret key to continue
+            </p>
           </div>
-          <CardTitle
-            className="text-2xl font-bold text-center"
-            style={{ color: "#1f2937" }}
-          >
-            Admin Login
-          </CardTitle>
-          <CardDescription className="text-center" style={{ color: "#6b7280" }}>
-            Enter your secret key to access the admin panel
-          </CardDescription>
-        </CardHeader>
-        <CardContent style={{ background: "white" }}>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="relative z-40">
               <label
                 htmlFor="secretKey"
-                className="text-sm font-medium"
-                style={{ color: "#374151" }}
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Secret Key
               </label>
               <Input
                 id="secretKey"
                 type="password"
-                placeholder="Enter your admin secret key"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
-                required
-                className="w-full"
+                placeholder="Enter admin secret key"
+                className="w-full relative z-50 pointer-events-auto"
                 disabled={loading}
-                style={{
-                  background: "white",
-                  color: "#1f2937",
-                  borderColor: "#d1d5db",
-                }}
+
               />
             </div>
 
             {error && (
-              <div
-                className="border px-4 py-3 rounded-md text-sm"
-                style={{
-                  background: "#fef2f2",
-                  borderColor: "#fecaca",
-                  color: "#b91c1c",
-                }}
-              >
+
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 {error}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full"
+
+              className="w-full bg-slate-900 hover:bg-slate-800 relative z-50 pointer-events-auto"
               disabled={loading}
-              style={{
-                background: loading ? "#93c5fd" : "#2563eb",
-                color: "white",
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
             >
               {loading ? (
-                <>
-                  <div
-                    className="w-4 h-4 border-2 rounded-full animate-spin mr-2"
-                    style={{
-                      borderColor: "white",
-                      borderTopColor: "transparent",
-                    }}
-                  />
-                  Logging in...
-                </>
+                "Logging in..."
               ) : (
                 <>
-                  <LogIn className="w-4 h-4 mr-2" />
+                  <LogIn className="mr-2 h-4 w-4" />
                   Login
                 </>
               )}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+
+          <div className="mt-6 text-center relative z-50">
+            <button
+              onClick={() => navigate("/home")}
+              className="text-sm text-slate-600 hover:text-slate-900 pointer-events-auto cursor-pointer"
+            >
+              ← Back to Home
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
-};
+}
 
 export default AdminLoginPage;

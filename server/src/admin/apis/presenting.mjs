@@ -4,10 +4,11 @@ import {
   getCurrentPresentingTeam,
   stopPresenting,
 } from "../services/presentingService.mjs";
+import { requireAdmin } from "../middleware/requireAdmin.mjs";
 
 const route = Router();
 
-route.post("/api/admin/presenting", async (req, res) => {
+route.post("/api/admin/presenting", requireAdmin, async (req, res) => {
   try {
     const { teamId } = req.body;
 
@@ -41,7 +42,7 @@ route.post("/api/admin/presenting", async (req, res) => {
   }
 });
 
-route.get("/api/admin/presenting", async (req, res) => {
+route.get("/api/admin/presenting", requireAdmin, async (req, res) => {
   try {
     const presentingTeam = await getCurrentPresentingTeam();
 
@@ -65,7 +66,7 @@ route.get("/api/admin/presenting", async (req, res) => {
   }
 });
 
-route.delete("/api/admin/presenting", async (req, res) => {
+route.delete("/api/admin/presenting", requireAdmin, async (req, res) => {
   try {
     const previousTeam = await stopPresenting();
 
