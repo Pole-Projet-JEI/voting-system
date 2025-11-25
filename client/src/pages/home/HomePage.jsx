@@ -160,18 +160,21 @@ export default function HomePage() {
       console.log("SSE connection lost. Will retry...");
       eventSource.close();
 
-      // Don't reload immediately - check if online first
-      if (navigator.onLine) {
+      // If user is actively on the page, reload
+      if (document.visibilityState === "visible") {
+        console.log("User is on page, reloading...");
         setTimeout(() => window.location.reload(), 3000);
       } else {
-        // Wait for network to come back
-        window.addEventListener(
-          "online",
-          () => {
-            window.location.reload();
-          },
-          { once: true }
-        );
+        // User is away, wait for them to come back
+        console.log("User is away, waiting for return...");
+        const handleReturn = () => {
+          if (document.visibilityState === "visible") {
+            console.log("User returned, reloading...");
+            document.removeEventListener("visibilitychange", handleReturn);
+            setTimeout(() => window.location.reload(), 1000);
+          }
+        };
+        document.addEventListener("visibilitychange", handleReturn);
       }
     };
 
