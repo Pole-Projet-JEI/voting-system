@@ -2,18 +2,26 @@ import { Router } from "express";
 import Team from "../mongodb/teamSchema.mjs";
 import Voter from "../mongodb/voterSchema.mjs";
 import { requireAuth } from "../middleware/auth-cookie.mjs";
+import mongoose from "mongoose";
 
 const route = Router();
 
 route.post("/api/vote/:id", requireAuth, async (req, res) => {
   const teamId = req.params.id;
   const { vote } = req.body;
-  const voterCode = req.voterCode;
+  const voterId = req.voter?._id;
 
   if (!["yes", "no"].includes(vote)) {
     return res.status(400).json({
       voted: false,
       message: "Vote must be 'yes' or 'no'",
+    });
+  }
+
+  if (!mongoose.isValidObjectId(teamId)) {
+    return res.status(400).json({
+      voted: false,
+      message: "Invalid team ID",
     });
   }
 
@@ -34,7 +42,7 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
     // 2. Use optimistic concurrency control instead of transactions
     const voter = await Voter.findOneAndUpdate(
       {
-        code: voterCode,
+        _id: voterId,
         [`votes.${teamId}`]: { $exists: false }, // Atomic duplicate check
       },
       {
@@ -45,7 +53,7 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
 
     if (!voter) {
       // Either voter doesn't exist or already voted
-      const existingVoter = await Voter.findOne({ code: voterCode });
+      const existingVoter = await Voter.findById(voterId);
       if (existingVoter?.votes.has(teamId)) {
         return res.status(400).json({
           voted: false,

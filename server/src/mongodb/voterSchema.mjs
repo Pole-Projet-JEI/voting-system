@@ -9,6 +9,12 @@ const voterSchema = new mongoose.Schema(
       index: true,
       trim: true,
     },
+    participantSessionHash: {
+      type: String,
+      index: true,
+      select: false,
+    },
+    participantSessionExpiresAt: Date,
     votes: {
       type: Map,
       of: {

@@ -45,7 +45,10 @@ const app = express();
 app.use(cors(corsOptions));
 
 app.use(express.json());
-app.use(cookieParser());
+if (!sessionSecret) {
+  throw new Error("SESSION_SECRET must be configured");
+}
+app.use(cookieParser(sessionSecret));
 app.use(
   session({
     secret: sessionSecret,
