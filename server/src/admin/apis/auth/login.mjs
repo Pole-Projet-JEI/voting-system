@@ -1,9 +1,12 @@
 import { Router } from "express";
 import {
   validateAdminKey,
+  authenticateAdmin,
   generateAdminToken,
   verifyAdminToken,
 } from "../../services/authService.mjs";
+import { shouldUseSecureCookies } from "../../../config/cookies.mjs";
+import { adminLoginRateLimit } from "../../../middleware/rate-limiters.mjs";
 
 const route = Router();
 
@@ -22,26 +25,34 @@ route.get("/api/admin/auth", (req, res) => {
       return res.status(401).json({ authenticated: false });
     }
 
-    return res.json({ authenticated: true, admin: true });
+    return res.json({
+      authenticated: true,
+      admin: true,
+      username: decoded.username,
+      mustChangePassword: decoded.mustChangePassword === true,
+    });
   } catch (error) {
     return res.status(401).json({ authenticated: false });
   }
 });
 
-route.post("/api/admin/login", async (req, res) => {
+route.post("/api/admin/login", adminLoginRateLimit, async (req, res) => {
   try {
-    const { secretKey } = req.body;
+    const { username, secretKey } = req.body;
 
     if (!secretKey) {
       return res.status(400).json({
         success: false,
-        message: "Secret key is required",
+        message: "Password or secret key is required",
       });
     }
 
-    if (!validateAdminKey(secretKey)) {
+    const accountAuth = await authenticateAdmin(username, secretKey);
+    const legacyAuth = !accountAuth.valid && validateAdminKey(secretKey);
+
+    if (!accountAuth.valid && !legacyAuth) {
       console.log(
-        `⚠️ Failed admin login attempt at ${new Date().toISOString()}`
+        ` Failed admin login attempt at ${new Date().toISOString()}`
       );
       return res.status(401).json({
         success: false,
@@ -49,15 +60,17 @@ route.post("/api/admin/login", async (req, res) => {
       });
     }
 
-    const token = generateAdminToken();
+    const token = generateAdminToken(
+      accountAuth.username || username || "legacy-admin",
+      legacyAuth ? false : accountAuth.mustChangePassword
+    );
 
     // Set HTTPOnly cookie with environment-based security
-    const IS_PROD = process.env.NODE_ENV === "production";
     const IS_STAGING = process.env.NODE_ENV === "staging";
     res.cookie("adminToken", token, {
       httpOnly: true,
-      secure: IS_PROD, // HTTPS only in production (not staging)
-      sameSite: IS_PROD || IS_STAGING ? "strict" : "lax",
+      secure: shouldUseSecureCookies(),
+      sameSite: shouldUseSecureCookies() || IS_STAGING ? "strict" : "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -68,6 +81,7 @@ route.post("/api/admin/login", async (req, res) => {
     return res.status(200).json({
       success: true,
       admin: true,
+      mustChangePassword: legacyAuth ? false : accountAuth.mustChangePassword,
       message: "Login successful",
     });
   } catch (error) {

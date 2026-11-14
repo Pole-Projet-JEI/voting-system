@@ -56,7 +56,9 @@ const ProtectedAdminRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/login" replace />;
+    return (
+      <Navigate to="/jvaFHT7xvivJPJqc1QBRWhfayoj/login" replace />
+    );
   }
 
   return children;
