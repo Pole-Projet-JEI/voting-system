@@ -16,6 +16,10 @@ const changeStream = Team.watch(
   }
 );
 
+changeStream.on("error", (error) => {
+  console.error("Change stream error:", error.message || error);
+});
+
 const clients = new Set();
 
 // Listen to change stream once and broadcast to all clients

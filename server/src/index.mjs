@@ -19,11 +19,13 @@ import adminLogoutRouter from "./admin/apis/auth/logout.mjs";
 import adminChangePasswordRouter from "./admin/apis/auth/change-password.mjs";
 import dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from "url";
 import { seedVoters } from "./seed/seed-voters.mjs";
 import { ensureBootstrapAdmin } from "./admin/services/adminBootstrap.mjs";
 import { shouldUseSecureCookies } from "./config/cookies.mjs";
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config();
 
 const NODE_ENV = process.env.NODE_ENV || "development";
