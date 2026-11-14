@@ -24,7 +24,17 @@ export async function updateTeam(teamId, updates) {
 }
 
 export async function deleteTeam(teamId) {
-  const team = await Team.findById(teamId);
+  const deletedTeam = await Team.findOneAndDelete({
+    _id: teamId,
+    presenting: false,
+    presented: false,
+  });
+
+  if (deletedTeam) {
+    return deletedTeam;
+  }
+
+  const team = await Team.findById(teamId).select("presenting presented");
 
   if (!team) {
     return null;
@@ -38,6 +48,5 @@ export async function deleteTeam(teamId) {
     throw new Error("Cannot delete team that has already presented");
   }
 
-  const deletedTeam = await Team.findByIdAndDelete(teamId);
-  return deletedTeam;
+  return null;
 }
