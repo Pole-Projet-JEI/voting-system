@@ -6,6 +6,7 @@ import Team from "../src/mongodb/teamSchema.mjs";
 import registerRouter from "../src/register/register.mjs";
 import { requireAuth } from "../src/middleware/auth-cookie.mjs";
 import votingRouter from "../src/vote/voting.mjs";
+import { hashVoterCode } from "../src/mongodb/voter-code.mjs";
 
 const teamId = "507f1f77bcf86cd799439011";
 const participantToken = "a".repeat(64);
@@ -71,7 +72,9 @@ test("valid registration creates a signed opaque participant session", async () 
 
   await withModelMocks(
     [[Voter, { findOne: async (filter) => {
-      assert.deepEqual(filter, { code: "fA7S59MVX" });
+      assert.deepEqual(filter, {
+        codeHash: hashVoterCode("fA7S59MVX"),
+      });
       return voter;
     } }]],
     async () => {

@@ -39,7 +39,6 @@ route.post("/api/admin/team", async (req, res) => {
 
     return res.status(500).json({
       message: "Internal Server Error",
-      error: error.message,
     });
   }
 });
@@ -82,7 +81,6 @@ route.put("/api/admin/team/:id", requireAdmin, async (req, res) => {
 
     return res.status(500).json({
       message: "Internal Server Error",
-      error: error.message,
     });
   }
 });
@@ -115,7 +113,6 @@ route.delete("/api/admin/team/:id", requireAdmin, async (req, res) => {
 
     return res.status(500).json({
       message: "Internal Server Error",
-      error: error.message,
     });
   }
 });

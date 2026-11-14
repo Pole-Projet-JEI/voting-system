@@ -41,11 +41,14 @@ const reducer = (state, action) => {
 
 export default function HomePage() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [pageError, setPageError] = useState("");
+  const [voteError, setVoteError] = useState("");
   const navigate = useNavigate();
 
   const fetchTeam = async () => {
     const result = await getCurrentTeam();
     if (result.success) {
+      setPageError("");
       dispatch({ type: "SET_TEAM_ID", payload: result.data.teamID });
       dispatch({ type: "SET_TEAM_NAME", payload: result.data.teamName });
 
@@ -54,7 +57,8 @@ export default function HomePage() {
       }
       // If there IS a team presenting, the mode will be set by checkHasVoted()
     } else {
-      dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
+      setPageError("Unable to load voting status. Please try again.");
+      dispatch({ type: "SET_MODE", payload: "voteError" });
     }
   };
 
@@ -76,6 +80,9 @@ export default function HomePage() {
         const teamResult = await getCurrentTeam();
         if (teamResult.success && teamResult.data.teamID) {
           dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
+        } else if (!teamResult.success) {
+          setPageError("Unable to load voting status. Please try again.");
+          dispatch({ type: "SET_MODE", payload: "voteError" });
         }
       }
     }
@@ -83,9 +90,10 @@ export default function HomePage() {
 
   const voteSubmitHandler = async (event) => {
     event.preventDefault();
+    setVoteError("");
 
     if (!state.userVote) {
-      alert("Please select Yes or No before submitting");
+      setVoteError("Please select Yes or No before submitting.");
       return;
     }
 
@@ -96,10 +104,14 @@ export default function HomePage() {
         dispatch({ type: "SET_HAS_VOTED", payload: true });
         dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
       } else {
-        alert(response.data.message || "Failed to submit vote");
+        setVoteError(response.data.message || "Failed to submit vote.");
       }
     } else {
-      alert(response.error || "Failed to submit vote. Please try again.");
+      setVoteError(
+        response.networkError
+          ? "Unable to connect to the server. Please try again."
+          : response.error || "Failed to submit vote. Please try again."
+      );
     }
   };
 
@@ -187,6 +199,11 @@ export default function HomePage() {
         Your vote for <span style={{ color: "#790C18" }}>{state.teamName}</span>
       </h1>
       <form className="vote-form" onSubmit={voteSubmitHandler}>
+        {voteError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700" role="alert">
+            {voteError}
+          </div>
+        )}
         <div className="vote-buttons">
           <button
             name="vote-yes"
@@ -232,6 +249,14 @@ export default function HomePage() {
     </div>
   );
 
+  const VoteError = (
+    <div className="home-container">
+      <div className="home-vote-closed-message" role="alert">
+        <p>{pageError}</p>
+      </div>
+    </div>
+  );
+
   const ThankYouForYourVote = (
     <div className="thank-you-container">
       <h1>Thank you for your vote</h1>
@@ -241,5 +266,6 @@ export default function HomePage() {
 
   if (state.mode === "voteIsOpen") return VoteOpen;
   if (state.mode === "thankYouForVoting") return ThankYouForYourVote;
+  if (state.mode === "voteError") return VoteError;
   return VoteClosed;
 }

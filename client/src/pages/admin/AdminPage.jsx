@@ -9,6 +9,8 @@ import {
   updateTeam,
   deleteTeam,
   adminLogout,
+  checkAdminAuth,
+  changeAdminPassword,
 } from "../../service/adminApi";
 import { Button } from "../../components/ui/button";
 import {
@@ -22,6 +24,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Eye,
+  EyeOff,
   LogOut,
 } from "lucide-react";
 import { PresentingTeamCard } from "../../components/adminComponents/PresentingTeamCard";
@@ -55,13 +59,80 @@ function AdminPage() {
   const [newTeamName, setNewTeamName] = useState("");
   const [newTeamDescription, setNewTeamDescription] = useState("");
   const [editingTeam, setEditingTeam] = useState(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [visiblePasswords, setVisiblePasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
 
   const { sortOrder, setSortOrder, filteredAndSortedTeams } =
     useTeamFilters(teams);
 
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+  };
+
   useEffect(() => {
     fetchData();
+    checkAdminAuth().then((result) => {
+      if (result.success) {
+        setMustChangePassword(result.data.mustChangePassword === true);
+      }
+    });
   }, []);
+
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    setPasswordError("");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError("Please fill in all fields.");
+      return;
+    }
+
+    const strongPassword =
+      newPassword.length >= 8 &&
+      /[a-z]/.test(newPassword) &&
+      /[A-Z]/.test(newPassword) &&
+      /\d/.test(newPassword) &&
+      /[^A-Za-z0-9]/.test(newPassword);
+
+    if (!strongPassword) {
+      setPasswordError(
+        "Use 8+ characters with uppercase, lowercase, a number and a symbol."
+      );
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+
+    const result = await changeAdminPassword(currentPassword, newPassword);
+    if (!result.success) {
+      setPasswordError(result.error);
+      return;
+    }
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setMustChangePassword(false);
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setVisiblePasswords((current) => ({
+      ...current,
+      [field]: !current[field],
+    }));
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -72,7 +143,10 @@ function AdminPage() {
     ]);
 
     if (!teamsResult.success || !presentingResult.success) {
-      alert(`✗ Error: ${teamsResult.error || presentingResult.error}`);
+      showNotification(
+        "error",
+        teamsResult.error || presentingResult.error
+      );
       setLoading(false);
       return;
     }
@@ -104,10 +178,10 @@ function AdminPage() {
     const result = await setPresentingTeamAPI(teamId);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       await fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
 
     }
   };
@@ -116,10 +190,10 @@ function AdminPage() {
     const result = await stopPresentingTeam();
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
     }
   };
 
@@ -127,20 +201,20 @@ function AdminPage() {
     e.preventDefault();
 
     if (!newTeamName.trim()) {
-      alert("⚠ Team name is required");
+      showNotification("error", "Team name is required");
       return;
     }
 
     const result = await createTeam(newTeamName, newTeamDescription);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       setNewTeamName("");
       setNewTeamDescription("");
       setShowAddTeamForm(false);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
 
     }
   };
@@ -149,11 +223,11 @@ function AdminPage() {
     const result = await updateTeam(teamId, updates);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       setEditingTeam(null);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
     }
   };
 
@@ -167,10 +241,10 @@ function AdminPage() {
     const result = await deleteTeam(teamId);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
     }
   };
 
@@ -230,7 +304,7 @@ function AdminPage() {
   // Save edited team
   const saveEditedTeam = () => {
     if (!editingTeam.teamName.trim()) {
-      alert("⚠ Team name cannot be empty");
+      showNotification("error", "Team name cannot be empty");
       return;
     }
 
@@ -264,6 +338,173 @@ function AdminPage() {
 
   return (
     <div className="admin-page flex h-screen bg-white">
+      {notification && (
+        <div
+          role="alert"
+          className={`fixed right-6 top-6 z-[70] max-w-sm rounded-lg border px-4 py-3 text-sm shadow-lg ${
+            notification.type === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-green-200 bg-green-50 text-green-700"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <span>{notification.message}</span>
+            <button
+              type="button"
+              onClick={() => setNotification(null)}
+              className="font-bold opacity-70 hover:opacity-100"
+              aria-label="Close notification"
+            >
+              x
+            </button>
+          </div>
+        </div>
+      )}
+      {mustChangePassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+          <form
+            onSubmit={handleChangePassword}
+            noValidate
+            className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">
+                Set a new password
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">Required on first login.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="current-admin-password"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Temporary password
+              </label>
+              <div className="relative">
+                <input
+                  id="current-admin-password"
+                  type={visiblePasswords.current ? "text" : "password"}
+                  placeholder="Temporary password"
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("current")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-900"
+                  aria-label={
+                    visiblePasswords.current
+                      ? "Hide temporary password"
+                      : "Show temporary password"
+                  }
+                >
+                  {visiblePasswords.current ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="new-admin-password"
+                className="block text-sm font-medium text-slate-700"
+              >
+                New password
+              </label>
+              <div className="relative">
+                <input
+                  id="new-admin-password"
+                  type={visiblePasswords.new ? "text" : "password"}
+                  placeholder="New password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("new")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-900"
+                  aria-label={
+                    visiblePasswords.new
+                      ? "Hide new password"
+                      : "Show new password"
+                  }
+                >
+                  {visiblePasswords.new ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              <p className="text-xs text-slate-500">
+                8+ chars: A-Z, a-z, 0-9 and a symbol.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="confirm-admin-password"
+                className="block text-sm font-medium text-slate-700"
+              >
+                Confirm password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirm-admin-password"
+                  type={visiblePasswords.confirm ? "text" : "password"}
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("confirm")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-900"
+                  aria-label={
+                    visiblePasswords.confirm
+                      ? "Hide confirmation password"
+                      : "Show confirmation password"
+                  }
+                >
+                  {visiblePasswords.confirm ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {passwordError && (
+              <div
+                role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {passwordError}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full rounded-lg bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800"
+            >
+              Save password
+            </Button>
+          </form>
+        </div>
+      )}
       {/* Sidebar */}
       <aside className="w-80 bg-gradient-to-b from-slate-900 to-slate-800 text-white overflow-y-auto shadow-xl">
         <div className="p-6 border-b border-white/10">

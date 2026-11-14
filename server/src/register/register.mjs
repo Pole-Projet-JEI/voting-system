@@ -6,17 +6,20 @@ import {
   isValidVoterCode,
   PARTICIPANT_SESSION_MAX_AGE,
 } from "../middleware/participant-session.mjs";
+import { shouldUseSecureCookies } from "../config/cookies.mjs";
+import { voterRegistrationRateLimit } from "../middleware/rate-limiters.mjs";
+import { hashVoterCode } from "../mongodb/voter-code.mjs";
 
 const route = Router();
 
-route.post("/api/register", async (req, res) => {
+route.post("/api/register", voterRegistrationRateLimit, async (req, res) => {
   const userCode = req.body?.code;
 
   if (!isValidVoterCode(userCode)) {
     return res.status(400).json({ status: "failed", message: "Invalid code" });
   }
 
-  const user = await Voter.findOne({ code: userCode });
+  const user = await Voter.findOne({ codeHash: hashVoterCode(userCode) });
 
   if (user) {
     const participantToken = createParticipantToken();
@@ -31,7 +34,7 @@ route.post("/api/register", async (req, res) => {
       participantToken,
       {
         maxAge: PARTICIPANT_SESSION_MAX_AGE,
-        secure: process.env.NODE_ENV === "production",
+        secure: shouldUseSecureCookies(),
         httpOnly: true,
         sameSite: "lax",
         signed: true,

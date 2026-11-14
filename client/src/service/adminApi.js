@@ -20,14 +20,18 @@ export const checkAdminAuth = async () => {
   }
 };
 
-export const adminLogin = async (secretKey) => {
+export const adminLogin = async (secretKey, username = "") => {
   try {
-    const response = await adminClient.post(routes.ADMIN_LOGIN, { secretKey });
+    const response = await adminClient.post(routes.ADMIN_LOGIN, {
+      username,
+      secretKey,
+    });
     return { success: true, data: response.data };
   } catch (error) {
     return {
       success: false,
       error: error.response?.data?.message || "Login failed",
+      retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
     };
   }
 };
@@ -40,6 +44,21 @@ export const adminLogout = async () => {
     return {
       success: false,
       error: error.response?.data?.message || "Logout failed",
+    };
+  }
+};
+
+export const changeAdminPassword = async (currentPassword, newPassword) => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_PASSWORD, {
+      currentPassword,
+      newPassword,
+    });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Password change failed",
     };
   }
 };

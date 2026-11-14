@@ -10,6 +10,9 @@ RUN npm install
 # Copy the rest of the frontend source code
 COPY . .
 
+ARG VITE_API_URL=/api/
+ENV VITE_API_URL=${VITE_API_URL}
+
 # Build the app using Vite (this assumes a Vite React project)
 RUN npm run build
 

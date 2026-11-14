@@ -1,6 +1,5 @@
-const baseURL = `${import.meta.env.VITE_API_URL}`;
-/* 
-const baseURL = 'http://localhost:3000/api/'; */
+const configuredBaseURL = import.meta.env.VITE_API_URL || "/api/";
+const baseURL = `${configuredBaseURL.replace(/\/+$/, "")}/`;
 
 const routes = {
   IS_CONNECTED: baseURL + "isconnected",
@@ -17,6 +16,7 @@ const routes = {
 
   ADMIN_LOGIN: baseURL + "admin/login",
   ADMIN_LOGOUT: baseURL + "admin/logout",
+  ADMIN_PASSWORD: baseURL + "admin/password",
   ADMIN_TEAMS: baseURL + "admin/teams",
   ADMIN_PRESENTING: baseURL + "admin/presenting",
   ADMIN_TEAM: baseURL + "admin/team",
