@@ -25,35 +25,45 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
     });
   }
 
+  let session;
+  let transactionStarted = false;
+
   try {
-    // 1. Pre-validate before transaction - check if team is presenting
+    session = await mongoose.startSession();
+    session.startTransaction();
+    transactionStarted = true;
+
     const presentingTeam = await Team.findOne(
       { _id: teamId, presenting: true },
-      { _id: 1 }
-    ).lean(); // Single query, no transaction needed
+      { _id: 1 },
+      { session }
+    ).lean();
 
     if (!presentingTeam) {
+      await session.abortTransaction();
+      transactionStarted = false;
       return res.status(400).json({
         voted: false,
         message: "This team is not currently presenting",
       });
     }
 
-    // 2. Use optimistic concurrency control instead of transactions
     const voter = await Voter.findOneAndUpdate(
       {
         _id: voterId,
-        [`votes.${teamId}`]: { $exists: false }, // Atomic duplicate check
+        [`votes.${teamId}`]: { $exists: false },
       },
       {
         $set: { [`votes.${teamId}`]: { vote, votedAt: new Date() } },
       },
-      { new: true }
+      { new: true, session }
     );
 
     if (!voter) {
-      // Either voter doesn't exist or already voted
-      const existingVoter = await Voter.findById(voterId);
+      const existingVoter = await Voter.findById(voterId, null, { session });
+      await session.abortTransaction();
+      transactionStarted = false;
+
       if (existingVoter?.votes.has(teamId)) {
         return res.status(400).json({
           voted: false,
@@ -67,11 +77,18 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
       });
     }
 
-    // 3. Increment team vote atomically (no transaction needed)
-    await Team.updateOne(
-      { _id: teamId },
-      { $inc: { [vote === "yes" ? "nyes" : "nno"]: 1 } }
+    const teamUpdate = await Team.updateOne(
+      { _id: teamId, presenting: true },
+      { $inc: { [vote === "yes" ? "nyes" : "nno"]: 1 } },
+      { session }
     );
+
+    if (teamUpdate.matchedCount !== 1) {
+      throw new Error("The presenting team is no longer available");
+    }
+
+    await session.commitTransaction();
+    transactionStarted = false;
 
     return res.status(200).json({
       voted: true,
@@ -79,12 +96,24 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
       vote: vote,
     });
   } catch (error) {
+    if (session && transactionStarted) {
+      try {
+        await session.abortTransaction();
+      } catch (abortError) {
+        console.error("Error rolling back vote transaction:", abortError);
+      }
+    }
+
     console.error("Error recording vote:", error);
     return res.status(500).json({
       voted: false,
       message: "Server error",
       error: error.message,
     });
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
   }
 });
 

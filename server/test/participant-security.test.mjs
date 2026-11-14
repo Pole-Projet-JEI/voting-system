@@ -11,6 +11,13 @@ import { hashVoterCode } from "../src/mongodb/voter-code.mjs";
 const teamId = "507f1f77bcf86cd799439011";
 const participantToken = "a".repeat(64);
 
+const createSession = () => ({
+  startTransaction() {},
+  async commitTransaction() {},
+  async abortTransaction() {},
+  async endSession() {},
+});
+
 const getRouteHandler = (router, path) => {
   const layer = router.stack.find((entry) => entry.route?.path === path);
   return layer.route.stack.at(-1).handle;
@@ -157,8 +164,10 @@ test("a valid participant session authenticates and records one vote", async () 
         findOne: () => ({ lean: async () => ({ _id: teamId }) }),
         updateOne: async () => {
           teamUpdated = true;
+          return { matchedCount: 1 };
         },
       }],
+      [mongoose, { startSession: async () => createSession() }],
     ],
     async () => {
       const req = {
@@ -227,6 +236,7 @@ test("reusing a consumed ballot is rejected", async () => {
       [Team, {
         findOne: () => ({ lean: async () => ({ _id: teamId }) }),
       }],
+      [mongoose, { startSession: async () => createSession() }],
     ],
     async () => {
       const req = {
