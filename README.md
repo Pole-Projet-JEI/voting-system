@@ -10,7 +10,7 @@ A real-time voting application built with React, Node.js, Express, and MongoDB. 
 - 🔄 Server-Sent Events for live updates
 - 🐳 Docker containerization
 - 📱 Responsive design
-- 🔒 Secure session management
+- 🔒 Secure cookie authentication
 
 ## Tech Stack
 
@@ -46,7 +46,7 @@ cd server && npm run start:dev
 
 ### Production Deployment
 
-For detailed deployment instructions, including setup for 600+ concurrent users, see **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
+For detailed deployment instructions and current SSE deployment limitations, see **[DEPLOYMENT.md](./DEPLOYMENT.md)**.
 
 Quick deployment:
 
@@ -103,7 +103,6 @@ PORT=3000
 HOST=voting.jeinsat.com
 MONGO_URI=mongodb://mongo:27017/votingsystem?replicaSet=rs0
 SESSION_SECRET=your-secret-key
-REDIS_URL=redis://redis:6379
 ```
 
 ### Client (`client/.env`)
@@ -137,17 +136,22 @@ VITE_API_URL=https://voting.jeinsat.com/api
 - `POST /api/admin/presenting/:id` - Set presenting team
 - `GET /api/admin/visualization` - Get voting statistics
 
-## Scaling for High Traffic
+## SSE deployment limitations
 
-The application is designed to scale horizontally. For 600+ concurrent users:
+The current SSE implementation is single-process. Connections are kept in an
+in-memory registry, and MongoDB change events are broadcast only to clients
+connected to the same backend process. The supported deployment model is one
+backend process for SSE.
 
-1. **Multiple Backend Instances**: Run 3-4 backend instances behind Nginx
-2. **MongoDB Session Store**: Use MongoDB for shared session storage
-3. **Redis Pub/Sub**: Use Redis for cross-instance SSE broadcasting
-4. **Connection Pooling**: Optimize MongoDB connection pool
-5. **Load Balancing**: Configure Nginx with least-connections algorithm
+Running multiple backend instances can cause clients connected to one instance
+to miss events received by another. A load balancer or sticky sessions alone
+does not provide cross-instance event broadcasting. Horizontal SSE scaling
+requires a shared event-broadcast mechanism such as Redis Pub/Sub or an
+equivalent service; that infrastructure is not included in this deployment.
 
-See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for detailed scaling instructions.
+The SSE connection limit is also per backend process, not global.
+
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for deployment configuration details.
 
 ## Development
 
