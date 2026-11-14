@@ -100,6 +100,16 @@ sudo systemctl reload nginx
 VITE_API_URL=http://voting.jeinsat.com/api
 ```
 
+### `server/.env`
+
+```env
+SSE_MAX_CONNECTIONS=100
+SSE_HEARTBEAT_INTERVAL_MS=25000
+```
+
+The SSE connection limit is per backend process. It is not a global limit when
+the application runs behind multiple backend instances.
+
 ## Step 5: Deploy Docker Services
 
 ```bash

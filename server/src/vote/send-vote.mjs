@@ -9,15 +9,27 @@ const pipeline = [
     },
   },
 ];
-const streamOptions = {
-  fullDocument: "updateLookup",
-};
-const MAX_RECONNECT_DELAY_MS = 30_000;
+const streamOptions = { fullDocument: "updateLookup" };
 const INITIAL_RECONNECT_DELAY_MS = 250;
+const MAX_RECONNECT_DELAY_MS = 30_000;
 const UNRECOVERABLE_ERROR_CODES = new Set([13, 18, 26, 73]);
 
+const parsePositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+export const SSE_HEARTBEAT_INTERVAL_MS = parsePositiveInteger(
+  process.env.SSE_HEARTBEAT_INTERVAL_MS,
+  25_000
+);
+export const SSE_MAX_CONNECTIONS = parsePositiveInteger(
+  process.env.SSE_MAX_CONNECTIONS,
+  100
+);
+
 const describeError = (error) => ({
-  message: error?.message || "Unknown change stream error",
+  message: error?.message || "Unknown error",
   code: error?.code,
   codeName: error?.codeName,
 });
@@ -64,8 +76,8 @@ export const createChangeStreamManager = ({
       maxDelayMs,
       initialDelayMs * 2 ** (reconnectAttempt - 1)
     );
-    const jitter = 0.5 + random();
-    const delay = Math.min(maxDelayMs, Math.round(exponentialDelay * jitter));
+    const jitteredDelay = exponentialDelay * (0.5 + random());
+    const delay = Math.min(maxDelayMs, Math.round(jitteredDelay));
 
     reconnectTimer = setTimer(() => {
       reconnectTimer = null;
@@ -73,12 +85,27 @@ export const createChangeStreamManager = ({
     }, delay);
   };
 
-  const handleFailure = (streamWithFailure, error) => {
-    if (shuttingDown || stream !== streamWithFailure) {
+  const handleFailure = (failedStream, error) => {
+    if (shuttingDown || stream !== failedStream) {
+      return;
+    }
+  };
+
+  const scheduleReconnect = () => {
+    if (shuttingDown || reconnectTimer) {
       return;
     }
 
+    reconnectAttempt += 1;
+    const exponentialDelay = Math.min(
+      maxDelayMs,
+      initialDelayMs * 2 ** (reconnectAttempt - 1)
+    );
+    const jitter = 0.5 + random();
+    const delay = Math.min(maxDelayMs, Math.round(exponentialDelay * jitter));
+
     stream = null;
+    void closeStream(failedStream);
 
     if (isUnrecoverableChangeStreamError(error)) {
       logger.error(
@@ -92,7 +119,6 @@ export const createChangeStreamManager = ({
       "Recoverable Change Stream error; scheduling reconnect",
       describeError(error)
     );
-    void closeStream(streamWithFailure);
     scheduleReconnect();
   };
 
@@ -106,11 +132,17 @@ export const createChangeStreamManager = ({
         const result = onChange(change);
         if (result?.catch) {
           result.catch((error) => {
-            logger.error("Change Stream event processing failed", describeError(error));
+            logger.error(
+              "Change Stream event processing failed",
+              describeError(error)
+            );
           });
         }
       } catch (error) {
-        logger.error("Change Stream event processing failed", describeError(error));
+        logger.error(
+          "Change Stream event processing failed",
+          describeError(error)
+        );
       }
     });
     streamToAttach.on("error", (error) => {
@@ -171,7 +203,79 @@ export const createChangeStreamManager = ({
   };
 };
 
-const clients = new Set();
+export const createSseClientRegistry = ({
+  maxConnections = SSE_MAX_CONNECTIONS,
+  heartbeatIntervalMs = SSE_HEARTBEAT_INTERVAL_MS,
+  setIntervalFn = setInterval,
+  clearIntervalFn = clearInterval,
+  logger = console,
+} = {}) => {
+  const clients = new Map();
+
+  const remove = (response) => {
+    const client = clients.get(response);
+    if (!client || client.cleaned) {
+      return;
+    }
+
+    client.cleaned = true;
+    clearIntervalFn(client.heartbeat);
+    clients.delete(response);
+  };
+
+  const add = (request, response) => {
+    if (clients.size >= maxConnections) {
+      return false;
+    }
+
+    const client = {
+      cleaned: false,
+      heartbeat: null,
+    };
+    const cleanup = () => remove(response);
+
+    client.heartbeat = setIntervalFn(() => {
+      if (client.cleaned) {
+        return;
+      }
+
+      try {
+        response.write(": heartbeat\n\n");
+      } catch (error) {
+        logger.error("SSE heartbeat failed", error?.message || error);
+        cleanup();
+      }
+    }, heartbeatIntervalMs);
+
+    clients.set(response, client);
+    request.once("close", cleanup);
+    response.once("close", cleanup);
+    response.once("error", cleanup);
+    return true;
+  };
+
+  const broadcast = (message) => {
+    for (const [response] of clients) {
+      try {
+        response.write(`data: ${message}\n\n`);
+      } catch (error) {
+        logger.error("SSE broadcast failed", error?.message || error);
+        remove(response);
+      }
+    }
+  };
+
+  return {
+    add,
+    broadcast,
+    remove,
+    get size() {
+      return clients.size;
+    },
+  };
+};
+
+const clients = createSseClientRegistry();
 
 const broadcastChange = (change) => {
   let data;
@@ -186,14 +290,7 @@ const broadcastChange = (change) => {
   }
 
   if (data) {
-    clients.forEach((client) => {
-      try {
-        client.write(`data: ${data}\n\n`);
-      } catch (error) {
-        console.error("Error writing to client:", error.message || error);
-        clients.delete(client);
-      }
-    });
+    clients.broadcast(data);
   }
 };
 
@@ -207,6 +304,12 @@ export const shutdownChangeStream = () => streamManager.shutdown();
 
 route.get("/api/sendvote", async (req, res) => {
   try {
+    if (!clients.add(req, res)) {
+      return res.status(503).json({
+        message: "SSE connection limit reached",
+      });
+    }
+
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -222,10 +325,13 @@ route.get("/api/sendvote", async (req, res) => {
       res.end();
     });
   } catch (error) {
+    clients.remove(res);
     console.error("Error in /api/sendvote:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    if (!res.headersSent) {
+      return res
+        .status(500)
+        .json({ message: "Internal Server Error", error: error.message });
+    }
   }
 });
 

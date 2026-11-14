@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import mongoose from "mongoose";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import dbconfig from "./mongodb/connect.mjs";
@@ -93,7 +94,6 @@ app.use(teamManagementRouter);
 
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://0.0.0.0:${PORT}`);
-
 });
 
 let isShuttingDown = false;
@@ -109,15 +109,11 @@ const shutdown = async (signal) => {
   await mongoose.disconnect();
 };
 
-process.once("SIGINT", () => {
-  shutdown("SIGINT").catch((error) => {
-    console.error("Shutdown failed:", error.message || error);
-    process.exitCode = 1;
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.once(signal, () => {
+    shutdown(signal).catch((error) => {
+      console.error("Shutdown failed:", error.message || error);
+      process.exitCode = 1;
+    });
   });
-});
-process.once("SIGTERM", () => {
-  shutdown("SIGTERM").catch((error) => {
-    console.error("Shutdown failed:", error.message || error);
-    process.exitCode = 1;
-  });
-});
+}
