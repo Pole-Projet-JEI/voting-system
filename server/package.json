@@ -21,7 +21,6 @@
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.24.9",
-    "my-mern-app": "file:..",
     "path": "^0.12.7",
     "url": "^0.11.4"
   },

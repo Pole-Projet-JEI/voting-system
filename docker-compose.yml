@@ -28,7 +28,7 @@ services:
     networks:
       - app-network
     ports:
-      - "127.0.0.1:3080:80"
+      - "127.0.0.1:3080:8080"
     env_file:
       - ./client/.env
     depends_on:
