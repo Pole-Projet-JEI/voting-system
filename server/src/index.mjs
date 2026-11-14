@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
-import session from "express-session";
 import cookieParser from "cookie-parser";
 import dbconfig from "./mongodb/connect.mjs";
 import statusRouter from "./check/status.mjs";
@@ -27,7 +26,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { seedVoters } from "./seed/seed-voters.mjs";
 import { ensureBootstrapAdmin } from "./admin/services/adminBootstrap.mjs";
-import { shouldUseSecureCookies } from "./config/cookies.mjs";
 import { createCorsOptions } from "./config/cors.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,8 +33,6 @@ dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config();
 
 const NODE_ENV = process.env.NODE_ENV || "development";
-const IS_PROD = NODE_ENV === "production";
-const IS_STAGING = NODE_ENV === "staging";
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "localhost";
 const mongoUri = process.env.MONGO_URI;
@@ -55,19 +51,6 @@ if (!sessionSecret) {
   throw new Error("SESSION_SECRET must be configured");
 }
 app.use(cookieParser(sessionSecret));
-app.use(
-  session({
-    secret: sessionSecret,
-    saveUninitialized: false,
-    resave: false,
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24,
-      secure: shouldUseSecureCookies(),
-      httpOnly: true,
-      sameSite: IS_PROD || IS_STAGING ? "strict" : "lax",
-    },
-  })
-);
 
 await dbconfig(mongoUri);
 await ensureBootstrapAdmin();
