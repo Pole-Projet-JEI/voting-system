@@ -22,7 +22,7 @@ Edit `docker-compose.yml` - change frontend ports:
     networks:
       - app-network
     ports:
-      - "3080:80"  # Change from "80:80" to "3080:80"
+      - "3080:8080"  # Keep host port 3080; Nginx runs unprivileged on 8080
     volumes:
       - dist_data:/app/client/dist
     env_file:
