@@ -71,7 +71,9 @@ export const createSseConnection = ({
       }
 
       Promise.resolve()
-        .then(() => onMessage(event))
+        .then(() =>
+          onMessage(event, () => !stopped && eventSource === nextEventSource)
+        )
         .then(() => {
           if (!stopped && eventSource === nextEventSource) {
             retryAttempt = 0;

@@ -5,7 +5,9 @@ import {
   createChangeStreamManager,
   createSseClientRegistry,
   isUnrecoverableChangeStreamError,
+  shutdownSseClients,
 } from "../src/vote/send-vote.mjs";
+import sendVoteRouter from "../src/vote/send-vote.mjs";
 
 const wait = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -16,6 +18,18 @@ const createResponse = () => {
   response.write = (value) => {
     response.writes.push(value);
     return true;
+  };
+  response.setHeader = () => {};
+  response.end = () => {
+    response.ended = true;
+  };
+  response.status = (code) => {
+    response.statusCode = code;
+    return response;
+  };
+  response.json = (body) => {
+    response.body = body;
+    return response;
   };
   return response;
 };
@@ -84,6 +98,23 @@ test("connection limits reject excess clients", () => {
   assert.equal(registry.add(firstRequest, firstResponse), true);
   assert.equal(registry.add(secondRequest, secondResponse), false);
   assert.equal(registry.size, 1);
+});
+
+test("the SSE route registers one client and sends the connection event", async () => {
+  const handler = sendVoteRouter.stack
+    .find((entry) => entry.route?.path === "/api/sendvote")
+    .route.stack.at(-1).handle;
+  const request = new EventEmitter();
+  const response = createResponse();
+
+  await handler(request, response);
+
+  assert.equal(response.statusCode, undefined);
+  assert.deepEqual(response.writes, [
+    `data: ${JSON.stringify({ connected: true })}\n\n`,
+  ]);
+  shutdownSseClients();
+  assert.equal(response.ended, true);
 });
 
 test("a broken client does not prevent other clients receiving broadcasts", () => {

@@ -138,6 +138,29 @@ test("unmounted connections do not reconnect", () => {
   assert.equal(sources.length, 1);
 });
 
+test("stale async message callbacks are inactive after cleanup", async () => {
+  let resolveMessage;
+  let isActive;
+  const message = new Promise((resolve) => {
+    resolveMessage = resolve;
+  });
+  const { connection, sources } = createHarness({
+    onMessage: async (_event, active) => {
+      isActive = active;
+      await message;
+    },
+  });
+
+  connection.start();
+  sources[0].onmessage({ data: "{}" });
+  await Promise.resolve();
+  connection.stop();
+  resolveMessage();
+  await message;
+
+  assert.equal(isActive(), false);
+});
+
 test("visibility changes do not create duplicate connections", () => {
   const { connection, sources, listeners } = createHarness();
 

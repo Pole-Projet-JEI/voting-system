@@ -12,6 +12,7 @@ import votingRouter from "./vote/voting.mjs";
 import sendingVoteRouter, {
   initializeChangeStream,
   shutdownChangeStream,
+  shutdownSseClients,
 } from "./vote/send-vote.mjs";
 import currentVoteRouter from "./check/prensenting-team.mjs";
 import hasVotedRouter from "./check/hasvoted.mjs";
@@ -104,6 +105,7 @@ const shutdown = async (signal) => {
   isShuttingDown = true;
   console.log(`Received ${signal}; shutting down`);
 
+  shutdownSseClients();
   await shutdownChangeStream();
   await new Promise((resolve) => server.close(resolve));
   await mongoose.disconnect();
