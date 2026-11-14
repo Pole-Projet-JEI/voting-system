@@ -48,7 +48,13 @@ export async function changePresentingTeam(newTeamId) {
     return newPresentingTeam;
   } catch (error) {
     await session.abortTransaction();
-    console.error(error);
+    console.error(
+      "Admin presenting transaction failed:",
+      JSON.stringify({
+        name: error?.name || "Error",
+        message: error?.message || "Unknown transaction error",
+      })
+    );
     return { error: error.message || "Failed to set presenting team" };
   } finally {
     session.endSession();

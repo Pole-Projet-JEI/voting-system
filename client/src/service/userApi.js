@@ -21,18 +21,6 @@ export const checkConnection = async () => {
   }
 };
 
-export const verifyPosition = async (positionData) => {
-  try {
-    const response = await apiClient.post(routes.VERIFY_POSITION, positionData);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Position verification failed",
-    };
-  }
-};
-
 export const registerUser = async (userData) => {
   try {
     const response = await apiClient.post(routes.REGISTER, { code: userData });
@@ -52,19 +40,6 @@ export const registerUser = async (userData) => {
       error: error.response?.data?.message || "Registration failed",
       networkError: !error.response,
       retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
-    };
-  }
-};
-
-export const sendVote = async (voteData) => {
-  try {
-    const response = await apiClient.post(routes.SEND_VOTE, voteData);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.response?.data?.message || "Failed to send vote",
-      networkError: !error.response,
     };
   }
 };

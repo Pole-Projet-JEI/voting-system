@@ -37,7 +37,7 @@ export async function seedVoters() {
     const count = await Voter.countDocuments();
 
     if (count === 0) {
-      console.log("📦 Seeding voter database...");
+      console.log("Seeding voter database");
       const voterCodes = await loadVoterCodes();
 
       const documents = voterCodes.map((code) => ({
@@ -47,9 +47,7 @@ export async function seedVoters() {
       }));
 
       await Voter.insertMany(documents);
-      console.log(
-        `VVVVVVVVVVV Successfully seeded ${documents.length} voter codes`
-      );
+      console.log(`Seeded ${documents.length} voter records`);
     } else {
       const legacyVoters = await Voter.find({ code: { $exists: true } })
         .select("+code")
@@ -90,7 +88,7 @@ export async function seedVoters() {
       console.log(`Database already contains ${count} voters - skipping seed`);
     }
   } catch (error) {
-    console.error("XXXXXXXXXXX Error seeding voters:", error);
+    console.error("Error seeding voters:", error.message);
     throw error;
   }
 }

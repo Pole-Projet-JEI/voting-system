@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "node:crypto";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -6,7 +7,6 @@ import cookieParser from "cookie-parser";
 import dbconfig from "./mongodb/connect.mjs";
 import statusRouter from "./check/status.mjs";
 import registerRouter from "./register/register.mjs";
-import positionRouter from "./check/position.mjs";
 import votingRouter from "./vote/voting.mjs";
 import sendingVoteRouter, {
   initializeChangeStream,
@@ -38,7 +38,7 @@ const HOST = process.env.HOST || "localhost";
 const mongoUri = process.env.MONGO_URI;
 const sessionSecret = process.env.SESSION_SECRET;
 
-console.log(` Starting server in ${NODE_ENV} mode`);
+console.log(`Starting server in ${NODE_ENV} mode`);
 console.log(` Host: ${HOST}`);
 
 const corsOptions = createCorsOptions({ nodeEnv: NODE_ENV });
@@ -47,6 +47,38 @@ const app = express();
 app.use(cors(corsOptions));
 
 app.use(express.json());
+app.use((req, res, next) => {
+  const requestId = randomUUID();
+  const startedAt = Date.now();
+  let logged = false;
+
+  req.requestId = requestId;
+  res.setHeader("X-Request-ID", requestId);
+
+  const logRequest = (completion) => {
+    if (logged) {
+      return;
+    }
+
+    logged = true;
+    console.log(
+      JSON.stringify({
+        event: "http_request",
+        requestId,
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        durationMs: Date.now() - startedAt,
+        completion,
+      })
+    );
+  };
+
+  res.once("finish", () => logRequest("finish"));
+  res.once("close", () => logRequest("close"));
+  next();
+});
+
 if (!sessionSecret) {
   throw new Error("SESSION_SECRET must be configured");
 }
@@ -59,7 +91,6 @@ initializeChangeStream();
 
 app.use(statusRouter); // /api/isconnected - checks cookie manually
 app.use(registerRouter); // /api/register - public registration
-app.use(positionRouter); // /api/verifyPosition - location check
 app.use(sendingVoteRouter); // /api/sendvote - SSE stream (public)
 app.use(currentVoteRouter); // /api/currentteam - anyone can view
 

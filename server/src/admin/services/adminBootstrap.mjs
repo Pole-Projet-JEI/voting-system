@@ -26,5 +26,10 @@ export async function ensureBootstrapAdmin() {
     mustChangePassword: true,
   });
 
-  console.log(`Created bootstrap admin account "${username}"`);
+  console.log(
+    JSON.stringify({
+      event: "admin_bootstrap_created",
+      timestamp: new Date().toISOString(),
+    })
+  );
 }
