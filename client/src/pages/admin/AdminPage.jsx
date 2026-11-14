@@ -64,6 +64,7 @@ function AdminPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [notification, setNotification] = useState(null);
   const [visiblePasswords, setVisiblePasswords] = useState({
     current: false,
     new: false,
@@ -72,6 +73,10 @@ function AdminPage() {
 
   const { sortOrder, setSortOrder, filteredAndSortedTeams } =
     useTeamFilters(teams);
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message });
+  };
 
   useEffect(() => {
     fetchData();
@@ -138,7 +143,10 @@ function AdminPage() {
     ]);
 
     if (!teamsResult.success || !presentingResult.success) {
-      alert(`✗ Error: ${teamsResult.error || presentingResult.error}`);
+      showNotification(
+        "error",
+        teamsResult.error || presentingResult.error
+      );
       setLoading(false);
       return;
     }
@@ -170,10 +178,10 @@ function AdminPage() {
     const result = await setPresentingTeamAPI(teamId);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       await fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
 
     }
   };
@@ -182,10 +190,10 @@ function AdminPage() {
     const result = await stopPresentingTeam();
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
     }
   };
 
@@ -193,20 +201,20 @@ function AdminPage() {
     e.preventDefault();
 
     if (!newTeamName.trim()) {
-      alert("⚠ Team name is required");
+      showNotification("error", "Team name is required");
       return;
     }
 
     const result = await createTeam(newTeamName, newTeamDescription);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       setNewTeamName("");
       setNewTeamDescription("");
       setShowAddTeamForm(false);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
 
     }
   };
@@ -215,11 +223,11 @@ function AdminPage() {
     const result = await updateTeam(teamId, updates);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       setEditingTeam(null);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
     }
   };
 
@@ -233,10 +241,10 @@ function AdminPage() {
     const result = await deleteTeam(teamId);
 
     if (result.success) {
-      alert(`✓ ${result.data.message}`);
+      showNotification("success", result.data.message);
       fetchData();
     } else {
-      alert(`✗ Error: ${result.error}`);
+      showNotification("error", result.error);
     }
   };
 
@@ -296,7 +304,7 @@ function AdminPage() {
   // Save edited team
   const saveEditedTeam = () => {
     if (!editingTeam.teamName.trim()) {
-      alert("⚠ Team name cannot be empty");
+      showNotification("error", "Team name cannot be empty");
       return;
     }
 
@@ -330,6 +338,28 @@ function AdminPage() {
 
   return (
     <div className="admin-page flex h-screen bg-white">
+      {notification && (
+        <div
+          role="alert"
+          className={`fixed right-6 top-6 z-[70] max-w-sm rounded-lg border px-4 py-3 text-sm shadow-lg ${
+            notification.type === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-green-200 bg-green-50 text-green-700"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <span>{notification.message}</span>
+            <button
+              type="button"
+              onClick={() => setNotification(null)}
+              className="font-bold opacity-70 hover:opacity-100"
+              aria-label="Close notification"
+            >
+              x
+            </button>
+          </div>
+        </div>
+      )}
       {mustChangePassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
           <form

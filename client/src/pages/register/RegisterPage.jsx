@@ -44,7 +44,11 @@ export default function RegisterPage() {
     if (result.success) {
       navigate("/home");
     } else {
-      setError(result.error || "Registration failed, Wrong Code");
+      setError(
+        result.networkError
+          ? "Unable to connect to the server. Please try again."
+          : result.error || "Invalid voter code."
+      );
       setRetryAfterSeconds(result.retryAfterSeconds || 0);
     }
   };

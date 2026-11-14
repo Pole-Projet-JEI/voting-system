@@ -50,6 +50,7 @@ export const registerUser = async (userData) => {
     return {
       success: false,
       error: error.response?.data?.message || "Registration failed",
+      networkError: !error.response,
       retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
     };
   }
@@ -63,6 +64,7 @@ export const sendVote = async (voteData) => {
     return {
       success: false,
       error: error.response?.data?.message || "Failed to send vote",
+      networkError: !error.response,
     };
   }
 };
@@ -76,6 +78,7 @@ export const voteForId = async (id, voteData) => {
     return {
       success: false,
       error: error.response?.data?.message || `Failed to vote for ID ${id}`,
+      networkError: !error.response,
     };
   }
 };

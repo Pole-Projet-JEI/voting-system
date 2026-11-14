@@ -275,3 +275,124 @@ Fichiers concernés :
 - `client/src/pages/admin/AdminLoginPage.jsx`
 - `client/src/pages/admin/AdminPage.jsx`
 
+## 7. Configuration de l'URL API frontend
+
+L'URL de l'API est injectée par Vite au moment du build frontend. Une
+variable fournie uniquement au conteneur Nginx après le build ne peut pas
+modifier le JavaScript déjà compilé.
+
+La solution appliquée :
+
+- normaliser `VITE_API_URL` dans `client/src/service/apiRoutes.js` ;
+- accepter une URL avec ou sans slash final ;
+- utiliser `/api/` dans Docker afin que Nginx relaie les appels vers le
+  backend `backend1:3000` ;
+- transmettre `VITE_API_URL` comme argument du build Docker ;
+- exclure `client/.env` de l'image afin de ne pas dépendre d'une valeur locale
+  et de ne pas copier cette configuration dans l'image.
+
+Pour le développement sans Docker, conserver par exemple :
+
+```env
+VITE_API_URL=http://localhost:3000/api/
+```
+
+Pour Docker, `docker-compose.yml` utilise :
+
+```yaml
+VITE_API_URL: /api/
+```
+
+Ainsi, les deux valeurs suivantes produisent correctement les mêmes routes :
+
+```text
+http://localhost:3000/api/admin/login
+/api/admin/login
+```
+
+Fichiers concernés :
+
+- `client/src/service/apiRoutes.js`
+- `client/Dockerfile`
+- `client/.dockerignore`
+- `docker-compose.yml`
+
+## 8. Opérations admin atomiques
+
+Les opérations d'arrêt de présentation et de suppression d'équipe effectuent
+maintenant leur vérification directement dans le filtre MongoDB et leur
+modification en une seule opération atomique :
+
+- `stopPresenting()` utilise `findOneAndUpdate({ presenting: true }, ...)` ;
+- `deleteTeam()` utilise `findOneAndDelete()` avec
+  `presenting: false` et `presented: false` ;
+- une vérification secondaire sert uniquement à retourner le message adapté
+  si l'équipe existe mais est protégée.
+
+Ainsi, deux administrateurs ne peuvent plus valider simultanément une
+condition obsolète entre une lecture et une écriture séparées. Le changement
+d'équipe présentée reste protégé par transaction MongoDB et par l'index unique
+sur `presenting`.
+
+Fichiers concernés :
+
+- `server/src/admin/services/presentingService.mjs`
+- `server/src/admin/services/teamManagementService.mjs`
+- `server/src/mongodb/teamSchema.mjs`
+
+## 9. Protection CSRF actuelle
+
+L'authentification de l'application repose sur des cookies. Un risque CSRF
+existe lorsqu'un site malveillant tente d'envoyer automatiquement une requête
+vers l'application au nom d'un utilisateur déjà connecté.
+
+Il n'y a pas encore de protection CSRF explicite dans le projet :
+
+- aucun middleware CSRF ;
+- aucun token CSRF envoyé par le frontend ;
+- aucune validation de token côté serveur.
+
+La protection actuelle est donc partielle grâce à l'attribut `SameSite` des
+cookies. Dans `server/src/index.mjs`, les cookies utilisent :
+
+```js
+sameSite: IS_PROD || IS_STAGING ? "strict" : "lax"
+```
+
+Les autres cookies utilisent également `SameSite=Lax` ou `SameSite=Strict`.
+Cette configuration bloque la majorité des requêtes CSRF modernes provenant
+d'un autre site, notamment les requêtes `POST`, `PUT` et `DELETE`.
+
+Cette protection ne remplace toutefois pas un token CSRF explicite. Une
+amélioration future consiste à ajouter un token CSRF pour les requêtes qui
+modifient les données et à limiter CORS aux origines de confiance au lieu
+d'utiliser `origin: true`.
+
+Fichiers vérifiés :
+
+- `server/src/index.mjs`
+- `server/src/config/cookies.mjs`
+- `server/src/register/register.mjs`
+- `server/src/admin/apis/auth/login.mjs`
+
+## 10. Messages d'erreur dans l'interface
+
+Les erreurs réseau et les erreurs métier sont maintenant distinguées dans les
+pages frontend :
+
+- les `alert()` des pages admin et de vote ont été remplacés par des
+  notifications intégrées à l'interface ;
+- une erreur lors du chargement du statut de vote n'est plus affichée comme
+  `Voting is now closed` ;
+- une indisponibilité du serveur affiche un message de connexion explicite ;
+- un code votant invalide reste affiché comme une erreur de code ;
+- les messages de succès et d'erreur admin peuvent être fermés sans popup
+  navigateur.
+
+Fichiers concernés :
+
+- `client/src/pages/admin/AdminPage.jsx`
+- `client/src/pages/home/HomePage.jsx`
+- `client/src/pages/register/RegisterPage.jsx`
+- `client/src/service/userApi.js`
+

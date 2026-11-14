@@ -60,22 +60,15 @@ export async function getCurrentPresentingTeam() {
 }
 
 export async function stopPresenting() {
-  const currentPresentingTeam = await Team.findOne({ presenting: true });
-
-  if (!currentPresentingTeam) {
-    return null;
-  }
-
-  await Team.updateOne(
-    { _id: currentPresentingTeam._id },
+  return await Team.findOneAndUpdate(
+    { presenting: true },
     {
       $set: {
         presenting: false,
         presented: true,
         presentedAt: new Date(),
       },
-    }
+    },
+    { new: false }
   );
-
-  return currentPresentingTeam;
 }

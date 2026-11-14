@@ -23,6 +23,8 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api/
     networks:
       - app-network
     ports:
