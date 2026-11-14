@@ -89,6 +89,20 @@ export const createChangeStreamManager = ({
     if (shuttingDown || stream !== failedStream) {
       return;
     }
+  };
+
+  const scheduleReconnect = () => {
+    if (shuttingDown || reconnectTimer) {
+      return;
+    }
+
+    reconnectAttempt += 1;
+    const exponentialDelay = Math.min(
+      maxDelayMs,
+      initialDelayMs * 2 ** (reconnectAttempt - 1)
+    );
+    const jitter = 0.5 + random();
+    const delay = Math.min(maxDelayMs, Math.round(exponentialDelay * jitter));
 
     stream = null;
     void closeStream(failedStream);
@@ -288,7 +302,7 @@ const streamManager = createChangeStreamManager({
 export const initializeChangeStream = () => streamManager.start();
 export const shutdownChangeStream = () => streamManager.shutdown();
 
-route.get("/api/sendvote", (req, res) => {
+route.get("/api/sendvote", async (req, res) => {
   try {
     if (!clients.add(req, res)) {
       return res.status(503).json({
@@ -300,9 +314,16 @@ route.get("/api/sendvote", (req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
+
+    clients.add(res);
+    console.log(`Client connected. Total clients: ${clients.size}`);
     res.write(`data: ${JSON.stringify({ connected: true })}\n\n`);
 
-    console.log(`Client connected. Total clients: ${clients.size}`);
+    req.on("close", () => {
+      clients.delete(res);
+      console.log(`Client disconnected. Total clients: ${clients.size}`);
+      res.end();
+    });
   } catch (error) {
     clients.remove(res);
     console.error("Error in /api/sendvote:", error);

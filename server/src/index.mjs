@@ -92,7 +92,7 @@ app.use(presentingRouter);
 app.use(visualizationRouter);
 app.use(teamManagementRouter);
 
-const server = app.listen(PORT, "0.0.0.0", () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on http://0.0.0.0:${PORT}`);
 });
 
@@ -101,9 +101,9 @@ const shutdown = async (signal) => {
   if (isShuttingDown) {
     return;
   }
-
   isShuttingDown = true;
   console.log(`Received ${signal}; shutting down`);
+
   await shutdownChangeStream();
   await new Promise((resolve) => server.close(resolve));
   await mongoose.disconnect();
