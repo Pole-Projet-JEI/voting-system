@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import mongoose from "mongoose";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import dbconfig from "./mongodb/connect.mjs";
@@ -8,7 +9,10 @@ import statusRouter from "./check/status.mjs";
 import registerRouter from "./register/register.mjs";
 import positionRouter from "./check/position.mjs";
 import votingRouter from "./vote/voting.mjs";
-import sendingVoteRouter from "./vote/send-vote.mjs";
+import sendingVoteRouter, {
+  initializeChangeStream,
+  shutdownChangeStream,
+} from "./vote/send-vote.mjs";
 import currentVoteRouter from "./check/prensenting-team.mjs";
 import hasVotedRouter from "./check/hasvoted.mjs";
 import presentingRouter from "./admin/apis/presenting.mjs";
@@ -67,6 +71,7 @@ app.use(
 await dbconfig(mongoUri);
 await ensureBootstrapAdmin();
 await seedVoters();
+initializeChangeStream();
 
 app.use(statusRouter); // /api/isconnected - checks cookie manually
 app.use(registerRouter); // /api/register - public registration
@@ -87,7 +92,28 @@ app.use(presentingRouter);
 app.use(visualizationRouter);
 app.use(teamManagementRouter);
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server is running on http://0.0.0.0:${PORT}`);
-
 });
+
+let isShuttingDown = false;
+const shutdown = async (signal) => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  console.log(`Received ${signal}; shutting down`);
+  await shutdownChangeStream();
+  await new Promise((resolve) => server.close(resolve));
+  await mongoose.disconnect();
+};
+
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.once(signal, () => {
+    shutdown(signal).catch((error) => {
+      console.error("Shutdown failed:", error.message || error);
+      process.exitCode = 1;
+    });
+  });
+}

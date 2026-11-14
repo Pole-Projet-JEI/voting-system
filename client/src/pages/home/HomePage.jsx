@@ -11,6 +11,7 @@ import {
   checkConnection,
 } from "../../service/userApi";
 import { routes } from "../../service/apiRoutes";
+import { createSseConnection } from "../../service/sseConnection";
 
 axios.defaults.withCredentials = true;
 
@@ -127,70 +128,47 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const eventSource = new EventSource(routes.SEND_VOTE, {
-      withCredentials: true,
+    const connection = createSseConnection({
+      url: routes.SEND_VOTE,
+      onMessage: async (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.connected) {
+            return;
+          }
+
+          const newTeamId = data.teamID;
+          const newTeamName = data.teamName;
+
+          dispatch({ type: "SET_TEAM_ID", payload: newTeamId });
+          dispatch({ type: "SET_TEAM_NAME", payload: newTeamName });
+
+          // Reset vote selection
+          dispatch({ type: "SET_USER_VOTE", payload: null });
+
+          // Check if user already voted for this new team
+          if (newTeamId) {
+            const voteStatus = await didUserVote();
+            if (voteStatus.success && voteStatus.data.hasVoted) {
+              dispatch({ type: "SET_HAS_VOTED", payload: true });
+              dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
+            } else {
+              dispatch({ type: "SET_HAS_VOTED", payload: false });
+              dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
+            }
+          } else {
+            // No team presenting
+            dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
+          }
+        } catch (error) {
+          console.error("Error processing SSE message:", error);
+        }
+      },
     });
 
-    eventSource.onmessage = async (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.connected) {
-          // console.log("SSE connected");
-          return;
-        }
-
-        const newTeamId = data.teamID;
-        const newTeamName = data.teamName;
-
-        dispatch({ type: "SET_TEAM_ID", payload: newTeamId });
-        dispatch({ type: "SET_TEAM_NAME", payload: newTeamName });
-
-        // Reset vote selection
-        dispatch({ type: "SET_USER_VOTE", payload: null });
-
-        // Check if user already voted for this new team
-        if (newTeamId) {
-          const voteStatus = await didUserVote();
-          if (voteStatus.success && voteStatus.data.hasVoted) {
-            dispatch({ type: "SET_HAS_VOTED", payload: true });
-            dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
-          } else {
-            dispatch({ type: "SET_HAS_VOTED", payload: false });
-            dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
-          }
-        } else {
-          // No team presenting
-          dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
-        }
-      } catch (error) {
-        console.error("Error processing SSE message:", error);
-      }
-    };
-
-    eventSource.onerror = () => {
-      // console.log("SSE connection lost. Will retry...");
-      eventSource.close();
-
-      // If user is actively on the page, reload
-      if (document.visibilityState === "visible") {
-        console.log("User is on page, reloading...");
-        setTimeout(() => window.location.reload(), 3000);
-      } else {
-        // User is away, wait for them to come back
-        console.log("User is away, waiting for return...");
-        const handleReturn = () => {
-          if (document.visibilityState === "visible") {
-            console.log("User returned, reloading...");
-            document.removeEventListener("visibilitychange", handleReturn);
-            setTimeout(() => window.location.reload(), 1000);
-          }
-        };
-        document.addEventListener("visibilitychange", handleReturn);
-      }
-    };
-
-    return () => eventSource.close();
+    connection.start();
+    return () => connection.stop();
   }, []);
 
   const VoteOpen = (
