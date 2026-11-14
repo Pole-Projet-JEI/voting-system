@@ -63,18 +63,7 @@ function AdminPage() {
     fetchData();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await adminLogout();
-      navigate("/admin/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-      navigate("/admin/login");
-    }
-  };
-
   const fetchData = async () => {
- prod
     setLoading(true);
 
     const [teamsResult, presentingResult] = await Promise.all([
@@ -84,7 +73,6 @@ function AdminPage() {
 
     if (!teamsResult.success || !presentingResult.success) {
       alert(`✗ Error: ${teamsResult.error || presentingResult.error}`);
-in
       setLoading(false);
       return;
     }
