@@ -130,7 +130,7 @@ export default function HomePage() {
   useEffect(() => {
     const connection = createSseConnection({
       url: routes.SEND_VOTE,
-      onMessage: async (event) => {
+      onMessage: async (event, isActive) => {
         try {
           const data = JSON.parse(event.data);
 
@@ -141,6 +141,10 @@ export default function HomePage() {
           const newTeamId = data.teamID;
           const newTeamName = data.teamName;
 
+          if (!isActive()) {
+            return;
+          }
+
           dispatch({ type: "SET_TEAM_ID", payload: newTeamId });
           dispatch({ type: "SET_TEAM_NAME", payload: newTeamName });
 
@@ -150,6 +154,10 @@ export default function HomePage() {
           // Check if user already voted for this new team
           if (newTeamId) {
             const voteStatus = await didUserVote();
+            if (!isActive()) {
+              return;
+            }
+
             if (voteStatus.success && voteStatus.data.hasVoted) {
               dispatch({ type: "SET_HAS_VOTED", payload: true });
               dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });

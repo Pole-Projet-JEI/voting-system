@@ -116,13 +116,20 @@ export const createChangeStreamManager = ({
 
       try {
         const result = onChange(change);
-        if (result?.catch) {
-          result.catch((error) => {
+        if (result?.then) {
+          result.then(
+            () => {
+              reconnectAttempt = 0;
+            },
+            (error) => {
             logger.error(
               "Change Stream event processing failed",
               describeError(error)
             );
-          });
+            }
+          );
+        } else {
+          reconnectAttempt = 0;
         }
       } catch (error) {
         logger.error(
@@ -150,7 +157,6 @@ export const createChangeStreamManager = ({
         : streamOptions;
       const nextStream = createStream(options);
       stream = nextStream;
-      reconnectAttempt = 0;
       attachListeners(nextStream);
       logger.info("MongoDB Change Stream connected");
     } catch (error) {
@@ -251,9 +257,21 @@ export const createSseClientRegistry = ({
     }
   };
 
+  const closeAll = () => {
+    for (const [response] of clients) {
+      remove(response);
+      try {
+        response.end?.();
+      } catch (error) {
+        logger.error("SSE connection close failed", error?.message || error);
+      }
+    }
+  };
+
   return {
     add,
     broadcast,
+    closeAll,
     remove,
     get size() {
       return clients.size;
@@ -287,6 +305,7 @@ const streamManager = createChangeStreamManager({
 
 export const initializeChangeStream = () => streamManager.start();
 export const shutdownChangeStream = () => streamManager.shutdown();
+export const shutdownSseClients = () => clients.closeAll();
 
 route.get("/api/sendvote", async (req, res) => {
   try {
@@ -301,15 +320,8 @@ route.get("/api/sendvote", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
 
-    clients.add(res);
     console.log(`Client connected. Total clients: ${clients.size}`);
     res.write(`data: ${JSON.stringify({ connected: true })}\n\n`);
-
-    req.on("close", () => {
-      clients.delete(res);
-      console.log(`Client disconnected. Total clients: ${clients.size}`);
-      res.end();
-    });
   } catch (error) {
     clients.remove(res);
     console.error("Error in /api/sendvote:", error);
