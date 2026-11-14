@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import session from "express-session";
@@ -15,9 +16,12 @@ import visualizationRouter from "./admin/apis/visualization.mjs";
 import teamManagementRouter from "./admin/apis/team-management.mjs";
 import adminLoginRouter from "./admin/apis/auth/login.mjs";
 import adminLogoutRouter from "./admin/apis/auth/logout.mjs";
+import adminChangePasswordRouter from "./admin/apis/auth/change-password.mjs";
 import dotenv from "dotenv";
 import path from "path";
 import { seedVoters } from "./seed/seed-voters.mjs";
+import { ensureBootstrapAdmin } from "./admin/services/adminBootstrap.mjs";
+import { shouldUseSecureCookies } from "./config/cookies.mjs";
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 dotenv.config();
@@ -56,16 +60,16 @@ app.use(
     resave: false,
     cookie: {
       maxAge: 1000 * 60 * 60 * 24,
-      secure: IS_PROD,
+      secure: shouldUseSecureCookies(),
       httpOnly: true,
       sameSite: IS_PROD || IS_STAGING ? "strict" : "lax",
     },
   })
 );
 
-dbconfig(mongoUri);
-
-seedVoters().catch((err) => console.error("Seeding failed:", err));
+await dbconfig(mongoUri);
+await ensureBootstrapAdmin();
+await seedVoters();
 
 app.use(statusRouter); // /api/isconnected - checks cookie manually
 app.use(registerRouter); // /api/register - public registration
@@ -75,6 +79,7 @@ app.use(currentVoteRouter); // /api/currentteam - anyone can view
 
 app.use(adminLoginRouter);
 app.use(adminLogoutRouter);
+app.use(adminChangePasswordRouter);
 
 
 // Voter auth routes (middleware applied at router level)

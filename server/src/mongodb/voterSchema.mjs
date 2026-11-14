@@ -4,10 +4,16 @@ const voterSchema = new mongoose.Schema(
   {
     code: {
       type: String,
+      select: false,
+      trim: true,
+    },
+    codeHash: {
+      type: String,
       required: true,
       unique: true,
       index: true,
-      trim: true,
+      select: false,
+      sparse: true,
     },
     participantSessionHash: {
       type: String,

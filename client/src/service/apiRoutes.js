@@ -17,6 +17,7 @@ const routes = {
 
   ADMIN_LOGIN: baseURL + "admin/login",
   ADMIN_LOGOUT: baseURL + "admin/logout",
+  ADMIN_PASSWORD: baseURL + "admin/password",
   ADMIN_TEAMS: baseURL + "admin/teams",
   ADMIN_PRESENTING: baseURL + "admin/presenting",
   ADMIN_TEAM: baseURL + "admin/team",

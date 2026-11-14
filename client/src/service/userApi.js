@@ -50,6 +50,7 @@ export const registerUser = async (userData) => {
     return {
       success: false,
       error: error.response?.data?.message || "Registration failed",
+      retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
     };
   }
 };

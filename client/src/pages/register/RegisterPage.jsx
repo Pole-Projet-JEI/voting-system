@@ -6,7 +6,21 @@ import { useNavigate } from "react-router-dom";
 import { checkConnection } from "../../service/userApi";
 export default function RegisterPage() {
   const [userInput, setUserInput] = useState("");
+  const [error, setError] = useState("");
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (retryAfterSeconds <= 0) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setRetryAfterSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [retryAfterSeconds]);
 
   useEffect(() => {
     const isConnected = async () => {
@@ -21,12 +35,17 @@ export default function RegisterPage() {
 
   const submitHandler = async (event) => {
     event.preventDefault();
+    if (retryAfterSeconds > 0) {
+      return;
+    }
+
+    setError("");
     const result = await registerUser(userInput);
     if (result.success) {
       navigate("/home");
     } else {
-      alert("Registration failed, Wrong Code");
-
+      setError(result.error || "Registration failed, Wrong Code");
+      setRetryAfterSeconds(result.retryAfterSeconds || 0);
     }
   };
 
@@ -40,6 +59,18 @@ export default function RegisterPage() {
       <h2 style={{ fontSize: "1em", color: "rgba(255,255,255,0.55)" }}>
         Voting System
       </h2>
+      {error && (
+        <p style={{ color: "#ffb4b4", marginBottom: "1rem" }}>
+          {error}
+          {retryAfterSeconds > 0 && (
+            <>
+              {" "}
+              Retry in {Math.floor(retryAfterSeconds / 60)}:
+              {String(retryAfterSeconds % 60).padStart(2, "0")}
+            </>
+          )}
+        </p>
+      )}
       <form onSubmit={submitHandler} style={{ position: "relative" }}>
         <input
           type="text"
@@ -51,7 +82,11 @@ export default function RegisterPage() {
             setUserInput(e.target.value);
           }}
         />
-        <button id="register-form-submit" type="submit">
+        <button
+          id="register-form-submit"
+          type="submit"
+          disabled={retryAfterSeconds > 0}
+        >
           <svg
             width="25px"
             height="25px"

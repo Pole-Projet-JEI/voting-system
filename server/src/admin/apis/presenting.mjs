@@ -25,7 +25,7 @@ route.post("/api/admin/presenting", requireAdmin, async (req, res) => {
       if (result.error.includes("already presented")) {
         return res.status(400).json({ message: "Team has already presented" });
       }
-      return res.status(500).json({ message: result.error });
+      return res.status(500).json({ message: "Unable to change presenting team" });
     }
 
     return res.json({
@@ -37,7 +37,6 @@ route.post("/api/admin/presenting", requireAdmin, async (req, res) => {
     console.error("Error changing presenting team:", error);
     return res.status(500).json({
       message: "Internal Server Error",
-      error: error.message,
     });
   }
 });
@@ -61,7 +60,6 @@ route.get("/api/admin/presenting", requireAdmin, async (req, res) => {
     console.error("Error getting presenting team:", error);
     return res.status(500).json({
       message: "Internal Server Error",
-      error: error.message,
     });
   }
 });
@@ -85,7 +83,6 @@ route.delete("/api/admin/presenting", requireAdmin, async (req, res) => {
     console.error("Error stopping presentation:", error);
     return res.status(500).json({
       message: "Internal Server Error",
-      error: error.message,
     });
   }
 });

@@ -1,11 +1,12 @@
 import { Router } from "express";
+import { shouldUseSecureCookies } from "../../../config/cookies.mjs";
 
 const route = Router();
 
 route.post("/api/admin/logout", (req, res) => {
   res.clearCookie("adminToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureCookies(),
     sameSite: "strict",
   });
 

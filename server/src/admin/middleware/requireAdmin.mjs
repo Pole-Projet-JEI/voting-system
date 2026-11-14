@@ -22,6 +22,8 @@ export const requireAdmin = (req, res, next) => {
 
     req.admin = {
       role: decoded.role,
+      username: decoded.username,
+      mustChangePassword: decoded.mustChangePassword === true,
       authenticatedAt: new Date(decoded.timestamp),
     };
 
