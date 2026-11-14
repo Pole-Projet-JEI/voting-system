@@ -26,6 +26,7 @@ import { fileURLToPath } from "url";
 import { seedVoters } from "./seed/seed-voters.mjs";
 import { ensureBootstrapAdmin } from "./admin/services/adminBootstrap.mjs";
 import { shouldUseSecureCookies } from "./config/cookies.mjs";
+import { createCorsOptions } from "./config/cors.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -42,13 +43,7 @@ const sessionSecret = process.env.SESSION_SECRET;
 console.log(` Starting server in ${NODE_ENV} mode`);
 console.log(` Host: ${HOST}`);
 
-// Simple CORS - allow all origins for now
-const corsOptions = {
-  origin: true, // Allow all origins
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-};
+const corsOptions = createCorsOptions({ nodeEnv: NODE_ENV });
 
 const app = express();
 app.use(cors(corsOptions));
