@@ -52,8 +52,12 @@ route.post("/api/admin/login", adminLoginRateLimit, async (req, res) => {
     const legacyAuth = !accountAuth.valid && validateAdminKey(secretKey);
 
     if (!accountAuth.valid && !legacyAuth) {
-      console.log(
-        ` Failed admin login attempt at ${new Date().toISOString()}`
+      console.warn(
+        JSON.stringify({
+          event: "admin_login_failed",
+          timestamp: new Date().toISOString(),
+          requestId: req.requestId,
+        })
       );
       return res.status(401).json({
         success: false,
@@ -76,7 +80,11 @@ route.post("/api/admin/login", adminLoginRateLimit, async (req, res) => {
     });
 
     console.log(
-      `VVVVV Admin logged in successfully at ${new Date().toISOString()}`
+      JSON.stringify({
+        event: "admin_login_success",
+        timestamp: new Date().toISOString(),
+        requestId: req.requestId,
+      })
     );
 
     return res.status(200).json({

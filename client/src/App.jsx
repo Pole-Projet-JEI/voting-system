@@ -30,7 +30,6 @@ function App() {
             }
           />
           <Route element={<GlobalLayout />}>
-            <Route path="/test" />
             <Route path="/home" element={<HomePage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/*" element={<Error404Page />} />

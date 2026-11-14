@@ -9,11 +9,13 @@ const route = Router();
 
 route.post("/api/admin/logout", async (req, res) => {
   const token = req.cookies?.adminToken;
+  let tokenRevoked = false;
 
   try {
     const decoded = token ? verifyAdminToken(token) : null;
     if (decoded?.exp) {
       await revokeAdminToken(token, decoded.exp);
+      tokenRevoked = true;
     }
   } catch (error) {
     console.error("Error revoking admin token:", error);
@@ -31,7 +33,14 @@ route.post("/api/admin/logout", async (req, res) => {
     sameSite: secure || IS_STAGING ? "strict" : "lax",
   });
 
-  console.log(`Admin logged out at ${new Date().toISOString()}`);
+  console.log(
+    JSON.stringify({
+      event: "admin_logout",
+      timestamp: new Date().toISOString(),
+      requestId: req.requestId,
+      tokenRevoked,
+    })
+  );
 
   return res.status(200).json({
     success: true,
