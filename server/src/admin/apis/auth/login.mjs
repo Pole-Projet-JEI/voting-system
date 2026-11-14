@@ -3,6 +3,7 @@ import {
   validateAdminKey,
   authenticateAdmin,
   generateAdminToken,
+  isAdminTokenRevoked,
   verifyAdminToken,
 } from "../../services/authService.mjs";
 import { shouldUseSecureCookies } from "../../../config/cookies.mjs";
@@ -11,7 +12,7 @@ import { adminLoginRateLimit } from "../../../middleware/rate-limiters.mjs";
 const route = Router();
 
 // Lightweight auth check - just validates token, no data fetching
-route.get("/api/admin/auth", (req, res) => {
+route.get("/api/admin/auth", async (req, res) => {
   const token = req.cookies?.adminToken;
 
   if (!token) {
@@ -21,7 +22,7 @@ route.get("/api/admin/auth", (req, res) => {
   try {
     const decoded = verifyAdminToken(token);
 
-    if (!decoded || decoded.role !== "admin") {
+    if (!decoded || decoded.role !== "admin" || await isAdminTokenRevoked(token)) {
       return res.status(401).json({ authenticated: false });
     }
 

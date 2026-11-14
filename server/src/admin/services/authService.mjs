@@ -2,6 +2,7 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { promisify } from "node:util";
 import Admin from "../../mongodb/adminSchema.mjs";
+import AdminTokenRevocation from "../../mongodb/adminTokenRevocationSchema.mjs";
 import { ADMIN_KEYS, JWT_SECRET, JWT_EXPIRY } from "../../config/secrets.mjs";
 
 const scrypt = promisify(crypto.scrypt);
@@ -84,4 +85,37 @@ export function verifyAdminToken(token) {
   } catch (error) {
     return null;
   }
+}
+
+export function hashAdminToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export async function isAdminTokenRevoked(token) {
+  if (typeof token !== "string" || token.length === 0) {
+    return false;
+  }
+
+  const revocation = await AdminTokenRevocation.findOne({
+    tokenHash: hashAdminToken(token),
+    expiresAt: { $gt: new Date() },
+  }).lean();
+
+  return Boolean(revocation);
+}
+
+export async function revokeAdminToken(token, expiresAt) {
+  if (
+    typeof token !== "string" ||
+    !Number.isInteger(expiresAt) ||
+    expiresAt * 1000 <= Date.now()
+  ) {
+    return;
+  }
+
+  await AdminTokenRevocation.updateOne(
+    { tokenHash: hashAdminToken(token) },
+    { $set: { expiresAt: new Date(expiresAt * 1000) } },
+    { upsert: true }
+  );
 }

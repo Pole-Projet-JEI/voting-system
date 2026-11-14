@@ -1,6 +1,9 @@
-import { verifyAdminToken } from "../services/authService.mjs";
+import {
+  isAdminTokenRevoked,
+  verifyAdminToken,
+} from "../services/authService.mjs";
 
-export const requireAdmin = (req, res, next) => {
+export const requireAdmin = async (req, res, next) => {
   try {
     const token = req.cookies?.adminToken;
 
@@ -14,6 +17,13 @@ export const requireAdmin = (req, res, next) => {
     const decoded = verifyAdminToken(token);
 
     if (!decoded || decoded.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+
+    if (await isAdminTokenRevoked(token)) {
       return res.status(403).json({
         success: false,
         message: "Invalid or expired token",
