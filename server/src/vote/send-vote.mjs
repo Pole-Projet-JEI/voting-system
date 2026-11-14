@@ -89,20 +89,6 @@ export const createChangeStreamManager = ({
     if (shuttingDown || stream !== failedStream) {
       return;
     }
-  };
-
-  const scheduleReconnect = () => {
-    if (shuttingDown || reconnectTimer) {
-      return;
-    }
-
-    reconnectAttempt += 1;
-    const exponentialDelay = Math.min(
-      maxDelayMs,
-      initialDelayMs * 2 ** (reconnectAttempt - 1)
-    );
-    const jitter = 0.5 + random();
-    const delay = Math.min(maxDelayMs, Math.round(exponentialDelay * jitter));
 
     stream = null;
     void closeStream(failedStream);
