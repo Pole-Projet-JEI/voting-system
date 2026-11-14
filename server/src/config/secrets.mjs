@@ -1,4 +1,11 @@
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import crypto from "crypto";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config();
 
 // Get admin keys from env (supports multiple keys for rotation)
 export const ADMIN_KEYS = process.env.ADMIN_KEYS

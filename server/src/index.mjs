@@ -17,9 +17,12 @@ import adminLoginRouter from "./admin/apis/auth/login.mjs";
 import adminLogoutRouter from "./admin/apis/auth/logout.mjs";
 import dotenv from "dotenv";
 import path from "path";
+import { fileURLToPath } from "url";
+import mongoose from "mongoose";
 import { seedVoters } from "./seed/seed-voters.mjs";
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 dotenv.config();
 
 const NODE_ENV = process.env.NODE_ENV || "development";
@@ -65,7 +68,9 @@ app.use(
 
 dbconfig(mongoUri);
 
-seedVoters().catch((err) => console.error("Seeding failed:", err));
+mongoose.connection.once("connected", () => {
+  seedVoters().catch((err) => console.error("Seeding failed:", err));
+});
 
 app.use(statusRouter); // /api/isconnected - checks cookie manually
 app.use(registerRouter); // /api/register - public registration
