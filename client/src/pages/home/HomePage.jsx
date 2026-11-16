@@ -18,6 +18,7 @@ axios.defaults.withCredentials = true;
 const initialState = {
   teamId: null,
   teamName: null,
+  teamState: null,
   hasVoted: false,
   userVote: null,
   mode: "voteIsClosed", // 'voteIsOpen', 'thankYouForVoting'
@@ -29,6 +30,8 @@ const reducer = (state, action) => {
       return { ...state, teamId: action.payload };
     case "SET_TEAM_NAME":
       return { ...state, teamName: action.payload };
+    case "SET_TEAM_STATE":
+      return { ...state, teamState: action.payload };
     case "SET_HAS_VOTED":
       return { ...state, hasVoted: action.payload };
     case "SET_USER_VOTE":
@@ -52,9 +55,12 @@ export default function HomePage() {
       setPageError("");
       dispatch({ type: "SET_TEAM_ID", payload: result.data.teamID });
       dispatch({ type: "SET_TEAM_NAME", payload: result.data.teamName });
+      dispatch({ type: "SET_TEAM_STATE", payload: result.data.state });
 
       if (!result.data.teamID) {
         dispatch({ type: "SET_MODE", payload: "voteIsClosed" });
+      } else if (result.data.state === "presenting") {
+        dispatch({ type: "SET_MODE", payload: "teamIsPresenting" });
       }
       // If there IS a team presenting, the mode will be set by checkHasVoted()
     } else {
@@ -73,18 +79,21 @@ export default function HomePage() {
   const checkHasVoted = async () => {
     const result = await didUserVote();
     if (result.success) {
-      if (result.data.hasVoted) {
+      const teamResult = await getCurrentTeam();
+      const teamState =
+        teamResult.data?.state ||
+        (teamResult.data?.teamID ? "voting" : null);
+
+      if (teamResult.success && teamState === "presenting") {
+        dispatch({ type: "SET_MODE", payload: "teamIsPresenting" });
+      } else if (result.data.hasVoted) {
         dispatch({ type: "SET_HAS_VOTED", payload: true });
         dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
-      } else {
-        // User hasn't voted - open voting if team is presenting
-        const teamResult = await getCurrentTeam();
-        if (teamResult.success && teamResult.data.teamID) {
+      } else if (teamResult.success && teamState === "voting") {
           dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
-        } else if (!teamResult.success) {
-          setPageError("Unable to load voting status. Please try again.");
-          dispatch({ type: "SET_MODE", payload: "voteError" });
-        }
+      } else if (!teamResult.success) {
+        setPageError("Unable to load voting status. Please try again.");
+        dispatch({ type: "SET_MODE", payload: "voteError" });
       }
     }
   };
@@ -138,6 +147,10 @@ export default function HomePage() {
             return;
           }
 
+          if (data.voteUpdate) {
+            return;
+          }
+
           const newTeamId = data.teamID;
           const newTeamName = data.teamName;
 
@@ -147,6 +160,7 @@ export default function HomePage() {
 
           dispatch({ type: "SET_TEAM_ID", payload: newTeamId });
           dispatch({ type: "SET_TEAM_NAME", payload: newTeamName });
+          dispatch({ type: "SET_TEAM_STATE", payload: data.state });
 
           // Reset vote selection
           dispatch({ type: "SET_USER_VOTE", payload: null });
@@ -158,7 +172,9 @@ export default function HomePage() {
               return;
             }
 
-            if (voteStatus.success && voteStatus.data.hasVoted) {
+            if (data.state === "presenting") {
+              dispatch({ type: "SET_MODE", payload: "teamIsPresenting" });
+            } else if (voteStatus.success && voteStatus.data.hasVoted) {
               dispatch({ type: "SET_HAS_VOTED", payload: true });
               dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
             } else {
@@ -235,6 +251,15 @@ export default function HomePage() {
     </div>
   );
 
+  const TeamIsPresenting = (
+    <div className="home-container">
+      <h1 className="vote-open-title">
+        <span style={{ color: "#790C18" }}>{state.teamName}</span> is presenting
+      </h1>
+      <p className="home-vote-closed-message">Voting will open shortly.</p>
+    </div>
+  );
+
   const VoteError = (
     <div className="home-container">
       <div className="home-vote-closed-message" role="alert">
@@ -251,6 +276,7 @@ export default function HomePage() {
   );
 
   if (state.mode === "voteIsOpen") return VoteOpen;
+  if (state.mode === "teamIsPresenting") return TeamIsPresenting;
   if (state.mode === "thankYouForVoting") return ThankYouForYourVote;
   if (state.mode === "voteError") return VoteError;
   return VoteClosed;

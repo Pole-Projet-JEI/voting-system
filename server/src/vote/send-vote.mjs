@@ -5,7 +5,12 @@ const route = Router();
 const pipeline = [
   {
     $match: {
-      "updateDescription.updatedFields.presenting": { $exists: true },
+      $or: [
+        { "updateDescription.updatedFields.presenting": { $exists: true } },
+        { "updateDescription.updatedFields.state": { $exists: true } },
+        { "updateDescription.updatedFields.nyes": { $exists: true } },
+        { "updateDescription.updatedFields.nno": { $exists: true } },
+      ],
     },
   },
 ];
@@ -283,13 +288,35 @@ const clients = createSseClientRegistry();
 
 const broadcastChange = (change) => {
   let data;
-  if (change.fullDocument?.presenting === true) {
+  if (
+    (change.fullDocument?.state === "voting" ||
+      (!change.fullDocument?.state && change.fullDocument?.presenting === true)) &&
+    (change.updateDescription?.updatedFields?.nyes !== undefined ||
+      change.updateDescription?.updatedFields?.nno !== undefined)
+  ) {
+    data = JSON.stringify({
+      voteUpdate: true,
+      teamID: change.fullDocument._id,
+      nyes: change.fullDocument.nyes,
+      nno: change.fullDocument.nno,
+    });
+  } else if (
+    change.fullDocument?.state === "presenting" ||
+    change.fullDocument?.state === "voting" ||
+    change.fullDocument?.presenting === true
+  ) {
     data = JSON.stringify({
       teamID: change.fullDocument._id,
       teamName: change.fullDocument.teamName,
       description: change.fullDocument.description,
+      state:
+        change.fullDocument.state ||
+        (change.fullDocument.presenting ? "voting" : "pending"),
     });
-  } else if (change.fullDocument?.presenting === false) {
+  } else if (
+    change.fullDocument?.state === "ended" ||
+    change.fullDocument?.presenting === false
+  ) {
     data = JSON.stringify({ teamID: null, teamName: null, stopped: true });
   }
 

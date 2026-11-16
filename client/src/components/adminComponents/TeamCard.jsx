@@ -22,6 +22,8 @@ export const TeamCard = ({
   onEditChange,
 }) => {
   const isEditing = editingTeam?.id === team._id;
+  const teamState =
+    team.state || (team.presented ? "ended" : team.presenting ? "voting" : "pending");
 
   if (isEditing) {
     return (
@@ -77,7 +79,7 @@ export const TeamCard = ({
   return (
     <Card
       className={`transition-all hover:shadow-lg bg-white ${
-        team.presenting
+        teamState === "presenting" || teamState === "voting"
           ? "border-green-500 bg-green-50"
           : team.presented
           ? "border-muted opacity-60"
@@ -90,8 +92,11 @@ export const TeamCard = ({
             {team.teamName}
           </CardTitle>
           <div className="flex gap-1">
-            {team.presenting && (
-              <Badge className="bg-green-500 text-white">Presenting</Badge>
+            {teamState === "presenting" && (
+              <Badge className="bg-blue-500 text-white">Presenting</Badge>
+            )}
+            {teamState === "voting" && (
+              <Badge className="bg-green-500 text-white">Voting</Badge>
             )}
             {team.presented && (
               <Badge variant="secondary" className="bg-gray-200 text-gray-800">
@@ -117,7 +122,7 @@ export const TeamCard = ({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {!team.presenting && !team.presented && (
+          {teamState === "pending" && !team.presenting && !team.presented && (
             <Button
               onClick={() => onSetPresenting(team._id)}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
@@ -127,7 +132,7 @@ export const TeamCard = ({
               Present
             </Button>
           )}
-          {!team.presenting && !team.presented && (
+          {teamState === "pending" && !team.presenting && !team.presented && (
             <>
               <Button
                 onClick={() => onStartEdit(team)}

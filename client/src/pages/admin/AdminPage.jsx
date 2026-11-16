@@ -5,6 +5,7 @@ import {
   getPresentingTeam,
   setPresentingTeam as setPresentingTeamAPI,
   stopPresentingTeam,
+  startVoting,
   createTeam,
   updateTeam,
   deleteTeam,
@@ -32,6 +33,8 @@ import { PresentingTeamCard } from "../../components/adminComponents/PresentingT
 import { StatCard } from "../../components/adminComponents/StatCard";
 import { TeamCard } from "../../components/adminComponents/TeamCard";
 import { AddTeamForm } from "../../components/adminComponents/AddTeamForm";
+import { createSseConnection } from "../../service/sseConnection";
+import { routes } from "../../service/apiRoutes";
 import { useTeamFilters } from "./hooks/useTeamFilters";
 import "./AdminPage.css";
 
@@ -85,6 +88,34 @@ function AdminPage() {
         setMustChangePassword(result.data.mustChangePassword === true);
       }
     });
+
+    const connection = createSseConnection({
+      url: routes.SEND_VOTE,
+      onMessage: (event, isActive) => {
+        const data = JSON.parse(event.data);
+
+        if (!isActive() || !data.voteUpdate || !data.teamID) {
+          return;
+        }
+
+        const updatedTeamId = String(data.teamID);
+        setTeams((currentTeams) =>
+          currentTeams.map((team) =>
+            String(team._id) === updatedTeamId
+              ? { ...team, nyes: data.nyes, nno: data.nno }
+              : team
+          )
+        );
+        setPresentingTeam((currentTeam) =>
+          currentTeam && String(currentTeam._id) === updatedTeamId
+            ? { ...currentTeam, nyes: data.nyes, nno: data.nno }
+            : currentTeam
+        );
+      },
+    });
+
+    connection.start();
+    return () => connection.stop();
   }, []);
 
   const handleChangePassword = async (event) => {
@@ -192,6 +223,17 @@ function AdminPage() {
     if (result.success) {
       showNotification("success", result.data.message);
       fetchData();
+    } else {
+      showNotification("error", result.error);
+    }
+  };
+
+  const handleStartVoting = async () => {
+    const result = await startVoting();
+
+    if (result.success) {
+      showNotification("success", result.data.message);
+      await fetchData();
     } else {
       showNotification("error", result.error);
     }
@@ -536,6 +578,7 @@ function AdminPage() {
           </h3>
           <PresentingTeamCard
             team={presentingTeam}
+            onStartVoting={handleStartVoting}
             onStopPresenting={handleStopPresenting}
           />
         </div>

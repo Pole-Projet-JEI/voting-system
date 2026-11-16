@@ -34,7 +34,13 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
     transactionStarted = true;
 
     const presentingTeam = await Team.findOne(
-      { _id: teamId, presenting: true },
+      {
+        _id: teamId,
+        $or: [
+          { state: "voting" },
+          { state: { $exists: false }, presenting: true },
+        ],
+      },
       { _id: 1 },
       { session }
     ).lean();
@@ -78,7 +84,13 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
     }
 
     const teamUpdate = await Team.updateOne(
-      { _id: teamId, presenting: true },
+      {
+        _id: teamId,
+        $or: [
+          { state: "voting" },
+          { state: { $exists: false }, presenting: true },
+        ],
+      },
       { $inc: { [vote === "yes" ? "nyes" : "nno"]: 1 } },
       { session }
     );

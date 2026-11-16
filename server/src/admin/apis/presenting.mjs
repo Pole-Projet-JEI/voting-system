@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   changePresentingTeam,
   getCurrentPresentingTeam,
+  startVoting,
   stopPresenting,
 } from "../services/presentingService.mjs";
 import { requireAdmin } from "../middleware/requireAdmin.mjs";
@@ -24,6 +25,9 @@ route.post("/api/admin/presenting", requireAdmin, async (req, res) => {
       }
       if (result.error.includes("already presented")) {
         return res.status(400).json({ message: "Team has already presented" });
+      }
+      if (result.error.includes("Another team is currently presenting")) {
+        return res.status(400).json({ message: result.error });
       }
       return res.status(500).json({ message: "Unable to change presenting team" });
     }
@@ -61,6 +65,27 @@ route.get("/api/admin/presenting", requireAdmin, async (req, res) => {
     return res.status(500).json({
       message: "Internal Server Error",
     });
+  }
+});
+
+route.post("/api/admin/presenting/voting", requireAdmin, async (req, res) => {
+  try {
+    const team = await startVoting();
+
+    if (!team) {
+      return res.status(400).json({
+        message: "No team is currently presenting",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Voting is now open for "${team.teamName}"`,
+      team,
+    });
+  } catch (error) {
+    console.error("Error starting voting:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 });
 

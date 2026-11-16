@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Copy package.json and package-lock.json (or yarn.lock) to install dependencies first
 COPY --chown=node:node package*.json ./
+RUN chown node:node /app
 USER node
 RUN npm install
 

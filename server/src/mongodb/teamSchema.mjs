@@ -30,6 +30,12 @@ const teamSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    state: {
+      type: String,
+      enum: ["pending", "presenting", "voting", "ended"],
+      default: "pending",
+      index: true,
+    },
     presentedAt: {
       type: Date,
       default: null, // when was this team presented? we need it
