@@ -20,18 +20,16 @@ export async function changePresentingTeam(newTeamId) {
       presenting: true,
     }).session(session);
 
+    if (
+      currentPresentingTeam &&
+      currentPresentingTeam._id.toString() !== teamToPresent._id.toString()
+    ) {
+      throw new Error("Another team is currently presenting");
+    }
+
     if (currentPresentingTeam) {
-      await Team.updateOne(
-        { _id: currentPresentingTeam._id },
-        {
-          $set: {
-            presenting: false,
-            presented: true,
-            presentedAt: new Date(),
-          },
-        },
-        { session }
-      );
+      await session.commitTransaction();
+      return currentPresentingTeam;
     }
 
     const newPresentingTeam = await Team.findOneAndUpdate(
@@ -39,6 +37,7 @@ export async function changePresentingTeam(newTeamId) {
       {
         $set: {
           presenting: true,
+          state: "presenting",
         },
       },
       { session, new: true }
@@ -62,16 +61,29 @@ export async function changePresentingTeam(newTeamId) {
 }
 
 export async function getCurrentPresentingTeam() {
-  return await Team.findOne({ presenting: true });
+  return await Team.findOne({
+    $or: [{ state: { $in: ["presenting", "voting"] } }, { presenting: true }],
+  });
+}
+
+export async function startVoting() {
+  return await Team.findOneAndUpdate(
+    {
+      $or: [{ state: "presenting" }, { presenting: true, presented: false }],
+    },
+    { $set: { state: "voting", presenting: true } },
+    { new: true }
+  );
 }
 
 export async function stopPresenting() {
   return await Team.findOneAndUpdate(
-    { presenting: true },
+    { $or: [{ state: { $in: ["presenting", "voting"] } }, { presenting: true }] },
     {
       $set: {
         presenting: false,
         presented: true,
+        state: "ended",
         presentedAt: new Date(),
       },
     },

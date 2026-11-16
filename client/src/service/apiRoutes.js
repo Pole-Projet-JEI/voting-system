@@ -18,6 +18,7 @@ const routes = {
   ADMIN_PASSWORD: baseURL + "admin/password",
   ADMIN_TEAMS: baseURL + "admin/teams",
   ADMIN_PRESENTING: baseURL + "admin/presenting",
+  ADMIN_START_VOTING: baseURL + "admin/presenting/voting",
   ADMIN_TEAM: baseURL + "admin/team",
   ADMIN_TEAM_BY_ID: baseURL + "admin/team/:id",
 };

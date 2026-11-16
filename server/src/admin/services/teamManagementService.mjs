@@ -8,6 +8,7 @@ export async function createTeam(teamName, description = "") {
     nno: 0,
     presented: false,
     presenting: false,
+    state: "pending",
   });
 
   return newTeam;
@@ -28,13 +29,14 @@ export async function deleteTeam(teamId) {
     _id: teamId,
     presenting: false,
     presented: false,
+    state: "pending",
   });
 
   if (deletedTeam) {
     return deletedTeam;
   }
 
-  const team = await Team.findById(teamId).select("presenting presented");
+  const team = await Team.findById(teamId).select("presenting presented state");
 
   if (!team) {
     return null;

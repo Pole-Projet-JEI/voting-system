@@ -116,6 +116,18 @@ export const stopPresentingTeam = async () => {
   }
 };
 
+export const startVoting = async () => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_START_VOTING);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to start voting",
+    };
+  }
+};
+
 export const createTeam = async (teamName, description = "") => {
   try {
     const response = await adminClient.post(routes.ADMIN_TEAM, {

@@ -6,9 +6,13 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { StopCircle } from "lucide-react";
+import { Play, StopCircle } from "lucide-react";
 
-export const PresentingTeamCard = ({ team, onStopPresenting }) => {
+export const PresentingTeamCard = ({
+  team,
+  onStartVoting,
+  onStopPresenting,
+}) => {
   if (!team) {
     return (
       <p className="text-center py-8 text-sm text-slate-400 italic">
@@ -16,6 +20,7 @@ export const PresentingTeamCard = ({ team, onStopPresenting }) => {
       </p>
     );
   }
+  const teamState = team.state || (team.presenting ? "voting" : "presenting");
 
   return (
     <Card className="bg-white/15 border-white/20 text-white backdrop-blur">
@@ -26,6 +31,11 @@ export const PresentingTeamCard = ({ team, onStopPresenting }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <p className="text-center text-sm text-slate-200">
+          {teamState === "voting"
+            ? "Voting is open"
+            : "Presentation in progress"}
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3 text-center">
             <div className="text-xs text-green-200 uppercase mb-1">Yes</div>
@@ -36,14 +46,25 @@ export const PresentingTeamCard = ({ team, onStopPresenting }) => {
             <div className="text-2xl font-bold">{team.nno}</div>
           </div>
         </div>
-        <Button
-          onClick={onStopPresenting}
-          variant="destructive"
-          className="w-full cursor-pointer hover:opacity-80 transition-opacity"
-        >
-          <StopCircle className="mr-2 h-4 w-4" />
-          Stop Presenting
-        </Button>
+        <div className="flex gap-2">
+          {teamState !== "voting" && (
+            <Button
+              onClick={onStartVoting}
+              className="flex-1 bg-green-600 hover:bg-green-700 cursor-pointer"
+            >
+              <Play className="mr-2 h-4 w-4" />
+              Start Voting
+            </Button>
+          )}
+          <Button
+            onClick={onStopPresenting}
+            variant="destructive"
+            className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            <StopCircle className="mr-2 h-4 w-4" />
+            End
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

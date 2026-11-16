@@ -5,7 +5,9 @@ const route = Router();
 
 route.get("/api/currentteam", async (req, res) => {
   try {
-    const presentingTeam = await Team.findOne({ presenting: true });
+    const presentingTeam = await Team.findOne({
+      $or: [{ state: { $in: ["presenting", "voting"] } }, { presenting: true }],
+    });
 
     if (!presentingTeam) {
       return res.status(200).json({
@@ -20,6 +22,7 @@ route.get("/api/currentteam", async (req, res) => {
       teamID: presentingTeam._id,
       teamName: presentingTeam.teamName,
       description: presentingTeam.description,
+      state: presentingTeam.state || (presentingTeam.presenting ? "voting" : "pending"),
     });
   } catch (error) {
     console.error("Error in /api/currentteam:", error);
