@@ -12,9 +12,7 @@ const teamId = "507f1f77bcf86cd799439011";
 const participantToken = "a".repeat(64);
 
 const createSession = () => ({
-  startTransaction() {},
-  async commitTransaction() {},
-  async abortTransaction() {},
+  async withTransaction(callback) { return callback(); },
   async endSession() {},
 });
 

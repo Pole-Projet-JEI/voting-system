@@ -25,14 +25,16 @@ const createResponse = () => ({
 });
 
 const createSession = (events) => ({
-  startTransaction() {
+  async withTransaction(callback) {
     events.push("start");
-  },
-  async commitTransaction() {
-    events.push("commit");
-  },
-  async abortTransaction() {
-    events.push("abort");
+    try {
+      const result = await callback();
+      events.push("commit");
+      return result;
+    } catch (error) {
+      events.push("abort");
+      throw error;
+    }
   },
   async endSession() {
     events.push("end");
@@ -193,7 +195,7 @@ test("concurrent requests can commit only one vote", async () => {
           claimed = true;
           return { _id: "voter-id", votes: new Map() };
         },
-        findById: async () => ({ votes: new Map() }),
+        findById: async () => ({ votes: new Map([[teamId, { vote: "yes" }]]) }),
       }],
     ],
     async () => {
@@ -205,8 +207,140 @@ test("concurrent requests can commit only one vote", async () => {
       );
 
       assert.equal(responses.filter((res) => res.statusCode === 200).length, 1);
-      assert.equal(responses.filter((res) => res.statusCode === 404).length, 1);
+      assert.equal(responses.filter((res) => res.statusCode === 400).length, 1);
+      assert.equal(responses.find((res) => res.statusCode === 400).body.existingVote, "yes");
       assert.equal(teamUpdates, 1);
+    }
+  );
+});
+
+test("multiple voters update persisted vote records and team totals once each", async () => {
+  const persistedVotes = new Map();
+  const teamTotals = { nyes: 0, nno: 0 };
+  const requests = [
+    { ...createRequest("yes"), voter: { _id: "voter-1" } },
+    { ...createRequest("no"), voter: { _id: "voter-2" } },
+    { ...createRequest("yes"), voter: { _id: "voter-3" } },
+    { ...createRequest("no"), voter: { _id: "voter-4" } },
+    { ...createRequest("yes"), voter: { _id: "voter-5" } },
+  ];
+
+  await withMocks(
+    [
+      [mongoose, { startSession: async () => createSession([]) }],
+      [Team, {
+        findOne: () => presentingTeamQuery(),
+        updateOne: async (_filter, update) => {
+          teamTotals.nyes += update.$inc.nyes ?? 0;
+          teamTotals.nno += update.$inc.nno ?? 0;
+          return { matchedCount: 1 };
+        },
+      }],
+      [Voter, {
+        findOneAndUpdate: async (filter, update) => {
+          const voter = filter._id;
+          if (persistedVotes.has(voter)) return null;
+          const value = update.$set[`votes.${teamId}`];
+          persistedVotes.set(voter, value);
+          return { _id: voter, votes: new Map([[teamId, value]]) };
+        },
+        findById: async (voter) => ({
+          votes: persistedVotes.has(voter)
+            ? new Map([[teamId, persistedVotes.get(voter)]])
+            : new Map(),
+        }),
+      }],
+    ],
+    async () => {
+      const responses = await Promise.all(requests.map(async (request) => {
+        const response = createResponse();
+        await voteHandler(request, response);
+        return response;
+      }));
+
+      assert.equal(responses.filter((response) => response.statusCode === 200).length, 5);
+      assert.equal(persistedVotes.size, 5);
+      assert.equal(teamTotals.nyes, [...persistedVotes.values()].filter((entry) => entry.vote === "yes").length);
+      assert.equal(teamTotals.nno, [...persistedVotes.values()].filter((entry) => entry.vote === "no").length);
+      assert.equal(teamTotals.nyes + teamTotals.nno, persistedVotes.size);
+    }
+  );
+});
+
+test("transient conflict retries the whole transaction without double counting", async () => {
+  let callbackAttempts = 0;
+  let voteRegistrations = 0;
+  let nyes = 0;
+  const transient = new Error("write conflict");
+  transient.errorLabels = ["TransientTransactionError"];
+
+  await withMocks(
+    [
+      [mongoose, { startSession: async () => ({
+        async withTransaction(callback) {
+          for (;;) {
+            callbackAttempts += 1;
+            try {
+              const result = await callback();
+              return result;
+            } catch (error) {
+              if (!error.hasErrorLabel?.("TransientTransactionError")) throw error;
+            }
+          }
+        },
+        async endSession() {},
+      }) }],
+      [Team, {
+        findOne: () => presentingTeamQuery(),
+        updateOne: async () => {
+          if (callbackAttempts === 1) throw transient;
+          nyes += 1;
+          return { matchedCount: 1 };
+        },
+      }],
+      [Voter, {
+        findOneAndUpdate: async () => {
+          voteRegistrations += 1;
+          return { _id: "voter-id", votes: new Map() };
+        },
+      }],
+    ],
+    async () => {
+      transient.hasErrorLabel = (label) => transient.errorLabels.includes(label);
+      const res = createResponse();
+      await voteHandler(createRequest(), res);
+
+      assert.equal(res.statusCode, 200);
+      assert.equal(callbackAttempts, 2);
+      assert.equal(voteRegistrations, 2, "registration is repeated as part of the full retry");
+      assert.equal(nyes, 1, "only the successful transaction contributes to the counter");
+    }
+  );
+});
+
+test("permanent transaction errors are not retried and client details stay hidden", async () => {
+  let callbackAttempts = 0;
+  const permanent = new Error("private database detail");
+
+  await withMocks(
+    [
+      [mongoose, { startSession: async () => ({
+        async withTransaction(callback) {
+          callbackAttempts += 1;
+          return callback();
+        },
+        async endSession() {},
+      }) }],
+      [Team, { findOne: () => presentingTeamQuery(), updateOne: async () => { throw permanent; } }],
+      [Voter, { findOneAndUpdate: async () => ({ _id: "voter-id", votes: new Map() }) }],
+    ],
+    async () => {
+      const res = createResponse();
+      await voteHandler(createRequest(), res);
+      assert.equal(res.statusCode, 500);
+      assert.equal(callbackAttempts, 1);
+      assert.equal("error" in res.body, false);
+      assert.equal(JSON.stringify(res.body).includes("private database detail"), false);
     }
   );
 });
