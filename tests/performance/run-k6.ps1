@@ -56,5 +56,7 @@ if ($Suite -eq 'voting') {
   }
   & k6 run @k6Env @summaryArgs $scriptPath
   $k6Code = $LASTEXITCODE
+  $diagnosticPath = Join-Path $PSScriptRoot ".test-data\backend-logs-$($env:TEST_RUN_ID)-$Suite.txt"
+  & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color --since 2h --tail 5000 backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
   if ($k6Code -ne 0) { throw "k6 $Suite run failed." }
 }

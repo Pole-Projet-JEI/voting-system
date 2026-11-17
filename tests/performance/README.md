@@ -51,7 +51,7 @@ First set the values in `.env.performance`. The scripts load those values, run t
 .\tests\performance\run-k6.ps1 sse
 ```
 
-The `voting` wrapper also runs the read-only database audit against the k6 JSON-lines output and saves backend logs beside the summary. The audit must pass as well as k6 thresholds for the wrapper to return success. For each fresh voting profile database, `prepare-voting-profile.ps1` creates a unique team, opens voting, and records its ID in the private performance environment file; then `prepare-voters.ps1` provisions distinct sessions for that run.
+The `voting` wrapper also runs the read-only database audit against the k6 JSON-lines output. All suite runners save backend logs beside the summary. The audit must pass as well as k6 thresholds for the wrapper to return success. For each fresh voting profile database, `prepare-voting-profile.ps1` creates a unique team, opens voting, and records its ID in the private performance environment file; then `prepare-voters.ps1` provisions distinct sessions for that run.
 
 ### Authentication and rate-limit modes
 
