@@ -31,7 +31,8 @@ $k6Env = @(
   '--env', "SSE_VUS=$env:SSE_VUS",
   '--env', "SSE_TIMEOUT=$env:SSE_TIMEOUT",
   '--env', "SSE_EXPECT_LIMIT=$env:SSE_EXPECT_LIMIT",
-  '--env', "SSE_MAX_CONNECTIONS=$env:SSE_MAX_CONNECTIONS"
+  '--env', "SSE_MAX_CONNECTIONS=$env:SSE_MAX_CONNECTIONS",
+  '--env', "SSE_HEARTBEATS=$env:SSE_HEARTBEATS"
 )
 if ($Suite -eq 'voting') {
   $out = "tests/performance/.test-data/vote-output-$($env:TEST_RUN_ID).jsonl"
@@ -39,8 +40,23 @@ if ($Suite -eq 'voting') {
   $k6Code = $LASTEXITCODE
   & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" exec --env "TEAM_ID=$env:TEAM_ID" --env "SESSION_FILE=/run/perf/sessions-$($env:TEST_RUN_ID).json" --env "VOTE_OUTPUT_FILE=/run/perf/vote-output-$($env:TEST_RUN_ID).jsonl" -T backend node /perf/verify-votes.mjs
   $auditCode = $LASTEXITCODE
+  $diagnosticPath = Join-Path $PSScriptRoot ".test-data\backend-logs-$($env:TEST_RUN_ID)-voting.txt"
+  & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color --since 2h --tail 5000 backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
   if ($k6Code -ne 0 -or $auditCode -ne 0) { throw "Voting run or read-only database audit failed (k6=$k6Code, audit=$auditCode)." }
 } else {
+  if ($Suite -eq 'sse') {
+    $env:TARGET_RECEIPT = Join-Path $PSScriptRoot ".test-data\target-$($env:TEST_RUN_ID).json"
+    $env:SSE_SUMMARY_PATH = Join-Path $PSScriptRoot ".test-data\sse-summary-$($env:TEST_RUN_ID).json"
+    & node "$PSScriptRoot\sse-stream.mjs"
+    $sseCode = $LASTEXITCODE
+    $diagnosticPath = Join-Path $PSScriptRoot ".test-data\backend-logs-$($env:TEST_RUN_ID)-sse.txt"
+    & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color --since 5m --tail 500 backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
+    if ($sseCode -ne 0) { throw 'Incremental SSE stream test failed.' }
+    return
+  }
   & k6 run @k6Env @summaryArgs $scriptPath
-  if ($LASTEXITCODE -ne 0) { throw "k6 $Suite run failed." }
+  $k6Code = $LASTEXITCODE
+  $diagnosticPath = Join-Path $PSScriptRoot ".test-data\backend-logs-$($env:TEST_RUN_ID)-$Suite.txt"
+  & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color --since 2h --tail 5000 backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
+  if ($k6Code -ne 0) { throw "k6 $Suite run failed." }
 }

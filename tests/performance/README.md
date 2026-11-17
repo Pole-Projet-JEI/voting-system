@@ -1,6 +1,6 @@
 # Voting system performance suite
 
-This directory contains k6 API load tests, a bounded SSE connection probe, and read-only vote-result auditing. The suite is restricted to the dedicated local Compose deployment described here. It does not accept the normal API ports or a public hostname.
+This directory contains k6 API load tests, an event-driven SSE stream test, and read-only vote-result auditing. The suite is restricted to the dedicated local Compose deployment described here. It does not accept the normal API ports or a public hostname.
 
 ## Safe local test environment
 
@@ -51,7 +51,7 @@ First set the values in `.env.performance`. The scripts load those values, run t
 .\tests\performance\run-k6.ps1 sse
 ```
 
-The `voting` wrapper also runs the read-only database audit against the k6 JSON-lines output. The audit must pass as well as k6 thresholds for the wrapper to return success.
+The `voting` wrapper also runs the read-only database audit against the k6 JSON-lines output. All suite runners save backend logs beside the summary. The audit must pass as well as k6 thresholds for the wrapper to return success. For each fresh voting profile database, `prepare-voting-profile.ps1` creates a unique team, opens voting, and records its ID in the private performance environment file; then `prepare-voters.ps1` provisions distinct sessions for that run.
 
 ### Authentication and rate-limit modes
 
@@ -89,13 +89,13 @@ Use a new run ID/database and a fresh team for each benchmark. The audit detects
 
 Dashboard/admin reads authenticate once in k6 setup, extract `adminToken` from k6’s structured cookie object, and verify that cookie against `/api/admin/teams` before starting. The token is shared among read VUs; the scripts do not log out or change passwords. For state-transition testing, set `ADMIN_TRANSITIONS=true`, `TEAM_ID` and `NEXT_TEAM_ID` to two fresh pending test teams, and ensure no team is currently presenting. A single VU serially selects, attempts a conflicting presenter switch, starts voting, and completes the presentation. It verifies response bodies and `/api/admin/teams` state after each operation, including exactly one presenter before completion and zero afterward. This mutates fixture state; run only on the dedicated test database. Concurrent selection tests are not implemented.
 
-`/api/admin/teams` is the implemented aggregate endpoint; there is no separate statistics route. `statistics.js` validates response structure and numeric counters during concurrent reads. Exact consistency is established by the post-vote audit, not an operator-entered total.
+`/api/admin/teams` is the implemented aggregate endpoint; there is no separate statistics route. `statistics.js` validates response structure and numeric counters during concurrent reads. For the soak profile it waits one second between reads, sustaining a bounded read workload for the profile duration. Exact consistency is established by the post-vote audit, not an operator-entered total.
 
-### SSE probe
+### SSE stream test
 
-`sse.js` is explicitly a bounded **connection probe**, not a complete SSE test. It uses a per-VU one-iteration executor, so `SSE_VUS` means that many concurrent connection attempts. Set `SSE_TIMEOUT` above the configured heartbeat interval. Because the API intentionally leaves the stream open and synchronous k6 HTTP only returns after body completion or timeout, this probe checks the response status/content type and reports `sse_connections_established`; it has no heartbeat/event assertions and no general HTTP-failure threshold that treats the intentional timeout as an error.
+The k6 extension was evaluated with k6 2.4.0 and its resolved `xk6-sse` v0.2.0 module. The extension's client object did not expose either documented JavaScript event-handler method in the runtime, so the harness uses `sse-stream.mjs`, a Node.js incremental `fetch()`/`ReadableStream` client. It launches all configured connections concurrently, parses frames as bytes arrive, validates HTTP 200 and `text/event-stream`, receives the initial `connected` event, and keeps accepted streams open until the configured server heartbeat comments arrive. It then cancels each reader and confirms capacity release with a follow-up streamed connection. No fixed sleep is used to infer stream activity. The JSON summary records request/status counts, event/heartbeat counts, connection and stream latency distributions, timeouts, server errors, unexpected disconnects, check pass rate, cleanup results, and the capacity probe. For explicit cap tests it validates the 503 response body as well as status.
 
-For an explicit cap probe, set `SSE_EXPECT_LIMIT=true`, set `SSE_MAX_CONNECTIONS` to the backend setting, and set `SSE_VUS` above it. The script expects exactly the configured number of 200 stream headers and 503 cap responses for the remainder. Run on a quiet dedicated instance. This does not validate heartbeat timing, event reception, cleanup, or reconnect. Real stream behavior needs an incremental SSE client harness: hold sockets open, parse lines as they arrive, trigger a controlled update, observe heartbeat intervals, close sockets abruptly, and verify a new connection can use released capacity. The endpoint has no event ID or server timestamp, so replay de-duplication and server-clock delivery latency remain unsupported.
+Set `SSE_HEARTBEATS` to the number of heartbeat comments required before a planned close (default 1); expected duration follows the configured server heartbeat interval. Set `SSE_TIMEOUT` longer than the expected heartbeat interval plus 5 seconds. For a connection-cap probe, set `SSE_EXPECT_LIMIT=true`, `SSE_MAX_CONNECTIONS` to the backend cap, and `SSE_VUS` above it, on an otherwise quiet dedicated instance. The test expects exactly the allowed number of 200 streams and 503 responses with the expected JSON message for excess attempts. The endpoint has no event ID or server timestamp; replay de-duplication and server-clock delivery latency remain unsupported. There is no public server-side connection-count endpoint; backend logs show accepted connection counts, and the post-close capacity probe verifies that the server releases at least one slot.
 
 ## Endpoint inventory (checked against backend source)
 
@@ -127,6 +127,6 @@ The admin middleware returns 401 when no cookie is supplied and 403 when a token
 - k6 cannot verify recorded ballots by response alone; a dedicated test Mongo database and matching private session fixture are prerequisites for the required post-run audit.
 - Authentication throughput is deliberately bounded by the implemented registration rate limit (five requests per IP per 15 minutes). No test-only security override exists.
 - Admin login is limited to three attempts per IP per 15 minutes; repeated script setup logins may require waiting or restarting the dedicated backend.
-- SSE heartbeat/event delivery, reconnect semantics, and streaming stability are not tested by `sse.js`; only bounded connection attempts/cap responses are measured.
+- SSE uses the Node.js streaming alternative because the resolved k6 extension did not expose its documented client event API. Automatic reconnect and server-clock delivery latency are not tested; the endpoint has no event ID or timestamp.
 - The admin transition test is serialized. Concurrent conflicting admin state changes are intentionally not generated.
 - Default thresholds are starting values, not production capacity claims.
