@@ -52,6 +52,14 @@ if (process.env.VOTING_TRANSACTION_DIAGNOSTICS === "true") {
 const corsOptions = createCorsOptions({ nodeEnv: NODE_ENV });
 
 const app = express();
+// Requests arrive through host nginx and the frontend nginx container. Trust
+// only private/loopback hops so req.ip is the real client address (used by
+// the rate limiters); a client cannot spoof it because the walk stops at the
+// first public address.
+app.set(
+  "trust proxy",
+  process.env.TRUST_PROXY || "loopback, linklocal, uniquelocal"
+);
 app.use(cors(corsOptions));
 
 app.use(express.json());

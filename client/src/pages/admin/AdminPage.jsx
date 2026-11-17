@@ -93,7 +93,7 @@ function AdminPage() {
     });
 
     const connection = createSseConnection({
-      url: routes.SEND_VOTE,
+      url: routes.ADMIN_SEND_VOTE,
       onMessage: (event, isActive) => {
         const data = JSON.parse(event.data);
 

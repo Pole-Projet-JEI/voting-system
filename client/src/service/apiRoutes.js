@@ -24,6 +24,7 @@ const routes = {
   ADMIN_TEAM_BY_ID: baseURL + "admin/team/:id",
   ADMIN_GEOFENCE: baseURL + "admin/geofence",
   ADMIN_RESULTS: baseURL + "admin/results",
+  ADMIN_SEND_VOTE: baseURL + "admin/sendvote",
 };
 
 export { baseURL, routes };

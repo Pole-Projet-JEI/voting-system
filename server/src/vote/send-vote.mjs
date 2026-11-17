@@ -1,5 +1,6 @@
 import { Router } from "express";
 import Team from "../mongodb/teamSchema.mjs";
+import { requireAdmin } from "../admin/middleware/requireAdmin.mjs";
 
 const route = Router();
 const pipeline = [
@@ -284,16 +285,22 @@ export const createSseClientRegistry = ({
   };
 };
 
+// Voters only receive team state changes. Live vote counts go to the admin
+// stream only, so voters cannot watch the tally while voting (and 600 phones
+// are not sent a message for every single vote).
 const clients = createSseClientRegistry();
+const adminClients = createSseClientRegistry({ maxConnections: 20 });
 
-const broadcastChange = (change) => {
+export const routeChangeMessage = (change) => {
   let data;
+  let adminOnly = false;
   if (
     (change.fullDocument?.state === "voting" ||
       (!change.fullDocument?.state && change.fullDocument?.presenting === true)) &&
     (change.updateDescription?.updatedFields?.nyes !== undefined ||
       change.updateDescription?.updatedFields?.nno !== undefined)
   ) {
+    adminOnly = true;
     data = JSON.stringify({
       voteUpdate: true,
       teamID: change.fullDocument._id,
@@ -320,8 +327,17 @@ const broadcastChange = (change) => {
     data = JSON.stringify({ teamID: null, teamName: null, stopped: true });
   }
 
-  if (data) {
-    clients.broadcast(data);
+  return data ? { data, adminOnly } : null;
+};
+
+const broadcastChange = (change) => {
+  const message = routeChangeMessage(change);
+  if (!message) {
+    return;
+  }
+  adminClients.broadcast(message.data);
+  if (!message.adminOnly) {
+    clients.broadcast(message.data);
   }
 };
 
@@ -332,11 +348,14 @@ const streamManager = createChangeStreamManager({
 
 export const initializeChangeStream = () => streamManager.start();
 export const shutdownChangeStream = () => streamManager.shutdown();
-export const shutdownSseClients = () => clients.closeAll();
+export const shutdownSseClients = () => {
+  clients.closeAll();
+  adminClients.closeAll();
+};
 
-route.get("/api/sendvote", async (req, res) => {
+const openStream = (registry, label) => async (req, res) => {
   try {
-    if (!clients.add(req, res)) {
+    if (!registry.add(req, res)) {
       return res.status(503).json({
         message: "SSE connection limit reached",
       });
@@ -347,17 +366,18 @@ route.get("/api/sendvote", async (req, res) => {
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
 
-    console.log(`Client connected. Total clients: ${clients.size}`);
+    console.log(`${label} connected. Total: ${registry.size}`);
     res.write(`data: ${JSON.stringify({ connected: true })}\n\n`);
   } catch (error) {
-    clients.remove(res);
-    console.error("Error in /api/sendvote:", error);
+    registry.remove(res);
+    console.error(`Error in ${label} stream:`, error);
     if (!res.headersSent) {
-      return res
-        .status(500)
-        .json({ message: "Internal Server Error", error: error.message });
+      return res.status(500).json({ message: "Internal Server Error" });
     }
   }
-});
+};
+
+route.get("/api/sendvote", openStream(clients, "SSE client"));
+route.get("/api/admin/sendvote", requireAdmin, openStream(adminClients, "Admin SSE client"));
 
 export default route;

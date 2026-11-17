@@ -226,3 +226,27 @@ test("unrecoverable change stream errors are surfaced without retrying", async (
     await manager.shutdown();
   }
 });
+
+test("vote counts are routed to the admin stream only; state changes go to everyone", async () => {
+  const { routeChangeMessage } = await import("../src/vote/send-vote.mjs");
+
+  const voteChange = routeChangeMessage({
+    fullDocument: { _id: "t1", state: "voting", nyes: 3, nno: 1 },
+    updateDescription: { updatedFields: { nyes: 3 } },
+  });
+  assert.equal(voteChange.adminOnly, true);
+  assert.match(voteChange.data, /voteUpdate/);
+
+  const stateChange = routeChangeMessage({
+    fullDocument: { _id: "t1", teamName: "A", state: "voting", nyes: 0, nno: 0 },
+    updateDescription: { updatedFields: { state: "voting" } },
+  });
+  assert.equal(stateChange.adminOnly, false);
+  assert.doesNotMatch(stateChange.data, /nyes/);
+});
+
+test("the admin vote stream requires an admin", async () => {
+  const sendVoteRouter = (await import("../src/vote/send-vote.mjs")).default;
+  const layer = sendVoteRouter.stack.find((entry) => entry.route?.path === "/api/admin/sendvote");
+  assert.equal(layer.route.stack[0].handle.name, "requireAdmin");
+});
