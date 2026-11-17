@@ -40,6 +40,12 @@ const sessionSecret = process.env.SESSION_SECRET;
 
 console.log(`Starting server in ${NODE_ENV} mode`);
 console.log(` Host: ${HOST}`);
+if (process.env.VOTING_TRANSACTION_DIAGNOSTICS === "true") {
+  console.log(JSON.stringify({
+    event: "performance_source_revision",
+    sourceRevision: process.env.EXPECTED_SOURCE_REVISION || "unknown",
+  }));
+}
 
 const corsOptions = createCorsOptions({ nodeEnv: NODE_ENV });
 

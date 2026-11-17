@@ -1,0 +1,7 @@
+.git
+**/node_modules
+**/.env
+**/.env.*
+server/private
+client
+tests

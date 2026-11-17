@@ -40,3 +40,5 @@ temp/
 *.tmp
 
 .env
+tests/performance/.env.performance
+tests/performance/.test-data/
