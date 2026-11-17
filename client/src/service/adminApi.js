@@ -168,3 +168,27 @@ export const deleteTeam = async (teamId) => {
     };
   }
 };
+
+export const getGeofenceSettings = async () => {
+  try {
+    const response = await adminClient.get(routes.ADMIN_GEOFENCE);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to load location settings",
+    };
+  }
+};
+
+export const updateGeofenceSettings = async (settings) => {
+  try {
+    const response = await adminClient.put(routes.ADMIN_GEOFENCE, settings);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to save location settings",
+    };
+  }
+};

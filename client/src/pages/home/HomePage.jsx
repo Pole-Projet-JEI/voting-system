@@ -9,7 +9,9 @@ import {
   getCurrentTeam,
   voteForId,
   checkConnection,
+  getGeofenceStatus,
 } from "../../service/userApi";
+import { getCurrentLocation } from "../../service/geolocation";
 import { routes } from "../../service/apiRoutes";
 import { createSseConnection } from "../../service/sseConnection";
 
@@ -47,6 +49,7 @@ export default function HomePage() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [pageError, setPageError] = useState("");
   const [voteError, setVoteError] = useState("");
+  const [submitStatus, setSubmitStatus] = useState(null); // null | 'locating' | 'sending'
   const navigate = useNavigate();
 
   const fetchTeam = async () => {
@@ -107,7 +110,34 @@ export default function HomePage() {
       return;
     }
 
-    const response = await voteForId(state.teamId, { vote: state.userVote });
+    if (submitStatus) {
+      return;
+    }
+
+    const payload = { vote: state.userVote };
+
+    // Read the setting at submit time so an admin can switch the location
+    // check on or off during the event.
+    const geofence = await getGeofenceStatus();
+    if (!geofence.success) {
+      setVoteError("Unable to connect to the server. Please try again.");
+      return;
+    }
+
+    if (geofence.data.enabled) {
+      setSubmitStatus("locating");
+      const position = await getCurrentLocation();
+      if (!position.success) {
+        setSubmitStatus(null);
+        setVoteError(position.error);
+        return;
+      }
+      payload.location = position.location;
+    }
+
+    setSubmitStatus("sending");
+    const response = await voteForId(state.teamId, payload);
+    setSubmitStatus(null);
 
     if (response.success) {
       if (response.data.voted) {
@@ -122,6 +152,11 @@ export default function HomePage() {
           ? "Unable to connect to the server. Please try again."
           : response.error || "Failed to submit vote. Please try again."
       );
+      if (response.errorCode === "OUTSIDE_VENUE") {
+        setVoteError(
+          "Your phone reports that you are outside the venue. Move inside the room, turn on precise location / GPS, and try again."
+        );
+      }
     }
   };
 
@@ -233,9 +268,13 @@ export default function HomePage() {
         <button
           type="submit"
           className="submit-vote-button"
-          disabled={!state.userVote}
+          disabled={!state.userVote || Boolean(submitStatus)}
         >
-          Submit Vote
+          {submitStatus === "locating"
+            ? "Checking your location..."
+            : submitStatus === "sending"
+              ? "Submitting..."
+              : "Submit Vote"}
         </button>
       </form>
       {/* <p style={{ fontSize: '1.5em', fontWeight: '700' }}>01:45</p> */}

@@ -8,6 +8,7 @@ const routes = {
   VOTE: baseURL + "vote/:id",
   GET_CURRENT_VOTE: baseURL + "currentteam",
   HAS_VOTED: baseURL + "hasvoted",
+  GEOFENCE: baseURL + "geofence",
 
 
   // Admin routes
@@ -21,6 +22,7 @@ const routes = {
   ADMIN_START_VOTING: baseURL + "admin/presenting/voting",
   ADMIN_TEAM: baseURL + "admin/team",
   ADMIN_TEAM_BY_ID: baseURL + "admin/team/:id",
+  ADMIN_GEOFENCE: baseURL + "admin/geofence",
 };
 
 export { baseURL, routes };

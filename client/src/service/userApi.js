@@ -52,6 +52,7 @@ export const voteForId = async (id, voteData) => {
     return {
       success: false,
       error: error.response?.data?.message || `Failed to vote for ID ${id}`,
+      errorCode: error.response?.data?.code,
       networkError: !error.response,
     };
   }
@@ -77,6 +78,18 @@ export const didUserVote = async () => {
     return {
       success: false,
       error: error.response?.data?.message || "Failed to check vote status",
+    };
+  }
+};
+
+export const getGeofenceStatus = async () => {
+  try {
+    const response = await apiClient.get(routes.GEOFENCE);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to load location settings",
     };
   }
 };

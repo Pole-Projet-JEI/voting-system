@@ -7,6 +7,12 @@ import registerRouter from "../src/register/register.mjs";
 import { requireAuth } from "../src/middleware/auth-cookie.mjs";
 import votingRouter from "../src/vote/voting.mjs";
 import { hashVoterCode } from "../src/mongodb/voter-code.mjs";
+import GeofenceSettings from "../src/mongodb/geofenceSchema.mjs";
+
+// These tests cover auth/ballot rules. If any test runs the venue location
+// check, keep it unconfigured (disabled). Geofence behavior is covered in
+// geofence.test.mjs.
+GeofenceSettings.findOne = () => ({ lean: async () => null });
 
 const teamId = "507f1f77bcf86cd799439011";
 const participantToken = "a".repeat(64);
@@ -179,7 +185,7 @@ test("a valid participant session authenticates and records one vote", async () 
       await voteHandlers[0](req, res, () => {
         nextCalled = true;
       });
-      await voteHandlers[1](req, res);
+      await voteHandlers.at(-1)(req, res);
 
       assert.equal(nextCalled, true);
       assert.equal(res.statusCode, 200);
@@ -247,7 +253,7 @@ test("reusing a consumed ballot is rejected", async () => {
       await voteHandlers[0](req, res, () => {
         req.authenticated = true;
       });
-      await voteHandlers[1](req, res);
+      await voteHandlers.at(-1)(req, res);
 
       assert.equal(res.statusCode, 400);
       assert.equal(res.body.voted, false);
@@ -258,7 +264,7 @@ test("reusing a consumed ballot is rejected", async () => {
 
 test("invalid team IDs are rejected before database access", async () => {
   const res = createResponse();
-  await voteHandlers[1](
+  await voteHandlers.at(-1)(
     { params: { id: { $ne: null } }, body: { vote: "yes" }, voter: { _id: "voter-id" } },
     res
   );

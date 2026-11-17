@@ -3,6 +3,7 @@ import Team from "../mongodb/teamSchema.mjs";
 import Voter from "../mongodb/voterSchema.mjs";
 import { requireAuth } from "../middleware/auth-cookie.mjs";
 import mongoose from "mongoose";
+import { requireVenuePresence } from "../geofence/require-venue-presence.mjs";
 
 const route = Router();
 
@@ -14,7 +15,7 @@ class VoteOutcome extends Error {
   }
 }
 
-route.post("/api/vote/:id", requireAuth, async (req, res) => {
+route.post("/api/vote/:id", requireAuth, requireVenuePresence, async (req, res) => {
   const teamId = req.params.id;
   const { vote } = req.body;
   const voterId = req.voter?._id;
@@ -73,7 +74,16 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
           [`votes.${teamId}`]: { $exists: false },
         },
         {
-          $set: { [`votes.${teamId}`]: { vote, votedAt: new Date() } },
+          $set: {
+            [`votes.${teamId}`]: {
+              vote,
+              votedAt: new Date(),
+              ...(req.venueCheck?.distanceMeters !== undefined && {
+                distanceMeters: req.venueCheck.distanceMeters,
+                accuracyMeters: req.venueCheck.accuracyMeters,
+              }),
+            },
+          },
         },
         { new: true, session }
       );

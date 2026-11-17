@@ -26,6 +26,10 @@ const voterSchema = new mongoose.Schema(
       of: {
         vote: { type: String, enum: ["yes", "no"] },
         votedAt: Date,
+        // Geofence audit: distance from venue center and the phone-reported
+        // accuracy, in meters. Raw coordinates are not stored.
+        distanceMeters: Number,
+        accuracyMeters: Number,
       },
       default: () => new Map(),
     },
