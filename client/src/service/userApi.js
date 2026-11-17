@@ -53,6 +53,7 @@ export const voteForId = async (id, voteData) => {
       success: false,
       error: error.response?.data?.message || `Failed to vote for ID ${id}`,
       errorCode: error.response?.data?.code,
+      status: error.response?.status,
       networkError: !error.response,
     };
   }

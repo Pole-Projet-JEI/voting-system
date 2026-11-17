@@ -35,6 +35,7 @@ import { StatCard } from "../../components/adminComponents/StatCard";
 import { TeamCard } from "../../components/adminComponents/TeamCard";
 import { AddTeamForm } from "../../components/adminComponents/AddTeamForm";
 import { GeofencePanel } from "../../components/adminComponents/GeofencePanel";
+import { OfficialResultsPanel } from "../../components/adminComponents/OfficialResultsPanel";
 import { createSseConnection } from "../../service/sseConnection";
 import { routes } from "../../service/apiRoutes";
 import { useTeamFilters } from "./hooks/useTeamFilters";
@@ -661,6 +662,8 @@ function AdminPage() {
               </Button>
             </div>
           </div>
+
+          <OfficialResultsPanel />
 
           {/* Add Team Form */}
           {showAddTeamForm && (

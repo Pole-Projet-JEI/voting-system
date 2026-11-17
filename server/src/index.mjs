@@ -16,6 +16,7 @@ import sendingVoteRouter, {
 import currentVoteRouter from "./check/prensenting-team.mjs";
 import hasVotedRouter from "./check/hasvoted.mjs";
 import geofenceRouter from "./geofence/geofence-api.mjs";
+import officialResultsRouter from "./admin/apis/official-results.mjs";
 import presentingRouter from "./admin/apis/presenting.mjs";
 import visualizationRouter from "./admin/apis/visualization.mjs";
 import teamManagementRouter from "./admin/apis/team-management.mjs";
@@ -113,6 +114,7 @@ app.use(hasVotedRouter);
 // Admin routes (middleware applied at router level)
 app.use(presentingRouter);
 app.use(visualizationRouter);
+app.use(officialResultsRouter);
 app.use(teamManagementRouter);
 
 const server = app.listen(PORT, '0.0.0.0', () => {

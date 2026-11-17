@@ -158,3 +158,11 @@
     font-size: 1em;
   }
 }
+
+.home-vote-progress {
+  margin-top: 1rem;
+  max-width: 28rem;
+  text-align: center;
+  font-size: 0.95rem;
+  opacity: 0.85;
+}

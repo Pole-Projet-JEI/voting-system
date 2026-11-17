@@ -192,3 +192,15 @@ export const updateGeofenceSettings = async (settings) => {
     };
   }
 };
+
+export const getOfficialResults = async () => {
+  try {
+    const response = await adminClient.get(routes.ADMIN_RESULTS);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to load results",
+    };
+  }
+};

@@ -1,4 +1,4 @@
-import { useEffect, useState, useReducer } from "react";
+import { useEffect, useRef, useState, useReducer } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
@@ -7,11 +7,14 @@ import checkIcon from "../../assets/check-icon.png";
 import {
   didUserVote,
   getCurrentTeam,
-  voteForId,
   checkConnection,
-  getGeofenceStatus,
 } from "../../service/userApi";
-import { getCurrentLocation } from "../../service/geolocation";
+import {
+  attemptVote,
+  getPendingVote,
+  rememberVotedTeam,
+  setPendingVote,
+} from "../../service/voteSubmission";
 import { routes } from "../../service/apiRoutes";
 import { createSseConnection } from "../../service/sseConnection";
 
@@ -50,6 +53,26 @@ export default function HomePage() {
   const [pageError, setPageError] = useState("");
   const [voteError, setVoteError] = useState("");
   const [submitStatus, setSubmitStatus] = useState(null); // null | 'locating' | 'sending'
+  const [progress, setProgress] = useState({ votedTeams: 0, totalTeams: 0 });
+  const retryInFlight = useRef(false);
+
+  const updateProgress = (data) => {
+    if (Number.isInteger(data?.totalTeams)) {
+      setProgress({ votedTeams: data.votedTeams || 0, totalTeams: data.totalTeams });
+    }
+  };
+
+  const refreshProgress = async () => {
+    const result = await didUserVote();
+    if (result.success) {
+      updateProgress(result.data);
+    }
+  };
+
+  const showThankYou = () => {
+    dispatch({ type: "SET_HAS_VOTED", payload: true });
+    dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
+  };
   const navigate = useNavigate();
 
   const fetchTeam = async () => {
@@ -66,6 +89,8 @@ export default function HomePage() {
         dispatch({ type: "SET_MODE", payload: "teamIsPresenting" });
       }
       // If there IS a team presenting, the mode will be set by checkHasVoted()
+    } else if (getPendingVote()) {
+      showThankYou();
     } else {
       setPageError("Unable to load voting status. Please try again.");
       dispatch({ type: "SET_MODE", payload: "voteError" });
@@ -82,6 +107,7 @@ export default function HomePage() {
   const checkHasVoted = async () => {
     const result = await didUserVote();
     if (result.success) {
+      updateProgress(result.data);
       const teamResult = await getCurrentTeam();
       const teamState =
         teamResult.data?.state ||
@@ -94,6 +120,8 @@ export default function HomePage() {
         dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
       } else if (teamResult.success && teamState === "voting") {
           dispatch({ type: "SET_MODE", payload: "voteIsOpen" });
+      } else if (!teamResult.success && getPendingVote()) {
+        showThankYou();
       } else if (!teamResult.success) {
         setPageError("Unable to load voting status. Please try again.");
         dispatch({ type: "SET_MODE", payload: "voteError" });
@@ -114,51 +142,73 @@ export default function HomePage() {
       return;
     }
 
-    const payload = { vote: state.userVote };
+    const teamId = state.teamId;
+    const vote = state.userVote;
 
-    // Read the setting at submit time so an admin can switch the location
-    // check on or off during the event.
-    const geofence = await getGeofenceStatus();
-    if (!geofence.success) {
-      setVoteError("Unable to connect to the server. Please try again.");
+    setSubmitStatus("sending");
+    const outcome = await attemptVote(teamId, vote, {
+      onLocating: () => setSubmitStatus("locating"),
+    });
+    setSubmitStatus(null);
+
+    if (outcome.kind === "saved") {
+      rememberVotedTeam(teamId);
+      showThankYou();
+      refreshProgress();
       return;
     }
 
-    if (geofence.data.enabled) {
-      setSubmitStatus("locating");
-      const position = await getCurrentLocation();
-      if (!position.success) {
-        setSubmitStatus(null);
-        setVoteError(position.error);
+    if (outcome.kind === "retry") {
+      // Server unreachable or failing: keep the vote on the phone, retry in
+      // the background, and show the normal confirmation.
+      setPendingVote({ teamId, vote, createdAt: Date.now() });
+      rememberVotedTeam(teamId);
+      setProgress((current) => ({
+        ...current,
+        votedTeams: Math.min(current.totalTeams || Infinity, current.votedTeams + 1),
+      }));
+      showThankYou();
+      return;
+    }
+
+    if (outcome.kind === "unauthenticated") {
+      navigate("/register");
+      return;
+    }
+
+    setVoteError(outcome.message);
+  };
+
+  // Background retry for a vote that could not reach the server.
+  useEffect(() => {
+    const flushPendingVote = async () => {
+      const pending = getPendingVote();
+      if (!pending || retryInFlight.current) {
         return;
       }
-      payload.location = position.location;
-    }
 
-    setSubmitStatus("sending");
-    const response = await voteForId(state.teamId, payload);
-    setSubmitStatus(null);
+      retryInFlight.current = true;
+      try {
+        const outcome = await attemptVote(pending.teamId, pending.vote);
+        if (outcome.kind === "retry") {
+          return;
+        }
+        setPendingVote(null);
+        if (outcome.kind === "saved") {
+          rememberVotedTeam(pending.teamId);
+          refreshProgress();
+        } else {
+          console.warn("Pending vote dropped:", outcome.code || outcome.message);
+        }
+      } finally {
+        retryInFlight.current = false;
+      }
+    };
 
-    if (response.success) {
-      if (response.data.voted) {
-        dispatch({ type: "SET_HAS_VOTED", payload: true });
-        dispatch({ type: "SET_MODE", payload: "thankYouForVoting" });
-      } else {
-        setVoteError(response.data.message || "Failed to submit vote.");
-      }
-    } else {
-      setVoteError(
-        response.networkError
-          ? "Unable to connect to the server. Please try again."
-          : response.error || "Failed to submit vote. Please try again."
-      );
-      if (response.errorCode === "OUTSIDE_VENUE") {
-        setVoteError(
-          "Your phone reports that you are outside the venue. Move inside the room, turn on precise location / GPS, and try again."
-        );
-      }
-    }
-  };
+    flushPendingVote();
+    const timer = setInterval(flushPendingVote, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -277,6 +327,11 @@ export default function HomePage() {
               : "Submit Vote"}
         </button>
       </form>
+      {progress.totalTeams > 0 && (
+        <p className="home-vote-progress">
+          Vote for all {progress.totalTeams} teams, otherwise none of your votes count.
+        </p>
+      )}
       {/* <p style={{ fontSize: '1.5em', fontWeight: '700' }}>01:45</p> */}
     </div>
   );
@@ -311,6 +366,13 @@ export default function HomePage() {
     <div className="thank-you-container">
       <h1>Thank you for your vote</h1>
       <img src={checkIcon} alt="check-icon" />
+      {progress.totalTeams > 0 && (
+        <p className="home-vote-progress">
+          {progress.votedTeams >= progress.totalTeams
+            ? `You voted for all ${progress.totalTeams} teams.`
+            : `You have voted for ${progress.votedTeams} of ${progress.totalTeams} teams. Stay for the next teams: your votes count only if you vote for all of them.`}
+        </p>
+      )}
     </div>
   );
 
