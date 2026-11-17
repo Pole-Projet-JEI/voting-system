@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { Lock, QrCode, Unlock, Upload, X } from "lucide-react";
 import { Button } from "../ui/button";
@@ -27,7 +28,8 @@ const QrOverlay = ({ onClose }) => {
     }).then(setDataUrl);
   }, []);
 
-  return (
+  // Rendered on <body> so the sidebar's scroll container cannot show through.
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex flex-col items-center justify-center gap-6 bg-white p-6">
       <button
         type="button"
@@ -48,7 +50,8 @@ const QrOverlay = ({ onClose }) => {
       <p className="text-center text-3xl font-semibold text-gray-800">
         {window.location.host}
       </p>
-    </div>
+    </div>,
+    document.body
   );
 };
 
