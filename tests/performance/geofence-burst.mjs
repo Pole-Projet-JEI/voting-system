@@ -128,6 +128,18 @@ report.registration = {
   latencyMs: summarize(regResults.map((r) => r.ms)),
 };
 
+// Brute-force check: wrong codes from the same IP must eventually be refused.
+const wrong = await Promise.all(
+  Array.from({ length: 350 }, (_, k) =>
+    fetch(`${BASE}/api/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ code: `ZZ${String(k).padStart(7, "0")}` }),
+    }).then((res) => res.status, (error) => error.message)
+  )
+);
+report.registration.wrongCodeBurst = tally(wrong);
+
 // Provision sessions for voters the limiter blocked, so the vote path can be tested.
 let provisioned = 0;
 for (const v of voters.filter((x) => !x.cookie)) {
