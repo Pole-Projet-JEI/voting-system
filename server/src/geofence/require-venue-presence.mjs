@@ -25,6 +25,19 @@ export const createRequireVenuePresence =
       const result = evaluateLocation(settings, location);
 
       if (!result.allowed) {
+        // Distance/accuracy only (no coordinates) so admins can tune the
+        // radius and max GPS error from real rejections.
+        console.info(
+          JSON.stringify({
+            event: "geofence_rejected",
+            requestId: req.requestId,
+            reason: result.reason,
+            distanceMeters: result.distanceMeters ?? null,
+            accuracyMeters: result.accuracyMeters ?? null,
+            radiusMeters: settings?.radiusMeters ?? null,
+            maxAccuracyMeters: settings?.maxAccuracyMeters ?? null,
+          })
+        );
         return res.status(403).json({
           voted: false,
           code: result.reason,
