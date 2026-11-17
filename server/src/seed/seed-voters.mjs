@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import Voter from "../mongodb/voterSchema.mjs";
 import { hashVoterCode } from "../mongodb/voter-code.mjs";
@@ -6,6 +6,8 @@ import { hashVoterCode } from "../mongodb/voter-code.mjs";
 const voterCodesFile = path.resolve(
   process.env.VOTER_CODES_FILE || "private/voter-codes.json"
 );
+
+const fileExists = (file) => access(file).then(() => true, () => false);
 
 async function loadVoterCodes() {
   let codes;
@@ -37,6 +39,10 @@ export async function seedVoters() {
     const count = await Voter.countDocuments();
 
     if (count === 0) {
+      if (!process.env.VOTER_CODES_FILE && !(await fileExists(voterCodesFile))) {
+        console.log("No voter codes file; skipping code seed (email login only)");
+        return;
+      }
       console.log("Seeding voter database");
       const voterCodes = await loadVoterCodes();
 

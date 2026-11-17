@@ -4,6 +4,9 @@ const baseURL = `${configuredBaseURL.replace(/\/+$/, "")}/`;
 const routes = {
   IS_CONNECTED: baseURL + "isconnected",
   REGISTER: baseURL + "register",
+  EMAIL_LOGIN_REQUEST: baseURL + "login/email/request",
+  EMAIL_LOGIN_VERIFY: baseURL + "login/email/verify",
+  LOGIN_STATUS: baseURL + "login/status",
   SEND_VOTE: baseURL + "sendvote",
   VOTE: baseURL + "vote/:id",
   GET_CURRENT_VOTE: baseURL + "currentteam",
@@ -25,6 +28,9 @@ const routes = {
   ADMIN_GEOFENCE: baseURL + "admin/geofence",
   ADMIN_RESULTS: baseURL + "admin/results",
   ADMIN_SEND_VOTE: baseURL + "admin/sendvote",
+  ADMIN_VOTERS_SUMMARY: baseURL + "admin/voters/summary",
+  ADMIN_VOTERS_EMAILS: baseURL + "admin/voters/emails",
+  ADMIN_LOGIN_WINDOW: baseURL + "admin/login-window",
 };
 
 export { baseURL, routes };

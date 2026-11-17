@@ -29,12 +29,14 @@ import {
   EyeOff,
   LogOut,
   MapPin,
+  Mail,
 } from "lucide-react";
 import { PresentingTeamCard } from "../../components/adminComponents/PresentingTeamCard";
 import { StatCard } from "../../components/adminComponents/StatCard";
 import { TeamCard } from "../../components/adminComponents/TeamCard";
 import { AddTeamForm } from "../../components/adminComponents/AddTeamForm";
 import { GeofencePanel } from "../../components/adminComponents/GeofencePanel";
+import { VotersLoginPanel } from "../../components/adminComponents/VotersLoginPanel";
 import { OfficialResultsPanel } from "../../components/adminComponents/OfficialResultsPanel";
 import { createSseConnection } from "../../service/sseConnection";
 import { routes } from "../../service/apiRoutes";
@@ -584,6 +586,15 @@ function AdminPage() {
             onStartVoting={handleStartVoting}
             onStopPresenting={handleStopPresenting}
           />
+        </div>
+
+        {/* Voters & login */}
+        <div className="p-6 border-b border-white/10">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Voters & Login
+          </h3>
+          <VotersLoginPanel onNotify={showNotification} />
         </div>
 
         {/* Venue location check */}

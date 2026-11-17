@@ -204,3 +204,30 @@ export const getOfficialResults = async () => {
     };
   }
 };
+
+export const getVotersSummary = async () => {
+  try {
+    const response = await adminClient.get(routes.ADMIN_VOTERS_SUMMARY);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Failed to load voters" };
+  }
+};
+
+export const importVoterEmails = async (emails) => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_VOTERS_EMAILS, { emails });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Import failed" };
+  }
+};
+
+export const setLoginWindow = async (open) => {
+  try {
+    const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, { open });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Failed to update login" };
+  }
+};

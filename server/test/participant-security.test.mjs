@@ -14,6 +14,9 @@ import GeofenceSettings from "../src/mongodb/geofenceSchema.mjs";
 // geofence.test.mjs.
 GeofenceSettings.findOne = () => ({ lean: async () => null });
 
+// These tests exercise the legacy code login, which is off by default.
+process.env.ENABLE_CODE_LOGIN = "true";
+
 const teamId = "507f1f77bcf86cd799439011";
 const participantToken = "a".repeat(64);
 

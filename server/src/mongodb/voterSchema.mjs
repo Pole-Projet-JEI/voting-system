@@ -7,13 +7,22 @@ const voterSchema = new mongoose.Schema(
       select: false,
       trim: true,
     },
+    // Legacy paper-code login. Email voters have no code.
     codeHash: {
       type: String,
-      required: true,
       unique: true,
       index: true,
       select: false,
       sparse: true,
+    },
+    // Email login: allowed voter address (lowercased).
+    email: {
+      type: String,
+      lowercase: true,
+      trim: true,
+      unique: true,
+      sparse: true,
+      index: true,
     },
     participantSessionHash: {
       type: String,

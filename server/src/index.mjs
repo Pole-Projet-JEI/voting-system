@@ -17,6 +17,7 @@ import currentVoteRouter from "./check/prensenting-team.mjs";
 import hasVotedRouter from "./check/hasvoted.mjs";
 import geofenceRouter from "./geofence/geofence-api.mjs";
 import officialResultsRouter from "./admin/apis/official-results.mjs";
+import emailLoginRouter from "./email-login/email-login-api.mjs";
 import presentingRouter from "./admin/apis/presenting.mjs";
 import visualizationRouter from "./admin/apis/visualization.mjs";
 import teamManagementRouter from "./admin/apis/team-management.mjs";
@@ -107,6 +108,7 @@ initializeChangeStream();
 
 app.use(statusRouter); // /api/isconnected - checks cookie manually
 app.use(registerRouter); // /api/register - public registration
+app.use(emailLoginRouter); // /api/login/email/* (public) + /api/admin/voters/* (admin)
 app.use(sendingVoteRouter); // /api/sendvote - SSE stream (public)
 app.use(currentVoteRouter); // /api/currentteam - anyone can view
 app.use(geofenceRouter); // /api/geofence (public) + /api/admin/geofence (admin)

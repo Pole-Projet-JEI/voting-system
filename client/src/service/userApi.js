@@ -94,3 +94,38 @@ export const getGeofenceStatus = async () => {
     };
   }
 };
+
+const toFailure = (error, fallback) => ({
+  success: false,
+  error: error.response?.data?.message || fallback,
+  errorCode: error.response?.data?.code,
+  networkError: !error.response,
+  retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
+});
+
+export const getLoginStatus = async () => {
+  try {
+    const response = await apiClient.get(routes.LOGIN_STATUS);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return toFailure(error, "Could not check login status");
+  }
+};
+
+export const requestEmailCode = async (email) => {
+  try {
+    const response = await apiClient.post(routes.EMAIL_LOGIN_REQUEST, { email });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return toFailure(error, "Could not send the code");
+  }
+};
+
+export const verifyEmailCode = async (email, code) => {
+  try {
+    const response = await apiClient.post(routes.EMAIL_LOGIN_VERIFY, { email, code });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return toFailure(error, "Could not verify the code");
+  }
+};

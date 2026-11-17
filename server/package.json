@@ -18,7 +18,8 @@
     "express-rate-limit": "^8.7.4",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.24.9"
+    "mongoose": "^8.24.9",
+    "nodemailer": "6.9.16"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
