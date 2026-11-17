@@ -5,7 +5,7 @@ import {
   getGeofenceSettings,
   updateGeofenceSettings,
 } from "../../service/adminApi";
-import { getCurrentLocation } from "../../service/geolocation";
+import { getCurrentLocation, parseCoordinatePair } from "../../service/geolocation";
 
 const toInput = (value) => (value === null || value === undefined ? "" : String(value));
 const toNumber = (value) => (value.trim() === "" ? undefined : Number(value));
@@ -24,6 +24,7 @@ export const GeofencePanel = ({ onNotify }) => {
   });
   const [busy, setBusy] = useState(null); // null | 'locating' | 'saving'
   const [lastFixAccuracy, setLastFixAccuracy] = useState(null);
+  const [locationError, setLocationError] = useState("");
 
   const applySettings = (settings) => {
     setEnabled(settings.enabled === true);
@@ -46,16 +47,30 @@ export const GeofencePanel = ({ onNotify }) => {
     });
   }, []);
 
-  const updateField = (field) => (event) =>
-    setForm((current) => ({ ...current, [field]: event.target.value }));
+  const updateField = (field) => (event) => {
+    const value = event.target.value;
+    // Pasting "lat, lng" from Google Maps into either field fills both.
+    const pair = parseCoordinatePair(value);
+    if ((field === "latitude" || field === "longitude") && pair) {
+      setForm((current) => ({
+        ...current,
+        latitude: String(pair.latitude),
+        longitude: String(pair.longitude),
+      }));
+      setLocationError("");
+      return;
+    }
+    setForm((current) => ({ ...current, [field]: value }));
+  };
 
   const useMyLocation = async () => {
     setBusy("locating");
-    const position = await getCurrentLocation({ timeoutMs: 20000 });
+    setLocationError("");
+    const position = await getCurrentLocation({ timeoutMs: 15000 });
     setBusy(null);
 
     if (!position.success) {
-      onNotify?.("error", position.error);
+      setLocationError(position.error);
       return;
     }
 
@@ -122,7 +137,7 @@ export const GeofencePanel = ({ onNotify }) => {
             inputMode="decimal"
             value={form.latitude}
             onChange={updateField("latitude")}
-            placeholder="36.843200"
+            placeholder="36.843200 or paste lat, lng"
           />
         </label>
         <label className="space-y-1 text-xs text-slate-300">
@@ -165,6 +180,15 @@ export const GeofencePanel = ({ onNotify }) => {
         <Crosshair className="mr-2 h-4 w-4" />
         {busy === "locating" ? "Locating..." : "Use my current location"}
       </Button>
+      {locationError && (
+        <div role="alert" className="rounded-md border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+          <p>{locationError}</p>
+          <p className="mt-1 text-red-100/80">
+            Or open Google Maps, right-click the auditorium, click the coordinates to copy them,
+            and paste them into Latitude.
+          </p>
+        </div>
+      )}
       {lastFixAccuracy !== null && (
         <p className="text-xs text-slate-400">
           Fix accuracy: ±{lastFixAccuracy} m. Stand in the middle of the room for the best center.

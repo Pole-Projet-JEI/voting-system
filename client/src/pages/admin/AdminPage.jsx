@@ -384,7 +384,7 @@ function AdminPage() {
   }
 
   return (
-    <div className="admin-page flex h-screen bg-white">
+    <div className="admin-page flex flex-col lg:flex-row h-screen overflow-y-auto lg:overflow-hidden bg-white">
       {notification && (
         <div
           role="alert"
@@ -553,7 +553,7 @@ function AdminPage() {
         </div>
       )}
       {/* Sidebar */}
-      <aside className="w-80 bg-gradient-to-b from-slate-900 to-slate-800 text-white overflow-y-auto shadow-xl">
+      <aside className="w-full shrink-0 lg:w-80 bg-gradient-to-b from-slate-900 to-slate-800 text-white lg:overflow-y-auto shadow-xl">
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
@@ -639,13 +639,13 @@ function AdminPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-8 bg-white">
+      <main className="flex-1 min-w-0 lg:overflow-y-auto p-4 sm:p-6 lg:p-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6 lg:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Team Management
             </h2>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <Button
                 onClick={cycleSort}
                 variant={filterBtn.variant}

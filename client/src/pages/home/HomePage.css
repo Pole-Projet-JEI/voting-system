@@ -12,8 +12,12 @@
 
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 1em;
+  width: 100%;
   max-width: 750px;
+  box-sizing: border-box;
+  margin: 0 auto;
   text-align: center;
+  overflow-wrap: anywhere;
 }
 .home-vote-closed-message {
   font-size: 2em;
@@ -148,10 +152,19 @@
   }
 }
 
-@media (max-width: 320px) {
-  .home-container {
-    gap: 1em;
-    padding: 2em 2em;
+@media (max-width: 360px) {
+  .home-container,
+  .home-container.vote-form-container {
+    gap: 0.75em;
+    padding: 1.25em 1em;
+  }
+
+  .vote-open-title {
+    font-size: 1.3em;
+  }
+
+  .vote-form {
+    gap: 1.25em;
   }
 
   .home-vote-closed-message {
@@ -165,4 +178,33 @@
   text-align: center;
   font-size: 0.95rem;
   opacity: 0.85;
+}
+
+@media (max-width: 500px) {
+  .home-container.vote-form-container {
+    padding: 2em 1.25em 1.5em;
+  }
+}
+
+.thank-you-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 750px;
+  margin: 0 auto;
+  padding: 2em 1.25em;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.thank-you-container h1 {
+  font-size: clamp(1.4em, 5vw, 2.2em);
+  font-weight: 800;
+}
+
+.thank-you-container img {
+  width: 56px;
+  height: 56px;
 }
