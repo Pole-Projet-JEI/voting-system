@@ -89,7 +89,7 @@ Use a new run ID/database and a fresh team for each benchmark. The audit detects
 
 Dashboard/admin reads authenticate once in k6 setup, extract `adminToken` from k6’s structured cookie object, and verify that cookie against `/api/admin/teams` before starting. The token is shared among read VUs; the scripts do not log out or change passwords. For state-transition testing, set `ADMIN_TRANSITIONS=true`, `TEAM_ID` and `NEXT_TEAM_ID` to two fresh pending test teams, and ensure no team is currently presenting. A single VU serially selects, attempts a conflicting presenter switch, starts voting, and completes the presentation. It verifies response bodies and `/api/admin/teams` state after each operation, including exactly one presenter before completion and zero afterward. This mutates fixture state; run only on the dedicated test database. Concurrent selection tests are not implemented.
 
-`/api/admin/teams` is the implemented aggregate endpoint; there is no separate statistics route. `statistics.js` validates response structure and numeric counters during concurrent reads. Exact consistency is established by the post-vote audit, not an operator-entered total.
+`/api/admin/teams` is the implemented aggregate endpoint; there is no separate statistics route. `statistics.js` validates response structure and numeric counters during concurrent reads. For the soak profile it waits one second between reads, sustaining a bounded read workload for the profile duration. Exact consistency is established by the post-vote audit, not an operator-entered total.
 
 ### SSE stream test
 

@@ -1,5 +1,5 @@
 import http from 'k6/http';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 import { profile } from './scenarios.js';
 import { baseUrl, requireTestTarget, adminLogin, json, dataConsistency, consistencyFailures } from './helpers.js';
 
@@ -13,4 +13,5 @@ export default function (data) {
   check(res, { 'admin dashboard returns teams and numeric vote counters': () => valid });
   dataConsistency.add(valid);
   if (!valid) consistencyFailures.add(1);
+  if ((__ENV.PROFILE || '').toLowerCase() === 'soak') sleep(1);
 }
