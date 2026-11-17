@@ -1,10 +1,20 @@
+import { readFileSync } from "node:fs";
 import nodemailer from "nodemailer";
 
 // SMTP settings come from the environment so any provider works
 // (JEI mail server, Gmail app password, Brevo/other SMTP relay).
 //   SMTP_HOST, SMTP_PORT (587), SMTP_SECURE ("true" for port 465),
 //   SMTP_USER, SMTP_PASS, MAIL_FROM ("JEI Voting <no-reply@jeinsat.com>")
+//   SMTP_PASS_FILE: path to a file holding the password (preferred: any
+//   character works, nothing to escape in .env).
 let transporter = null;
+
+export const readSmtpPassword = () => {
+  if (process.env.SMTP_PASS_FILE) {
+    return readFileSync(process.env.SMTP_PASS_FILE, "utf8").replace(/\r?\n$/, "");
+  }
+  return process.env.SMTP_PASS;
+};
 
 export const isMailerConfigured = () => Boolean(process.env.SMTP_HOST);
 
@@ -16,7 +26,7 @@ const getTransporter = () => {
       port,
       secure: process.env.SMTP_SECURE === "true" || port === 465,
       auth: process.env.SMTP_USER
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        ? { user: process.env.SMTP_USER, pass: readSmtpPassword() }
         : undefined,
       // Pooled connections: ~600 codes go out in a few minutes at event start.
       pool: true,

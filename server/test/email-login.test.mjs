@@ -183,3 +183,18 @@ test("both email login routes are behind the login window", async () => {
     assert.equal(layer.route.stack.length, 3, `${path}: limiter, login window, handler`);
   }
 });
+
+test("the SMTP password can come from a file, with any characters", async () => {
+  const { mkdtempSync, writeFileSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { readSmtpPassword } = await import("../src/email-login/mailer.mjs");
+  const file = join(mkdtempSync(join(tmpdir(), "smtp-")), "pw");
+  writeFileSync(file, "a'b\"c$d)4).'\n");
+  process.env.SMTP_PASS_FILE = file;
+  try {
+    assert.equal(readSmtpPassword(), "a'b\"c$d)4).'");
+  } finally {
+    delete process.env.SMTP_PASS_FILE;
+  }
+});
