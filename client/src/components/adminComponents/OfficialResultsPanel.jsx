@@ -5,6 +5,43 @@ import { getOfficialResults } from "../../service/adminApi";
 
 const REFRESH_INTERVAL_MS = 10_000;
 
+const ordinal = (n) => {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
+  return `${n}${{ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"}`;
+};
+
+// Ranking: most counted "yes" first; on a tie, fewer counted "no" ranks
+// higher; teams still equal share the same place (1st, 1st, 3rd...).
+export const rankTeams = (teams) => {
+  const sorted = [...teams].sort(
+    (a, b) =>
+      b.official.yes - a.official.yes ||
+      a.official.no - b.official.no ||
+      a.teamName.localeCompare(b.teamName)
+  );
+  return sorted.map((team, index) => {
+    let rank = index + 1;
+    for (let k = index - 1; k >= 0; k--) {
+      const prev = sorted[k];
+      if (prev.official.yes === team.official.yes && prev.official.no === team.official.no) {
+        rank = k + 1;
+      } else {
+        break;
+      }
+    }
+    const tied = sorted.some(
+      (other) =>
+        other !== team &&
+        other.official.yes === team.official.yes &&
+        other.official.no === team.official.no
+    );
+    return { ...team, rank, tied };
+  });
+};
+
+const MEDALS = { 1: "🥇", 2: "🥈", 3: "🥉" };
+
 export const OfficialResultsPanel = () => {
   const [results, setResults] = useState(null);
   const [error, setError] = useState("");
@@ -40,7 +77,8 @@ export const OfficialResultsPanel = () => {
             Official results
           </h3>
           <p className="text-sm text-gray-500">
-            Only voters who voted for every team that has opened voting are counted.
+            Ranked by counted yes votes (ties: fewer no votes first). Only voters who voted
+            for every team that has opened voting are counted.
             Voters who missed a team have all their votes discarded.
           </p>
         </div>
@@ -91,6 +129,7 @@ export const OfficialResultsPanel = () => {
               <table className="w-full text-left text-sm">
                 <thead className="border-b text-gray-500">
                   <tr>
+                    <th className="py-2 pr-4">Rank</th>
                     <th className="py-2 pr-4">Team</th>
                     <th className="py-2 pr-4">Counted yes</th>
                     <th className="py-2 pr-4">Counted no</th>
@@ -98,8 +137,13 @@ export const OfficialResultsPanel = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {results.teams.map((team) => (
+                  {rankTeams(results.teams).map((team) => (
                     <tr key={team._id} className="border-b last:border-0 text-gray-900">
+                      <td className="py-2 pr-4 font-bold whitespace-nowrap">
+                        <span aria-hidden="true">{MEDALS[team.rank] || ""} </span>
+                        {ordinal(team.rank)}
+                        {team.tied && <span className="ml-1 text-xs font-normal text-gray-500">(tie)</span>}
+                      </td>
                       <td className="py-2 pr-4 font-medium">{team.teamName}</td>
                       <td className="py-2 pr-4 font-semibold text-green-700">{team.official.yes}</td>
                       <td className="py-2 pr-4 font-semibold text-red-700">{team.official.no}</td>
