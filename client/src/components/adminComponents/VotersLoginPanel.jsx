@@ -29,8 +29,9 @@ const QrOverlay = ({ onClose }) => {
   }, []);
 
   // Rendered on <body> so the sidebar's scroll container cannot show through.
+  // z-index must stay above .admin-page (z-index 9999 in AdminPage.css).
   return createPortal(
-    <div className="fixed inset-0 z-[80] flex flex-col items-center justify-center gap-6 bg-white p-6">
+    <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-6 bg-white p-6">
       <button
         type="button"
         onClick={onClose}
