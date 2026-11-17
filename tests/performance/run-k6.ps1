@@ -31,7 +31,8 @@ $k6Env = @(
   '--env', "SSE_VUS=$env:SSE_VUS",
   '--env', "SSE_TIMEOUT=$env:SSE_TIMEOUT",
   '--env', "SSE_EXPECT_LIMIT=$env:SSE_EXPECT_LIMIT",
-  '--env', "SSE_MAX_CONNECTIONS=$env:SSE_MAX_CONNECTIONS"
+  '--env', "SSE_MAX_CONNECTIONS=$env:SSE_MAX_CONNECTIONS",
+  '--env', "SSE_HEARTBEATS=$env:SSE_HEARTBEATS"
 )
 if ($Suite -eq 'voting') {
   $out = "tests/performance/.test-data/vote-output-$($env:TEST_RUN_ID).jsonl"
@@ -42,5 +43,10 @@ if ($Suite -eq 'voting') {
   if ($k6Code -ne 0 -or $auditCode -ne 0) { throw "Voting run or read-only database audit failed (k6=$k6Code, audit=$auditCode)." }
 } else {
   & k6 run @k6Env @summaryArgs $scriptPath
-  if ($LASTEXITCODE -ne 0) { throw "k6 $Suite run failed." }
+  $k6Code = $LASTEXITCODE
+  if ($Suite -eq 'sse') {
+    $diagnosticPath = "tests/performance/.test-data/backend-logs-$($env:TEST_RUN_ID)-sse.txt"
+    & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
+  }
+  if ($k6Code -ne 0) { throw "k6 $Suite run failed." }
 }
