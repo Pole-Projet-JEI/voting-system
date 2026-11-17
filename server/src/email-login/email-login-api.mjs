@@ -9,7 +9,9 @@ import {
 } from "../middleware/participant-session.mjs";
 import { shouldUseSecureCookies } from "../config/cookies.mjs";
 import {
+  canonicalizeEmail,
   findOrCreateEmailVoter,
+  isDisposableEmail,
   getAllowedDomains,
   isEmailAllowed,
   issueLoginCode,
@@ -17,7 +19,7 @@ import {
   verifyLoginCode,
 } from "./email-login.mjs";
 import { isMailerConfigured, sendLoginCode } from "./mailer.mjs";
-import { isLoginOpen, requireLoginOpen, setLoginOpen } from "./login-window.mjs";
+import { getLoginSettings, requireLoginOpen, updateLoginSettings } from "./login-window.mjs";
 
 const route = Router();
 const loginMustBeOpen = requireLoginOpen();
@@ -53,9 +55,20 @@ const verifyCodeLimit = rateLimit({
 });
 
 route.post("/api/login/email/request", requestCodeLimit, loginMustBeOpen, async (req, res) => {
-  const email = normalizeEmail(req.body?.email);
-  if (!email) {
+  const typedEmail = normalizeEmail(req.body?.email);
+  if (!typedEmail) {
     return res.status(400).json({ status: "failed", message: "Enter a valid email address." });
+  }
+  // Voter identity is the canonical mailbox (gmail dots / +aliases removed);
+  // the code is sent to the address as typed.
+  const email = canonicalizeEmail(typedEmail);
+
+  if (isDisposableEmail(email)) {
+    return res.status(400).json({
+      status: "failed",
+      code: "DISPOSABLE_EMAIL",
+      message: "Temporary email addresses are not accepted. Use your personal or school email.",
+    });
   }
 
   try {
@@ -80,7 +93,7 @@ route.post("/api/login/email/request", requestCodeLimit, loginMustBeOpen, async 
       });
     }
 
-    await sendLoginCode(email, issued.code);
+    await sendLoginCode(typedEmail, issued.code);
     return res.status(200).json({ status: "sent" });
   } catch (error) {
     console.error(
@@ -94,7 +107,8 @@ route.post("/api/login/email/request", requestCodeLimit, loginMustBeOpen, async 
 });
 
 route.post("/api/login/email/verify", verifyCodeLimit, loginMustBeOpen, async (req, res) => {
-  const email = normalizeEmail(req.body?.email);
+  const typedEmail = normalizeEmail(req.body?.email);
+  const email = typedEmail && canonicalizeEmail(typedEmail);
   const code = typeof req.body?.code === "string" ? req.body.code.trim() : req.body?.code;
   if (!email) {
     return res.status(400).json({ status: "failed", message: "Enter a valid email address." });
@@ -147,7 +161,7 @@ route.post("/api/login/email/verify", verifyCodeLimit, loginMustBeOpen, async (r
 // Public: lets the login page show "login is closed".
 route.get("/api/login/status", async (req, res) => {
   try {
-    return res.json({ open: await isLoginOpen() });
+    return res.json({ open: (await getLoginSettings()).open });
   } catch (error) {
     console.error("Error reading login window:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -155,12 +169,29 @@ route.get("/api/login/status", async (req, res) => {
 });
 
 route.put("/api/admin/login-window", requireAdmin, async (req, res) => {
-  if (typeof req.body?.open !== "boolean") {
-    return res.status(400).json({ message: "open must be true or false" });
+  const update = {};
+  for (const key of ["open", "anyEmail"]) {
+    if (req.body?.[key] !== undefined) {
+      if (typeof req.body[key] !== "boolean") {
+        return res.status(400).json({ message: `${key} must be true or false` });
+      }
+      update[key] = req.body[key];
+    }
+  }
+  if (Object.keys(update).length === 0) {
+    return res.status(400).json({ message: "Nothing to update" });
   }
   try {
-    const open = await setLoginOpen(req.body.open, req.admin?.username || null);
-    return res.json({ success: true, open, message: open ? "Login is open" : "Login is closed" });
+    const settings = await updateLoginSettings(update, req.admin?.username || null);
+    const message =
+      "anyEmail" in update
+        ? settings.anyEmail
+          ? "Anyone with an email can now log in"
+          : "Only emails on the list can log in"
+        : settings.open
+          ? "Login is open"
+          : "Login is closed";
+    return res.json({ success: true, ...settings, message });
   } catch (error) {
     console.error("Error updating login window:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -175,8 +206,10 @@ route.get("/api/admin/voters/summary", requireAdmin, async (req, res) => {
       Voter.countDocuments({ email: { $exists: true } }),
       Voter.countDocuments(),
     ]);
+    const settings = await getLoginSettings({ fresh: true });
     return res.json({
-      loginOpen: await isLoginOpen({ fresh: true }),
+      loginOpen: settings.open,
+      anyEmail: settings.anyEmail,
       emailVoters,
       codeVoters: totalVoters - emailVoters,
       allowedDomains: getAllowedDomains(),
@@ -199,7 +232,7 @@ route.post("/api/admin/voters/emails", requireAdmin, async (req, res) => {
   for (const entry of raw) {
     const email = normalizeEmail(entry);
     if (email) {
-      valid.add(email);
+      valid.add(canonicalizeEmail(email));
     } else if (typeof entry === "string" && entry.trim()) {
       invalid.push(entry.trim().slice(0, 100));
     }

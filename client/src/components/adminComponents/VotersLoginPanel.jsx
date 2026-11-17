@@ -75,9 +75,24 @@ export const VotersLoginPanel = ({ onNotify }) => {
     refresh();
   }, []);
 
+  const setMode = async (anyEmail) => {
+    if (summary?.anyEmail === anyEmail) {
+      return;
+    }
+    setBusy(true);
+    const result = await setLoginWindow({ anyEmail });
+    setBusy(false);
+    if (!result.success) {
+      onNotify?.("error", result.error);
+      return;
+    }
+    onNotify?.("success", result.data.message);
+    refresh();
+  };
+
   const toggleLogin = async () => {
     setBusy(true);
-    const result = await setLoginWindow(!summary?.loginOpen);
+    const result = await setLoginWindow({ open: !summary?.loginOpen });
     setBusy(false);
     if (!result.success) {
       onNotify?.("error", result.error);
@@ -166,6 +181,35 @@ export const VotersLoginPanel = ({ onNotify }) => {
         Show QR code
       </Button>
 
+      <div>
+        <div className="mb-1 text-sm text-slate-300">Who can log in</div>
+        <div className="grid grid-cols-2 gap-1 rounded-md bg-white/5 p-1" role="radiogroup">
+          {[
+            [true, "Anyone with an email"],
+            [false, "Only the list"],
+          ].map(([value, label]) => (
+            <button
+              key={label}
+              type="button"
+              role="radio"
+              aria-checked={summary.anyEmail === value}
+              disabled={busy}
+              onClick={() => setMode(value)}
+              className={`rounded px-2 py-1.5 text-xs font-semibold transition ${
+                summary.anyEmail === value ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-slate-400">
+          {summary.anyEmail
+            ? "Anyone who scans the QR code can log in with their email. Gmail aliases count as one person; temporary inboxes are refused."
+            : "Only emails you add below can log in."}
+        </p>
+      </div>
+
       {!summary.mailerConfigured && (
         <div className="rounded-md border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
           Email sending is not configured on the server: voters cannot receive codes yet.
@@ -173,7 +217,9 @@ export const VotersLoginPanel = ({ onNotify }) => {
       )}
 
       <div className="rounded-md bg-white/5 px-3 py-2 text-sm">
-        <div className="text-slate-300">Allowed voter emails</div>
+        <div className="text-slate-300">
+          {summary.anyEmail ? "Voters logged in by email" : "Allowed voter emails"}
+        </div>
         <div className="text-2xl font-bold">{summary.emailVoters}</div>
         {summary.allowedDomains.length > 0 && (
           <div className="text-xs text-slate-400">
@@ -182,6 +228,8 @@ export const VotersLoginPanel = ({ onNotify }) => {
         )}
       </div>
 
+      {!summary.anyEmail && (
+      <>
       <textarea
         value={pasted}
         onChange={(event) => setPasted(event.target.value)}
@@ -208,6 +256,8 @@ export const VotersLoginPanel = ({ onNotify }) => {
       <p className="text-xs text-slate-400">
         Excel: save as CSV first, or copy the email column and paste it above.
       </p>
+      </>
+      )}
     </div>
   );
 };

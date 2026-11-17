@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import Voter from "../mongodb/voterSchema.mjs";
 import LoginChallenge from "../mongodb/loginChallengeSchema.mjs";
+import { getLoginSettings } from "./login-window.mjs";
 
 export const CODE_TTL_MS = 10 * 60 * 1000;
 export const RESEND_COOLDOWN_MS = 30 * 1000;
@@ -17,6 +18,37 @@ export const normalizeEmail = (value) => {
   const email = value.trim().toLowerCase();
   return email.length <= 254 && EMAIL_PATTERN.test(email) ? email : null;
 };
+
+// One mailbox = one voter. Providers that ignore dots and/or "+tag" in the
+// local part would otherwise let one person create unlimited aliases.
+const DOTS_IGNORED = new Set(["gmail.com", "googlemail.com"]);
+const PLUS_TAGS = new Set([
+  "gmail.com", "googlemail.com", "outlook.com", "hotmail.com", "live.com",
+  "msn.com", "icloud.com", "me.com", "proton.me", "protonmail.com", "fastmail.com",
+]);
+
+export const canonicalizeEmail = (email) => {
+  const at = email.lastIndexOf("@");
+  let local = email.slice(0, at);
+  let domain = email.slice(at + 1);
+  if (domain === "googlemail.com") domain = "gmail.com";
+  if (PLUS_TAGS.has(domain)) local = local.split("+")[0];
+  if (DOTS_IGNORED.has(domain)) local = local.replace(/\./g, "");
+  return `${local}@${domain}`;
+};
+
+// Throwaway inbox services: refused so one person cannot mint voters.
+const DISPOSABLE_DOMAINS = new Set([
+  "mailinator.com", "yopmail.com", "yopmail.fr", "guerrillamail.com", "guerrillamail.net",
+  "sharklasers.com", "grr.la", "10minutemail.com", "10minutemail.net", "temp-mail.org",
+  "tempmail.com", "tempmail.net", "temp-mail.io", "tempmailo.com", "trashmail.com",
+  "getnada.com", "nada.email", "maildrop.cc", "dispostable.com", "throwawaymail.com",
+  "fakeinbox.com", "mintemail.com", "mohmal.com", "emailondeck.com", "moakt.com",
+  "tmail.ws", "tmpmail.org", "mail.tm", "dropmail.me", "spamgourmet.com", "mytemp.email",
+  "burnermail.io", "inboxkitten.com", "1secmail.com", "1secmail.org", "1secmail.net",
+]);
+
+export const isDisposableEmail = (email) => DISPOSABLE_DOMAINS.has(email.split("@")[1]);
 
 // ALLOWED_EMAIL_DOMAINS="insat.ucar.tn,jeinsat.com" lets any address of those
 // domains vote without being on the imported list.
@@ -48,8 +80,17 @@ export const hashLoginCode = (email, code) =>
 const safeEqual = (a, b) =>
   a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
-export const isEmailAllowed = async (email) =>
-  isDomainAllowed(email) || Boolean(await Voter.exists({ email }));
+// `email` is the canonical address. Allowed when the admin lets anyone in,
+// when its domain is allowed, or when it is on the imported list.
+export const isEmailAllowed = async (email, { loadSettings = getLoginSettings } = {}) => {
+  if (isDisposableEmail(email)) {
+    return false;
+  }
+  if ((await loadSettings()).anyEmail || isDomainAllowed(email)) {
+    return true;
+  }
+  return Boolean(await Voter.exists({ email }));
+};
 
 // Creates or refreshes the pending code for an address, enforcing the resend
 // cooldown and the per-address send limit. Returns { code } or { error, retryAfterSeconds }.
@@ -128,12 +169,12 @@ export const verifyLoginCode = async (email, code, now = new Date()) => {
 };
 
 // Finds the voter for a verified address, creating it for allowed domains.
-export const findOrCreateEmailVoter = async (email) => {
+export const findOrCreateEmailVoter = async (email, { loadSettings = getLoginSettings } = {}) => {
   const voter = await Voter.findOne({ email });
   if (voter) {
     return voter;
   }
-  if (!isDomainAllowed(email)) {
+  if (isDisposableEmail(email) || !((await loadSettings()).anyEmail || isDomainAllowed(email))) {
     return null;
   }
   try {

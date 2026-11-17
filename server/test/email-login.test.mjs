@@ -198,3 +198,53 @@ test("the SMTP password can come from a file, with any characters", async () => 
     delete process.env.SMTP_PASS_FILE;
   }
 });
+
+test("gmail dots and +aliases map to one voter", async () => {
+  const { canonicalizeEmail } = await import("../src/email-login/email-login.mjs");
+  assert.equal(canonicalizeEmail("ali.ben@gmail.com"), "aliben@gmail.com");
+  assert.equal(canonicalizeEmail("a.l.i.ben+vote2@gmail.com"), "aliben@gmail.com");
+  assert.equal(canonicalizeEmail("aliben@googlemail.com"), "aliben@gmail.com");
+  assert.equal(canonicalizeEmail("sara+x@outlook.com"), "sara@outlook.com");
+  // Other providers keep dots (they are real, different mailboxes there).
+  assert.equal(canonicalizeEmail("ali.ben@insat.ucar.tn"), "ali.ben@insat.ucar.tn");
+});
+
+test("disposable inboxes are refused even when anyone can log in", async () => {
+  const { isEmailAllowed, isDisposableEmail } = await import("../src/email-login/email-login.mjs");
+  const anyone = async () => ({ open: true, anyEmail: true });
+  assert.equal(isDisposableEmail("x@mailinator.com"), true);
+  assert.equal(await isEmailAllowed("x@yopmail.com", { loadSettings: anyone }), false);
+  assert.equal(await isEmailAllowed("x@gmail.com", { loadSettings: anyone }), true);
+});
+
+test("list mode only allows imported emails", async () => {
+  const { isEmailAllowed } = await import("../src/email-login/email-login.mjs");
+  const Voter = (await import("../src/mongodb/voterSchema.mjs")).default;
+  const listOnly = async () => ({ open: true, anyEmail: false });
+  const originalExists = Voter.exists;
+  Voter.exists = async ({ email }) => (email === "listed@gmail.com" ? { _id: 1 } : null);
+  try {
+    assert.equal(await isEmailAllowed("listed@gmail.com", { loadSettings: listOnly }), true);
+    assert.equal(await isEmailAllowed("other@gmail.com", { loadSettings: listOnly }), false);
+  } finally {
+    Voter.exists = originalExists;
+  }
+});
+
+test("anyone mode creates the voter on first verified login", async () => {
+  const { findOrCreateEmailVoter } = await import("../src/email-login/email-login.mjs");
+  const Voter = (await import("../src/mongodb/voterSchema.mjs")).default;
+  const original = { findOne: Voter.findOne, create: Voter.create };
+  let created = null;
+  Voter.findOne = async () => null;
+  Voter.create = async (doc) => (created = { _id: "new", ...doc });
+  try {
+    const voter = await findOrCreateEmailVoter("new@gmail.com", { loadSettings: async () => ({ anyEmail: true }) });
+    assert.equal(voter.email, "new@gmail.com");
+    assert.equal(created.email, "new@gmail.com");
+    const refused = await findOrCreateEmailVoter("new@gmail.com", { loadSettings: async () => ({ anyEmail: false }) });
+    assert.equal(refused, null);
+  } finally {
+    Object.assign(Voter, original);
+  }
+});

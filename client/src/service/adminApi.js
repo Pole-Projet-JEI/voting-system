@@ -223,9 +223,11 @@ export const importVoterEmails = async (emails) => {
   }
 };
 
-export const setLoginWindow = async (open) => {
+// settings: { open?: boolean, anyEmail?: boolean }; a boolean means { open }.
+export const setLoginWindow = async (settings) => {
   try {
-    const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, { open });
+    const body = typeof settings === "boolean" ? { open: settings } : settings;
+    const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, body);
     return { success: true, data: response.data };
   } catch (error) {
     return { success: false, error: error.response?.data?.message || "Failed to update login" };
