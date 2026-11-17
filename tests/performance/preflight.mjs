@@ -5,13 +5,16 @@ import { fileURLToPath } from 'node:url';
 import { allowedBaseUrl, composeProject, composeNetwork, configVolume, databaseVolume, validateRunDatabase } from './test-target.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const envFile = path.join(here, '.env.performance');
+const envFile = process.env.PERFORMANCE_ENV_FILE ? path.resolve(process.env.PERFORMANCE_ENV_FILE) : path.join(here, '.env.performance');
 const composeFile = path.join(here, 'docker-compose.test.yml');
 const dockerIgnore = readFileSync(path.join(here, 'Dockerfile.dockerignore'), 'utf8');
 for (const protectedPath of ['**/.env', '**/.env.*', 'server/private', 'tests']) {
   if (!dockerIgnore.split(/\r?\n/).some(line => line.trim() === protectedPath)) throw new Error(`Test Docker build context must exclude ${protectedPath}.`);
 }
-const env = parseEnv(readFileSync(envFile, 'utf8'));
+const env = {
+  ...parseEnv(readFileSync(envFile, 'utf8')),
+  ...process.env,
+};
 const expectedGitRevision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: path.resolve(here, '../..'), encoding: 'utf8' }).trim();
 if (!/^[a-f0-9]{40}$/.test(expectedGitRevision)) throw new Error('Unable to determine the expected full Git revision.');
 const dirtyServerSource = execFileSync('git', ['status', '--porcelain', '--', 'server/src'], { cwd: path.resolve(here, '../..'), encoding: 'utf8' }).trim();
@@ -23,7 +26,7 @@ for (const key of ['SESSION_SECRET', 'VOTER_CODE_PEPPER', 'JWT_SECRET', 'ADMIN_P
   if (!env[key] || env[key].length < 32 || /replace-with|placeholder/i.test(env[key])) throw new Error(`${key} must be a unique local test secret of at least 32 characters.`);
 }
 const voterFile = path.resolve(here, env.TEST_VOTER_CODES_FILE || '');
-if (voterFile !== path.join(here, '.test-data', 'voter-codes.json')) throw new Error('TEST_VOTER_CODES_FILE must be tests/performance/.test-data/voter-codes.json.');
+if (path.dirname(voterFile) !== path.join(here, '.test-data') || path.extname(voterFile) !== '.json') throw new Error('TEST_VOTER_CODES_FILE must be a JSON file directly inside tests/performance/.test-data.');
 const codes = JSON.parse(readFileSync(voterFile, 'utf8'));
 if (!Array.isArray(codes) || !codes.length || codes.some(c => typeof c !== 'string' || !/^[A-Za-z0-9]{9}$/.test(c)) || new Set(codes).size !== codes.length) throw new Error('Private voter-code fixture must contain unique 9-character test codes.');
 const root = path.resolve(here, '../..');
@@ -82,7 +85,7 @@ if (liveDb.database !== database || liveDb.host !== 'mongo-performance' || liveD
 const receipt = { project: composeProject, baseUrl: allowedBaseUrl, runId, database, backendId, mongoId, checkedAt: new Date().toISOString() };
 const privateDir = path.join(here, '.test-data');
 mkdirSync(privateDir, { recursive: true });
-writeFileSync(path.join(privateDir, 'target.json'), JSON.stringify(receipt, null, 2), { mode: 0o600 });
+writeFileSync(path.join(privateDir, `target-${runId}.json`), JSON.stringify(receipt, null, 2), { mode: 0o600 });
 console.log(JSON.stringify({ result: 'PASS', project: composeProject, baseUrl: allowedBaseUrl, database, voterCodesAvailable: codes.length, checkedAt: receipt.checkedAt }));
 
 function docker(args) {

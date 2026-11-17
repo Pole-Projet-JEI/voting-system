@@ -5,8 +5,8 @@ import Team from '/app/src/mongodb/teamSchema.mjs';
 import { hashVoterCode } from '/app/src/mongodb/voter-code.mjs';
 import { validateRunDatabase } from './test-target.mjs';
 
-const fixturePath = '/run/perf/sessions.json';
-const outputPath = '/run/perf/vote-output.jsonl';
+const fixturePath = process.env.SESSION_FILE || '/run/perf/sessions.json';
+const outputPath = process.env.VOTE_OUTPUT_FILE || '/run/perf/vote-output.jsonl';
 const fixture = JSON.parse(await readFile(fixturePath, 'utf8'));
 mongoose.set('autoIndex', false);
 mongoose.set('autoCreate', false);

@@ -20,11 +20,18 @@ const testVoters = __ENV.TEST_VOTERS_FILE ? JSON.parse(open(__ENV.TEST_VOTERS_FI
 export function runId() { return __ENV.TEST_RUN_ID || ''; }
 export function requireTestTarget() {
   const receiptAge = targetReceipt ? Date.now() - Date.parse(targetReceipt.checkedAt) : Infinity;
-  if (baseUrl !== 'http://127.0.0.1:3180' || !targetReceipt || receiptAge < 0 || receiptAge > 10 * 60 * 1000 ||
-      targetReceipt.baseUrl !== baseUrl || targetReceipt.runId !== runId() ||
-      targetReceipt.database !== `voting_performance_test_${runId()}` ||
-      targetReceipt.project !== 'voting-performance-test') {
-    fail('Test target verification missing or stale. Run tests/performance/preflight.mjs and set BASE_URL, TEST_RUN_ID, and TARGET_RECEIPT from its verified local Compose environment.');
+  const checks = {
+    receiptPresent: Boolean(targetReceipt),
+    receiptFresh: receiptAge >= 0 && receiptAge <= 10 * 60 * 1000,
+    baseUrlMatchesReceipt: targetReceipt?.baseUrl === baseUrl,
+    runIdMatchesReceipt: targetReceipt?.runId === runId(),
+    databaseMatchesEnvironment: targetReceipt?.database === __ENV.TEST_DB_NAME,
+    projectMatchesEnvironment: targetReceipt?.project === __ENV.INTEGRATION_COMPOSE_PROJECT,
+    loopbackUrl: /^http:\/\/127\.0\.0\.1:\d+$/.test(baseUrl),
+    databaseAllowlisted: [ `voting_performance_test_${runId()}`, `voting_integration_test_${runId()}` ].includes(targetReceipt?.database),
+  };
+  if (Object.values(checks).some(ok => !ok)) {
+    fail(`Test target verification missing or stale. Run tests/performance/preflight.mjs. Checks: ${JSON.stringify(checks)}`);
   }
 }
 export function testVoterCodes() {
