@@ -1,11 +1,16 @@
 import axios from "axios";
 import { routes } from "./apiRoutes";
 
+// Voter requests give up after 8 s so a stalled server never leaves a voter
+// stuck on "Submitting...": the vote is then kept on the phone and retried.
+export const VOTER_REQUEST_TIMEOUT_MS = 8000;
+
 const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
   withCredentials: true,
+  timeout: VOTER_REQUEST_TIMEOUT_MS,
 });
 
 export const checkConnection = async () => {
