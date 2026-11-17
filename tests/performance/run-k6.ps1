@@ -42,11 +42,17 @@ if ($Suite -eq 'voting') {
   $auditCode = $LASTEXITCODE
   if ($k6Code -ne 0 -or $auditCode -ne 0) { throw "Voting run or read-only database audit failed (k6=$k6Code, audit=$auditCode)." }
 } else {
+  if ($Suite -eq 'sse') {
+    $env:TARGET_RECEIPT = Join-Path $PSScriptRoot ".test-data\target-$($env:TEST_RUN_ID).json"
+    $env:SSE_SUMMARY_PATH = Join-Path $PSScriptRoot ".test-data\sse-summary-$($env:TEST_RUN_ID).json"
+    & node "$PSScriptRoot\sse-stream.mjs"
+    $sseCode = $LASTEXITCODE
+    $diagnosticPath = Join-Path $PSScriptRoot ".test-data\backend-logs-$($env:TEST_RUN_ID)-sse.txt"
+    & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color --since 5m --tail 500 backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
+    if ($sseCode -ne 0) { throw 'Incremental SSE stream test failed.' }
+    return
+  }
   & k6 run @k6Env @summaryArgs $scriptPath
   $k6Code = $LASTEXITCODE
-  if ($Suite -eq 'sse') {
-    $diagnosticPath = "tests/performance/.test-data/backend-logs-$($env:TEST_RUN_ID)-sse.txt"
-    & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
-  }
   if ($k6Code -ne 0) { throw "k6 $Suite run failed." }
 }
