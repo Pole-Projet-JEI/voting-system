@@ -64,7 +64,7 @@ export default function RegisterPage() {
         Voting System
       </h2>
       {error && (
-        <p style={{ color: "#ffb4b4", marginBottom: "1rem" }}>
+        <p className="text-error" style={{ marginBottom: "1rem" }}>
           {error}
           {retryAfterSeconds > 0 && (
             <>

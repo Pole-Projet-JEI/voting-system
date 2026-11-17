@@ -198,11 +198,11 @@ export default function HomePage() {
   const VoteOpen = (
     <div className="home-container vote-form-container">
       <h1 className="vote-open-title">
-        Your vote for <span style={{ color: "#790C18" }}>{state.teamName}</span>
+        Your vote for <span className="text-primary">{state.teamName}</span>
       </h1>
       <form className="vote-form" onSubmit={voteSubmitHandler}>
         {voteError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700" role="alert">
+          <div className="mb-4 rounded-lg border border-error-border bg-error-surface px-4 py-3 text-error" role="alert">
             {voteError}
           </div>
         )}
@@ -254,7 +254,7 @@ export default function HomePage() {
   const TeamIsPresenting = (
     <div className="home-container">
       <h1 className="vote-open-title">
-        <span style={{ color: "#790C18" }}>{state.teamName}</span> is presenting
+        <span className="text-primary">{state.teamName}</span> is presenting
       </h1>
       <p className="home-vote-closed-message">Voting will open shortly.</p>
     </div>

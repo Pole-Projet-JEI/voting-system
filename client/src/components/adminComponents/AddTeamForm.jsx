@@ -29,7 +29,7 @@ export const AddTeamForm = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">
-                Team Name <span className="text-red-600">*</span>
+                Team Name <span className="text-primary">*</span>
               </label>
               <Input
                 value={teamName}
@@ -53,7 +53,7 @@ export const AddTeamForm = ({
           </div>
           <Button
             type="submit"
-            className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+            className="cursor-pointer"
           >
             <Plus className="mr-2 h-4 w-4" />
             Create Team

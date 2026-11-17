@@ -27,31 +27,6 @@ function AdminLoginPage() {
     return () => window.clearInterval(timer);
   }, [retryAfterSeconds]);
 
-  // Override global body styles
-  useEffect(() => {
-    document.body.style.background = "none";
-    document.body.style.backgroundImage = "none";
-    document.body.style.overflow = "auto";
-
-    // Hide the ::before overlay
-    const style = document.createElement("style");
-    style.id = "admin-login-override";
-    style.innerHTML = `
-      body::before {
-        display: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      document.body.style.background = "";
-      document.body.style.backgroundImage = "";
-      document.body.style.overflow = "";
-      const styleEl = document.getElementById("admin-login-override");
-      if (styleEl) styleEl.remove();
-    };
-  }, []);
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -80,7 +55,7 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative z-10">
+    <div className="admin-login-page min-h-screen flex items-center justify-center relative z-10">
       <div className="w-full max-w-md p-8 relative z-20">
         <div className="bg-white rounded-lg shadow-2xl p-8 relative z-30">
           <div className="flex flex-col items-center mb-8">
@@ -147,7 +122,7 @@ function AdminLoginPage() {
 
             {error && (
 
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="bg-error-surface border border-error-border text-error-strong px-4 py-3 rounded">
                 {error}
                 {retryAfterSeconds > 0 && (
                   <div className="mt-1 font-medium">
@@ -161,7 +136,7 @@ function AdminLoginPage() {
             <Button
               type="submit"
 
-              className="w-full bg-slate-900 hover:bg-slate-800 relative z-50 pointer-events-auto"
+              className="w-full relative z-50 pointer-events-auto"
               disabled={loading || retryAfterSeconds > 0}
             >
               {loading ? (
