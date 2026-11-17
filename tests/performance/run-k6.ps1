@@ -40,6 +40,8 @@ if ($Suite -eq 'voting') {
   $k6Code = $LASTEXITCODE
   & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" exec --env "TEAM_ID=$env:TEAM_ID" --env "SESSION_FILE=/run/perf/sessions-$($env:TEST_RUN_ID).json" --env "VOTE_OUTPUT_FILE=/run/perf/vote-output-$($env:TEST_RUN_ID).jsonl" -T backend node /perf/verify-votes.mjs
   $auditCode = $LASTEXITCODE
+  $diagnosticPath = Join-Path $PSScriptRoot ".test-data\backend-logs-$($env:TEST_RUN_ID)-voting.txt"
+  & docker compose --env-file $composeEnvFile -f "$PSScriptRoot\docker-compose.test.yml" logs --no-color --since 2h --tail 5000 backend 2>&1 | Set-Content -LiteralPath $diagnosticPath
   if ($k6Code -ne 0 -or $auditCode -ne 0) { throw "Voting run or read-only database audit failed (k6=$k6Code, audit=$auditCode)." }
 } else {
   if ($Suite -eq 'sse') {
