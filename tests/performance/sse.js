@@ -70,11 +70,11 @@ export default function () {
     timeout: __ENV.SSE_TIMEOUT || '45s',
   }, (stream) => {
     client = stream;
-    stream.on('open', () => {
+    stream.On('open', () => {
       openedAt = Date.now();
       connectionLatency.add(openedAt - startedAt);
     });
-    stream.on('event', (event) => {
+    stream.On('event', (event) => {
       receivedEvents.add(1);
       if (!connectedEventReceived) {
         try {
@@ -92,11 +92,11 @@ export default function () {
         heartbeatEvents.add(1);
         if (heartbeatCount >= heartbeatsRequired) {
           deliberateClose = true;
-          stream.close();
+          stream.Close();
         }
       }
     });
-    stream.on('error', (error) => {
+    stream.On('error', (error) => {
       streamError = true;
       const message = String(error?.error?.() || error?.message || error || '');
       if (/timeout|deadline/i.test(message)) connectionTimeouts.add(1);
