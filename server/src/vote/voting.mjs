@@ -34,9 +34,20 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
   }
 
   let session;
+  let transactionCallbackAttempts = 0;
+  const transactionStartedAt = Date.now();
+  const transactionDiagnostics = process.env.VOTING_TRANSACTION_DIAGNOSTICS === "true";
   try {
     session = await mongoose.startSession();
     const result = await session.withTransaction(async () => {
+      transactionCallbackAttempts += 1;
+      if (transactionDiagnostics && transactionCallbackAttempts > 1) {
+        console.info(JSON.stringify({
+          event: "vote_transaction_retry",
+          requestId: req.requestId,
+          callbackAttempt: transactionCallbackAttempts,
+        }));
+      }
       const presentingTeam = await Team.findOne(
         {
           _id: teamId,
@@ -101,13 +112,41 @@ route.post("/api/vote/:id", requireAuth, async (req, res) => {
       };
     });
 
+    if (transactionDiagnostics) {
+      console.info(JSON.stringify({
+        event: "vote_transaction_succeeded",
+        requestId: req.requestId,
+        callbackAttempts: transactionCallbackAttempts,
+        elapsedMs: Date.now() - transactionStartedAt,
+      }));
+    }
+
     return res.status(result.status).json(result.body);
   } catch (error) {
     if (error instanceof VoteOutcome) {
       return res.status(error.status).json(error.body);
     }
 
-    console.error("Error recording vote:", error);
+    if (transactionDiagnostics) {
+      console.error(JSON.stringify({
+        event: "vote_transaction_failed",
+        requestId: req.requestId,
+        callbackAttempts: transactionCallbackAttempts,
+        elapsedMs: Date.now() - transactionStartedAt,
+        errorName: error.name,
+        errorCode: error.code,
+        errorCodeName: error.codeName,
+        errorLabels: typeof error.errorLabels === "string"
+          ? [error.errorLabels]
+          : Array.isArray(error.errorLabels)
+            ? error.errorLabels
+            : error.errorLabelSet instanceof Set
+              ? [...error.errorLabelSet]
+              : [],
+      }));
+    } else {
+      console.error("Error recording vote:", error);
+    }
     return res.status(500).json({
       voted: false,
       message: "Server error",

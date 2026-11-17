@@ -1,0 +1,81 @@
+name: ${INTEGRATION_COMPOSE_PROJECT:-voting-performance-test}
+services:
+  mongo-performance:
+    image: mongo@sha256:f4d54619262ae3bc6a0a8efbebcef970b87b8ad70697479a75ce308a6f400158
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017", "--quiet", "--setParameter", "enableTestCommands=1"]
+    volumes:
+      - performance_mongo_data:/data/db
+      - performance_mongo_config:/data/configdb
+    healthcheck:
+      test: >-
+        mongosh --quiet --eval "try { var s=rs.status(); quit(s.myState===1?0:1); }
+        catch(e) { if (e.message.includes('no replset config')) {
+          rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo-performance:27017'}]}); quit(0);
+        } quit(1); }"
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 12
+    networks: [performance]
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: tests/performance/Dockerfile
+      args:
+        SOURCE_REVISION: ${SOURCE_REVISION:?Set SOURCE_REVISION to the checked-out Git revision}
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      HOST: localhost
+      CORS_ORIGINS: http://127.0.0.1:3180
+      MONGO_URI: mongodb://mongo-performance:27017/${TEST_DB_NAME:?Set TEST_DB_NAME to voting_performance_test_<TEST_RUN_ID>}?replicaSet=rs0
+      TEST_DB_NAME: ${TEST_DB_NAME:?Set TEST_DB_NAME}
+      TEST_RUN_ID: ${TEST_RUN_ID:?Set TEST_RUN_ID}
+      SESSION_SECRET: ${SESSION_SECRET:?Set a unique test SESSION_SECRET}
+      VOTER_CODE_PEPPER: ${VOTER_CODE_PEPPER:?Set a unique test VOTER_CODE_PEPPER}
+      JWT_SECRET: ${JWT_SECRET:?Set a unique test JWT_SECRET}
+      JWT_EXPIRY: 24h
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Set a test admin username}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set a test admin password}
+      ADMIN_SECRET_KEY: ""
+      ADMIN_KEYS: ""
+      SSE_MAX_CONNECTIONS: ${SSE_MAX_CONNECTIONS:-100}
+      SSE_HEARTBEAT_INTERVAL_MS: ${SSE_HEARTBEAT_INTERVAL_MS:-25000}
+      VOTER_CODES_FILE: /run/test/voter-codes.json
+      VOTING_MODE: ${VOTING_MODE:-benchmark}
+      VOTER_SESSION_COUNT: ${VOTER_SESSION_COUNT:-5}
+      PROFILE: ${PROFILE:-smoke}
+      SOAK_VUS: ${SOAK_VUS:-30}
+      REQUIRED_VUS: ${REQUIRED_VUS:-}
+      TEST_DUPLICATES: ${TEST_DUPLICATES:-false}
+      VOTING_TRANSACTION_DIAGNOSTICS: "true"
+      TEAM_ID: ${TEAM_ID:-}
+      INTEGRATION_COMPOSE_PROJECT: ${INTEGRATION_COMPOSE_PROJECT:-voting-performance-test}
+      INTEGRATION_DATA_VOLUME: ${INTEGRATION_DATA_VOLUME:-voting_performance_mongo_data}
+      INTEGRATION_CONFIG_VOLUME: ${INTEGRATION_CONFIG_VOLUME:-voting_performance_mongo_config}
+      INTEGRATION_NETWORK_NAME: ${INTEGRATION_NETWORK_NAME:-voting-performance-test-network}
+    volumes:
+      - ${TEST_VOTER_CODES_FILE:?Set TEST_VOTER_CODES_FILE to a private test-only JSON code file}:/run/test/voter-codes.json:ro
+      - ./.test-data:/run/perf:ro
+      - ./test-target.mjs:/perf/test-target.mjs:ro
+      - ./check-target.mjs:/perf/check-target.mjs:ro
+      - ./provision-sessions.mjs:/perf/provision-sessions.mjs:ro
+      - ./verify-votes.mjs:/perf/verify-votes.mjs:ro
+      - ./voting-replica-integration.mjs:/perf/voting-replica-integration.mjs:ro
+    ports:
+      - "127.0.0.1:${API_PORT:-3180}:3000"
+    depends_on:
+      mongo-performance:
+        condition: service_healthy
+    networks: [performance]
+
+networks:
+  performance:
+    name: ${INTEGRATION_NETWORK_NAME:-voting-performance-test-network}
+
+volumes:
+  performance_mongo_data:
+    name: ${INTEGRATION_DATA_VOLUME:-voting_performance_mongo_data}
+  performance_mongo_config:
+    name: ${INTEGRATION_CONFIG_VOLUME:-voting_performance_mongo_config}
