@@ -1,20 +1,13 @@
-body:has(.admin-page) {
-  background: white !important;
-  background-image: none !important;
-  overflow: hidden !important;
-}
-
-body:has(.admin-page)::before {
-  display: none !important;
-  background: none !important;
-}
-
 .admin-page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: white;
-  z-index: 9999;
+  color-scheme: light;
+  min-height: 100vh;
+  min-height: 100dvh;
+  color: #111827;
+  background: #fff;
+}
+
+.admin-login-page {
+  color-scheme: light;
+  color: #111827;
+  background: linear-gradient(135deg, #05031a, #151039 55%, #0c0928);
 }

@@ -41,19 +41,6 @@ import "./AdminPage.css";
 function AdminPage() {
   const navigate = useNavigate();
 
-  // Override body styles for admin page
-
-  useEffect(() => {
-    document.body.style.background = "white";
-    document.body.style.overflow = "hidden";
-    const overlay = document.querySelector("body::before");
-    if (overlay) overlay.style.display = "none";
-
-    return () => {
-      document.body.style.background = "";
-      document.body.style.overflow = "";
-    };
-  }, []);
   const [teams, setTeams] = useState([]);
   const [presentingTeam, setPresentingTeam] = useState(null);
   const [stats, setStats] = useState({ voters: null, teams: null });
@@ -299,28 +286,28 @@ function AdminPage() {
   };
 
   const getFilterButton = () => {
-    const baseClass = "cursor-pointer transition-all";
+    const baseClass = "cursor-pointer";
     switch (sortOrder) {
       case "yes-desc":
         return {
           icon: ArrowDown,
           variant: "default",
           text: "Most Votes",
-          className: `${baseClass} bg-blue-600 hover:bg-blue-700 text-white`,
+          className: baseClass,
         };
       case "yes-asc":
         return {
           icon: ArrowUp,
           variant: "default",
           text: "Least Votes",
-          className: `${baseClass} bg-blue-600 hover:bg-blue-700 text-white`,
+          className: baseClass,
         };
       default:
         return {
           icon: ArrowUpDown,
           variant: "outline",
           text: "Sort by Votes",
-          className: `${baseClass} border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700`,
+          className: `${baseClass} border-border bg-white hover:bg-primary/10 text-gray-700`,
         };
     }
   };
@@ -370,7 +357,7 @@ function AdminPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="admin-page flex min-h-screen items-center justify-center">
         <div className="text-xl text-muted-foreground">
           Loading admin panel...
         </div>
@@ -379,13 +366,13 @@ function AdminPage() {
   }
 
   return (
-    <div className="admin-page flex h-screen bg-white">
+    <div className="admin-page flex min-h-screen bg-white">
       {notification && (
         <div
           role="alert"
           className={`fixed right-6 top-6 z-[70] max-w-sm rounded-lg border px-4 py-3 text-sm shadow-lg ${
             notification.type === "error"
-              ? "border-red-200 bg-red-50 text-red-700"
+              ? "border-error-border bg-error-surface text-error-strong"
               : "border-green-200 bg-green-50 text-green-700"
           }`}
         >
@@ -430,7 +417,7 @@ function AdminPage() {
                   placeholder="Temporary password"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                   autoComplete="current-password"
                 />
                 <button
@@ -466,7 +453,7 @@ function AdminPage() {
                   placeholder="New password"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                   minLength={8}
                   autoComplete="new-password"
                 />
@@ -506,7 +493,7 @@ function AdminPage() {
                   placeholder="Confirm password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30"
                   minLength={8}
                   autoComplete="new-password"
                 />
@@ -532,7 +519,7 @@ function AdminPage() {
             {passwordError && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                className="rounded-lg border border-error-border bg-error-surface px-4 py-3 text-sm text-error-strong"
               >
                 {passwordError}
               </div>
@@ -540,7 +527,7 @@ function AdminPage() {
 
             <Button
               type="submit"
-              className="w-full rounded-lg bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800"
+              className="w-full py-3 font-semibold"
             >
               Save password
             </Button>
@@ -562,7 +549,7 @@ function AdminPage() {
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-white hover:bg-white/10"
+              className="text-white hover:bg-primary"
               title="Logout"
             >
               <LogOut className="h-5 w-5" />
@@ -607,7 +594,7 @@ function AdminPage() {
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full border-white/20 text-white hover:bg-white/10"
+            className="w-full border-white/20 text-white hover:bg-primary"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Logout
@@ -634,7 +621,7 @@ function AdminPage() {
               <Button
                 onClick={() => setShowAddTeamForm(!showAddTeamForm)}
                 size="lg"
-                className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                className="cursor-pointer"
               >
                 {showAddTeamForm ? (
                   <>

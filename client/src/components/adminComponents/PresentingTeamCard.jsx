@@ -41,8 +41,8 @@ export const PresentingTeamCard = ({
             <div className="text-xs text-green-200 uppercase mb-1">Yes</div>
             <div className="text-2xl font-bold">{team.nyes}</div>
           </div>
-          <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 text-center">
-            <div className="text-xs text-red-200 uppercase mb-1">No</div>
+          <div className="bg-error-surface border border-error-border rounded-lg p-3 text-center">
+            <div className="text-xs text-error uppercase mb-1">No</div>
             <div className="text-2xl font-bold">{team.nno}</div>
           </div>
         </div>
@@ -50,7 +50,7 @@ export const PresentingTeamCard = ({
           {teamState !== "voting" && (
             <Button
               onClick={onStartVoting}
-              className="flex-1 bg-green-600 hover:bg-green-700 cursor-pointer"
+              className="flex-1 cursor-pointer"
             >
               <Play className="mr-2 h-4 w-4" />
               Start Voting

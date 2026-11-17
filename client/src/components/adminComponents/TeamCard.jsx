@@ -58,7 +58,7 @@ export const TeamCard = ({
             <div className="flex gap-2">
               <Button
                 onClick={onSaveEdit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                className="flex-1 cursor-pointer"
               >
                 Save
               </Button>
@@ -93,7 +93,7 @@ export const TeamCard = ({
           </CardTitle>
           <div className="flex gap-1">
             {teamState === "presenting" && (
-              <Badge className="bg-blue-500 text-white">Presenting</Badge>
+              <Badge className="bg-primary text-primary-foreground">Presenting</Badge>
             )}
             {teamState === "voting" && (
               <Badge className="bg-green-500 text-white">Voting</Badge>
@@ -125,7 +125,7 @@ export const TeamCard = ({
           {teamState === "pending" && !team.presenting && !team.presented && (
             <Button
               onClick={() => onSetPresenting(team._id)}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              className="flex-1 cursor-pointer"
               size="sm"
             >
               <Play className="mr-1 h-3 w-3" />
@@ -138,15 +138,15 @@ export const TeamCard = ({
                 onClick={() => onStartEdit(team)}
                 variant="outline"
                 size="sm"
-                className="text-gray-900 border-gray-300 hover:bg-gray-100 cursor-pointer"
+                className="bg-white text-gray-900 border-gray-300 hover:bg-primary/10 hover:text-primary cursor-pointer"
               >
                 <Pencil className="h-3 w-3" />
               </Button>
               <Button
                 onClick={() => onDelete(team._id, team.teamName)}
-                variant="destructive"
                 size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                className="cursor-pointer"
+                variant="destructive"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
