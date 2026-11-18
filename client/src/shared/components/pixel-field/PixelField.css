@@ -8,5 +8,17 @@
   pointer-events: none;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  opacity: 0.92;
+  opacity: 0.8;
+}
+
+/* Dark veil over the field, as in the design system: the night ground stays
+   dominant and the centre (where the panel sits) stays calm. */
+.pixel-field-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 50% at 50% 48%, rgba(5, 3, 26, 0.55), rgba(5, 3, 26, 0) 70%),
+    linear-gradient(rgba(5, 3, 26, 0.28), rgba(5, 3, 26, 0.28));
 }

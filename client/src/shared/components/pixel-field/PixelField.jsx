@@ -14,7 +14,7 @@ import "./PixelField.css";
 // stays still when the user prefers reduced motion.
 
 const VIOLET = ["#13042a", "#1d0a3a", "#22104f", "#2c125c", "#36136c", "#40198a", "#4a249e", "#5631b6", "#6639cc", "#7646e6"];
-const RED = ["#000000", "#2b0840", "#3d0838", "#540a33", "#760a2c", "#931028", "#b8192a"];
+const RED = ["#000000", "#3d0838", "#540a33", "#760a2c", "#931028", "#b8192a", "#e8102c"];
 
 const hexToVec = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
 const paletteUniform = (list, size) => {
@@ -103,7 +103,8 @@ float shape(vec2 uv, float a, vec2 anchor, float size, float speed, float phase,
   float s = t * speed + phase;
   vec2 c = mix(anchor, vec2(0.5, 0.5), 0.12 * (0.5 + 0.5 * sin(s + 1.1)));
   float r = size * (1.0 + 0.28 * sin(s));
-  float d = length(vec2((uv.x - c.x) * a / 1.6, uv.y - c.y));
+  // Distance in screen proportions, valid for landscape and portrait.
+  float d = length(vec2((uv.x - c.x) * a, uv.y - c.y)) / sqrt(max(a, 0.3));
   float body = exp(-pow(d / r, 2.0));
   float intensity = 0.72 + 0.28 * sin(s + 0.6);
   return clamp(intensity * body + 0.045 * sin(18.0 * d - 3.0 * t) * body, 0.0, 1.0);
@@ -112,17 +113,17 @@ float shape(vec2 uv, float a, vec2 anchor, float size, float speed, float phase,
 void main() {
   vec2 cell = floor(gl_FragCoord.xy);
   vec2 uv = vec2((cell.x + 0.5) / uGrid.x, 1.0 - (cell.y + 0.5) / uGrid.y);
-  float a = min(uAspect, 2.0);
+  float a = clamp(uAspect, 0.35, 2.0);
   float grain = (cellHash(cell) - 0.5) * 0.55;
   float t = uTime;
 
   float flow = 0.62 * snoise(vec3(uv * 2.6 + 0.5 * vec2(cos(t * 0.35), sin(t * 0.35)), 5.7 + t * 0.05));
 
   float empty = 1.0;
-  empty *= 1.0 - shape(uv, a, vec2(0.02, 0.62), 0.30, 0.35, 0.0, t);
-  empty *= 1.0 - shape(uv, a, vec2(0.97, 0.28), 0.32, 0.70, 1.9, t);
-  empty *= 1.0 - shape(uv, a, vec2(0.62, 1.02), 0.30, 0.35, 3.6, t);
-  empty *= 1.0 - shape(uv, a, vec2(0.35, -0.02), 0.26, 1.05, 5.1, t);
+  empty *= 1.0 - shape(uv, a, vec2(0.02, 0.62), 0.24, 0.35, 0.0, t);
+  empty *= 1.0 - shape(uv, a, vec2(0.97, 0.28), 0.25, 0.70, 1.9, t);
+  empty *= 1.0 - shape(uv, a, vec2(0.62, 1.02), 0.24, 0.35, 3.6, t);
+  empty *= 1.0 - shape(uv, a, vec2(0.35, -0.02), 0.21, 1.05, 5.1, t);
 
   // Pointer heat (bottom-left GL origin vs top-left pointer coordinates).
   vec2 pc = vec2(uPointer.x, uGrid.y - uPointer.y);
@@ -133,11 +134,11 @@ void main() {
   vec2 dc = (uv - vec2(0.5, 0.48)) / vec2(0.26, 0.3);
   float calm = exp(-dot(dc, dc));
 
-  float heat = 0.26 + 0.74 * (1.0 - empty) - 0.34 * calm + 0.07 * flow + 0.35 * warm;
+  float heat = 0.06 + 0.82 * (1.0 - empty) - 0.4 * calm + 0.08 * flow + 0.3 * warm;
   vec3 col = violetAt(heat + grain / 10.0);
 
   // Stepped red rings around the pointer.
-  float r = 0.95 * warm + 0.05 * flow;
+  float r = 1.05 * warm + 0.04 * flow;
   int ri = int(floor(clamp(r + grain / 7.0, 0.0, 0.9999) * 7.0));
   if (ri > 0) {
     float w = ri == 1 ? 0.4 : (ri == 2 ? 0.65 : (ri == 3 ? 0.85 : 1.0));
@@ -219,7 +220,7 @@ export default function PixelField({ cell = 10 }) {
       gl.viewport(0, 0, cols, rows);
       gl.uniform2f(u.uGrid, cols, rows);
       gl.uniform1f(u.uAspect, w / h);
-      gl.uniform1f(u.uRadius, w < 640 ? 6 : 7);
+      gl.uniform1f(u.uRadius, w < 640 ? 7 : 9);
     };
 
     const render = () => {
@@ -287,5 +288,10 @@ export default function PixelField({ cell = 10 }) {
     };
   }, [cell]);
 
-  return <canvas ref={canvasRef} className="pixel-field" aria-hidden="true" />;
+  return (
+    <>
+      <canvas ref={canvasRef} className="pixel-field" aria-hidden="true" />
+      <div className="pixel-field-scrim" aria-hidden="true" />
+    </>
+  );
 }
