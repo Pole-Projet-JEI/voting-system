@@ -6,9 +6,38 @@
   min-height: 100dvh;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 72px 20px 20px;
   color: var(--fie-foreground);
   background: var(--fie-background);
+}
+
+.voter-brand-header {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 0;
+  z-index: 2;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.voter-brand-logo {
+  display: block;
+  width: auto;
+  max-width: 42%;
+  height: 38px;
+  object-fit: contain;
+}
+
+.voter-brand-logo-jei {
+  max-height: 38px;
+}
+
+.voter-brand-logo-oif {
+  max-height: 34px;
 }
 
 .content-container {
@@ -23,6 +52,19 @@
 @media (max-width: 640px) {
   .layout-container {
     align-items: flex-start;
-    padding: 16px 12px max(16px, env(safe-area-inset-bottom));
+    padding: 56px 12px max(16px, env(safe-area-inset-bottom));
+  }
+
+  .voter-brand-header {
+    top: max(8px, env(safe-area-inset-top));
+    gap: 10px;
+  }
+
+  .voter-brand-logo {
+    height: 30px;
+  }
+
+  .voter-brand-logo-oif {
+    max-height: 27px;
   }
 }
