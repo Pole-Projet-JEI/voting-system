@@ -1,5 +1,4 @@
 import "./RegisterPage.css";
-import jeiLogo from "../../assets/jei2.png";
 import { useEffect, useState } from "react";
 import { registerUser } from "../../service/userApi";
 import { useNavigate } from "react-router-dom";
@@ -55,10 +54,8 @@ export default function RegisterPage() {
 
   return (
     <div className="register-form-container">
-      <img src={jeiLogo} alt="JEILogo" width="100px" height="50px" />
       <div className="title-container">
-        <h1 className="title-G">Hack for Good</h1>
-        <h1 className="title-2">4.0</h1>
+        <h1 className="title-G">IA ETHIQUE 360</h1>
       </div>
       <h2 style={{ fontSize: "1em", color: "rgba(255,255,255,0.55)" }}>
         Voting System
