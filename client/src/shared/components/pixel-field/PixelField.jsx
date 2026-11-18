@@ -8,13 +8,10 @@ import "./PixelField.css";
 //     with faint ripples, over a slow simplex-noise flow;
 //   - heat is quantised into the 10-step violet palette with a per-cell
 //     grain, so edges stay crisp and pixelated;
-//   - the pointer (mouse or finger) adds heat that shows as stepped red
-//     rings, easing in and following smoothly.
 // Falls back to the plain night background when WebGL is unavailable, and
 // stays still when the user prefers reduced motion.
 
 const VIOLET = ["#13042a", "#1d0a3a", "#22104f", "#2c125c", "#36136c", "#40198a", "#4a249e", "#5631b6", "#6639cc", "#7646e6"];
-const RED = ["#000000", "#2b0840", "#3d0838", "#540a33", "#760a2c", "#931028", "#b8192a"];
 
 const hexToVec = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
 const paletteUniform = (list, size) => {
@@ -33,11 +30,8 @@ const FRAGMENT = `
 precision highp float;
 uniform vec2 uGrid;
 uniform float uTime;
-uniform vec3 uPointer;   // x, y in cells (top-left origin), strength 0..1
-uniform float uRadius;   // pointer radius in cells
 uniform float uAspect;
 uniform vec3 uViolet[10];
-uniform vec3 uRed[7];
 
 vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -91,11 +85,6 @@ vec3 violetAt(float t) {
   for (int i = 0; i < 10; i++) { if (i == k) c = uViolet[i]; }
   return c;
 }
-vec3 redAt(int k) {
-  vec3 c = uRed[0];
-  for (int i = 0; i < 7; i++) { if (i == k) c = uRed[i]; }
-  return c;
-}
 
 // One drifting shape: anchored near an edge, pulled slightly inwards,
 // breathing in size and intensity, with faint ripples inside.
@@ -125,29 +114,14 @@ void main() {
   empty *= 1.0 - shape(uv, a, vec2(0.62, 1.02), 0.24, 0.35, 3.6, t);
   empty *= 1.0 - shape(uv, a, vec2(0.35, -0.02), 0.21, 1.05, 5.1, t);
 
-  // Pointer heat (bottom-left GL origin vs top-left pointer coordinates).
-  vec2 pc = vec2(uPointer.x, uGrid.y - uPointer.y);
-  float pd = length(cell + 0.5 - pc) / uRadius;
-  float warm = exp(-pd * pd) * uPointer.z;
-
   // Darker centre behind the voting panel keeps text legible.
   vec2 dc = (uv - vec2(0.5, 0.48)) / vec2(0.26, 0.3);
   float calm = exp(-dot(dc, dc));
 
-  float heat = 0.06 + 0.82 * (1.0 - empty) - 0.4 * calm + 0.08 * flow + 0.3 * warm;
+  float heat = 0.06 + 0.82 * (1.0 - empty) - 0.4 * calm + 0.08 * flow;
   vec3 col = violetAt(heat + grain / 10.0);
-  // Veil: keep the night ground dominant (darker in the centre) without
-  // dimming the red pointer rings drawn after it.
+  // Veil: keep the night ground dominant (darker in the centre).
   col = mix(vec3(0.0196, 0.0118, 0.102), col, 0.72 - 0.38 * calm);
-
-  // Stepped red rings around the pointer.
-  // Small, dark pointer glow: peaks on the artifact's deep reds (#540a33 / #760a2c).
-  float r = 0.62 * warm + 0.03 * flow;
-  int ri = int(floor(clamp(r + grain / 7.0, 0.0, 0.9999) * 7.0));
-  if (ri > 0) {
-    float w = ri == 1 ? 0.35 : (ri == 2 ? 0.55 : (ri == 3 ? 0.75 : 0.9));
-    col = mix(col, redAt(ri), w);
-  }
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -195,18 +169,15 @@ export default function PixelField({ cell = 10.5 }) {
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
     const u = Object.fromEntries(
-      ["uGrid", "uTime", "uPointer", "uRadius", "uAspect", "uViolet", "uRed"].map((n) => [n, gl.getUniformLocation(program, n)])
+      ["uGrid", "uTime", "uAspect", "uViolet"].map((n) => [n, gl.getUniformLocation(program, n)])
     );
     gl.uniform3fv(u.uViolet, paletteUniform(VIOLET, 10));
-    gl.uniform3fv(u.uRed, paletteUniform(RED, 7));
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     let cellPx = cell;
     let cols = 0;
     let rows = 0;
-    // Pointer eases towards its target for a smooth follow.
-    const pointer = { x: -100, y: -100, tx: -100, ty: -100, s: 0, ts: 0 };
     let raf = 0;
     let last = 0;
     let time = 0;
@@ -223,13 +194,10 @@ export default function PixelField({ cell = 10.5 }) {
       gl.viewport(0, 0, cols, rows);
       gl.uniform2f(u.uGrid, cols, rows);
       gl.uniform1f(u.uAspect, w / h);
-      // Small fixed glow: ~2.5 cells (about 25 px) on every screen size.
-      gl.uniform1f(u.uRadius, 2.5);
     };
 
     const render = () => {
       gl.uniform1f(u.uTime, time);
-      gl.uniform3f(u.uPointer, pointer.x / cellPx, pointer.y / cellPx, pointer.s);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
@@ -239,28 +207,7 @@ export default function PixelField({ cell = 10.5 }) {
       const dt = Math.min(0.1, (now - (last || now)) / 1000);
       last = now;
       time += dt;
-      // Frame-rate independent easing: position ~90 ms, heat ~180 ms.
-      const follow = 1 - Math.exp(-dt / 0.09);
-      pointer.x += (pointer.tx - pointer.x) * follow;
-      pointer.y += (pointer.ty - pointer.y) * follow;
-      pointer.s += (pointer.ts - pointer.s) * (1 - Math.exp(-dt / 0.18));
       render();
-    };
-
-    const onPointer = (event) => {
-      if (pointer.s < 0.02) {
-        pointer.x = event.clientX;
-        pointer.y = event.clientY;
-      }
-      pointer.tx = event.clientX;
-      pointer.ty = event.clientY;
-      pointer.ts = event.pointerType === "mouse" || event.buttons > 0 || event.type === "pointerdown" ? 1 : 0;
-    };
-    const onRelease = (event) => {
-      if (event.pointerType !== "mouse") pointer.ts = 0;
-    };
-    const onLeave = () => {
-      pointer.ts = 0;
     };
 
     resize();
@@ -268,11 +215,6 @@ export default function PixelField({ cell = 10.5 }) {
     render();
     if (!reduceMotion) {
       raf = requestAnimationFrame(loop);
-      window.addEventListener("pointermove", onPointer, { passive: true });
-      window.addEventListener("pointerdown", onPointer, { passive: true });
-      window.addEventListener("pointerup", onRelease, { passive: true });
-      window.addEventListener("pointercancel", onLeave, { passive: true });
-      document.documentElement.addEventListener("pointerleave", onLeave);
     }
     const onResize = () => {
       resize();
@@ -282,11 +224,6 @@ export default function PixelField({ cell = 10.5 }) {
 
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("pointermove", onPointer);
-      window.removeEventListener("pointerdown", onPointer);
-      window.removeEventListener("pointerup", onRelease);
-      window.removeEventListener("pointercancel", onLeave);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("resize", onResize);
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
