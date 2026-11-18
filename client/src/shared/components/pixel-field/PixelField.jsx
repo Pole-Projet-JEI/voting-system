@@ -141,14 +141,13 @@ void main() {
   col = mix(vec3(0.0196, 0.0118, 0.102), col, 0.72 - 0.38 * calm);
 
   // Stepped red rings around the pointer.
-  // Same pointer response as the design system: peak 0.85 (5th red step).
-  float r = 0.85 * warm + 0.07 * flow;
+  // Small, dark pointer glow: peaks on the deep reds (#760a2c / #931028).
+  float r = 0.74 * warm + 0.04 * flow;
   int ri = int(floor(clamp(r + grain / 7.0, 0.0, 0.9999) * 7.0));
   if (ri > 0) {
     float w = ri == 1 ? 0.4 : (ri == 2 ? 0.65 : (ri == 3 ? 0.85 : 1.0));
     col = mix(col, redAt(ri), w);
   }
-  col += (1.0 - col) * warm * 0.06;
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -224,8 +223,8 @@ export default function PixelField({ cell = 10.5 }) {
       gl.viewport(0, 0, cols, rows);
       gl.uniform2f(u.uGrid, cols, rows);
       gl.uniform1f(u.uAspect, w / h);
-      // 6 cells, widened only on very wide screens (as in the design system).
-      gl.uniform1f(u.uRadius, 6 * Math.max(1, cols / 110));
+      // Small fixed glow: ~3.5 cells (about 35 px) on every screen size.
+      gl.uniform1f(u.uRadius, 3.5);
     };
 
     const render = () => {
