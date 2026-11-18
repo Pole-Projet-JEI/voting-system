@@ -22,13 +22,6 @@
 }
 
 .title-container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 12px;
-}
-
-.title-container h1 {
   margin: 0;
   font-family: var(--sans);
   font-weight: 700;

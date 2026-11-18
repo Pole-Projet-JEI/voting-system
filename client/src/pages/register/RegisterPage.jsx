@@ -137,10 +137,10 @@ export default function RegisterPage() {
     <div className="register-brand">
       <img src={jeiLogo} alt="Junior Entreprise INSAT" />
       <span className="triband" aria-hidden="true"><span /><span /><span /></span>
-      <div className="title-container">
-        <h1 className="title-G">Hack for Good</h1>
-        <h1 className="title-2">4.0</h1>
-      </div>
+      <h1 className="title-container">
+        <span className="title-G">Hackathon AI Éthique</span>{" "}
+        <span className="title-2">360</span>
+      </h1>
       <span className="fie-label register-subtitle">Voting system</span>
     </div>
   );
