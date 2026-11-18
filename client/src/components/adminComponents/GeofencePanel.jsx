@@ -11,7 +11,7 @@ const toInput = (value) => (value === null || value === undefined ? "" : String(
 const toNumber = (value) => (value.trim() === "" ? undefined : Number(value));
 
 const inputClass =
-  "w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-400 outline-none focus:border-white/50";
+  "w-full rounded-md border border-line-strong bg-panel-2 px-3 py-2 text-sm text-white placeholder:text-slate-400 outline-none focus:border-white/50";
 
 export const GeofencePanel = ({ onNotify }) => {
   const [loaded, setLoaded] = useState(false);
@@ -122,7 +122,7 @@ export const GeofencePanel = ({ onNotify }) => {
         <span className="text-sm text-muted">Status</span>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-            enabled ? "bg-green-500/20 text-green-300" : "bg-white/10 text-muted"
+            enabled ? "bg-green-500/20 text-green-300" : "bg-panel-2 text-muted"
           }`}
         >
           {enabled ? "Enforced" : "Off"}
@@ -175,7 +175,7 @@ export const GeofencePanel = ({ onNotify }) => {
         variant="outline"
         onClick={useMyLocation}
         disabled={Boolean(busy)}
-        className="w-full border-white/20 text-white hover:bg-white/10"
+        className="w-full border-line-strong text-white hover:bg-white/10"
       >
         <Crosshair className="mr-2 h-4 w-4" />
         {busy === "locating" ? "Locating..." : "Use my current location"}
@@ -201,7 +201,7 @@ export const GeofencePanel = ({ onNotify }) => {
           onClick={() => save(enabled)}
           disabled={Boolean(busy)}
           variant="outline"
-          className="border-white/20 text-white hover:bg-white/10"
+          className="border-line-strong text-white hover:bg-white/10"
         >
           Save
         </Button>

@@ -175,7 +175,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
         type="button"
         variant="outline"
         onClick={() => setShowQr(true)}
-        className="w-full border-white/20 text-white hover:bg-white/10"
+        className="w-full border-line-strong text-white hover:bg-white/10"
       >
         <QrCode className="mr-2 h-4 w-4" />
         Show QR code
@@ -235,7 +235,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
         onChange={(event) => setPasted(event.target.value)}
         rows={3}
         placeholder="Paste emails (any format: one per line, CSV, Excel copy...)"
-        className="w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-400 outline-none focus:border-white/50"
+        className="w-full rounded-md border border-line-strong bg-panel-2 px-3 py-2 text-sm text-white placeholder:text-slate-400 outline-none focus:border-white/50"
       />
       <div className="grid grid-cols-2 gap-2">
         <Button
@@ -243,11 +243,11 @@ export const VotersLoginPanel = ({ onNotify }) => {
           onClick={() => importEmails(extractEmails(pasted))}
           disabled={busy || pastedCount === 0}
           variant="outline"
-          className="border-white/20 text-white hover:bg-white/10"
+          className="border-line-strong text-white hover:bg-white/10"
         >
           Add {pastedCount || ""}
         </Button>
-        <label className="flex cursor-pointer items-center justify-center rounded-md border border-white/20 px-3 text-sm text-white hover:bg-white/10">
+        <label className="flex cursor-pointer items-center justify-center rounded-md border border-line-strong px-3 text-sm text-white hover:bg-white/10">
           <Upload className="mr-2 h-4 w-4" />
           CSV / TXT
           <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={onFile} className="hidden" />

@@ -23,7 +23,7 @@ export const PresentingTeamCard = ({
   const teamState = team.state || (team.presenting ? "voting" : "presenting");
 
   return (
-    <Card className="bg-white/15 border-white/20 text-white backdrop-blur">
+    <Card className="bg-panel-2 border-line-strong text-white backdrop-blur">
       <CardHeader>
         <CardTitle className="text-lg">{team.teamName}</CardTitle>
         <CardDescription className="text-muted line-clamp-2">
@@ -50,7 +50,7 @@ export const PresentingTeamCard = ({
           {teamState !== "voting" && (
             <Button
               onClick={onStartVoting}
-              className="flex-1 bg-hackathon hover:bg-hackathon-hover cursor-pointer"
+              className="flex-1 bg-hackathon hover:bg-hackathon-hover cursor-pointer text-white"
             >
               <Play className="mr-2 h-4 w-4" />
               Start Voting

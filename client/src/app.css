@@ -86,6 +86,13 @@
   --font-display: var(--sans);
 }
 
+@layer base {
+  /* Tailwind's default border colour is currentColor: use the design line. */
+  *, ::before, ::after, ::backdrop {
+    border-color: var(--line-strong);
+  }
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   /* The design system is strictly square. */

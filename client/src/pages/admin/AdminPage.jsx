@@ -554,7 +554,7 @@ function AdminPage() {
       )}
       {/* Sidebar */}
       <aside className="w-full shrink-0 lg:w-80 bg-ground-deep border-r border-line text-white lg:overflow-y-auto shadow-xl">
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-line">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <BarChart3 className="h-8 w-8" />
@@ -576,7 +576,7 @@ function AdminPage() {
         </div>
 
         {/* Current Presenting Team */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-line">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Play className="h-5 w-5" />
             Currently Presenting
@@ -589,7 +589,7 @@ function AdminPage() {
         </div>
 
         {/* Voters & login */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-line">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Mail className="h-5 w-5" />
             Voters & Login
@@ -598,7 +598,7 @@ function AdminPage() {
         </div>
 
         {/* Venue location check */}
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-line">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <MapPin className="h-5 w-5" />
             Venue Location Check
@@ -630,7 +630,7 @@ function AdminPage() {
           <Button
             onClick={handleLogout}
             variant="outline"
-            className="w-full border-white/20 text-white hover:bg-white/10"
+            className="w-full border-line-strong text-white hover:bg-white/10"
           >
             <LogOut className="mr-2 h-4 w-4" />
             Logout

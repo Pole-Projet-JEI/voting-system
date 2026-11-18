@@ -161,7 +161,7 @@ function AdminLoginPage() {
             <Button
               type="submit"
 
-              className="w-full bg-hackathon hover:bg-hackathon-hover relative z-50 pointer-events-auto"
+              className="w-full bg-hackathon hover:bg-hackathon-hover relative z-50 pointer-events-auto text-white"
               disabled={loading || retryAfterSeconds > 0}
             >
               {loading ? (
