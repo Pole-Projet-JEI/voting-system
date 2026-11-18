@@ -141,11 +141,11 @@ void main() {
   col = mix(vec3(0.0196, 0.0118, 0.102), col, 0.72 - 0.38 * calm);
 
   // Stepped red rings around the pointer.
-  // Small, dark pointer glow: peaks on the deep reds (#760a2c / #931028).
-  float r = 0.74 * warm + 0.04 * flow;
+  // Small, dark pointer glow: peaks on the artifact's deep reds (#540a33 / #760a2c).
+  float r = 0.62 * warm + 0.03 * flow;
   int ri = int(floor(clamp(r + grain / 7.0, 0.0, 0.9999) * 7.0));
   if (ri > 0) {
-    float w = ri == 1 ? 0.4 : (ri == 2 ? 0.65 : (ri == 3 ? 0.85 : 1.0));
+    float w = ri == 1 ? 0.35 : (ri == 2 ? 0.55 : (ri == 3 ? 0.75 : 0.9));
     col = mix(col, redAt(ri), w);
   }
   gl_FragColor = vec4(col, 1.0);
@@ -223,8 +223,8 @@ export default function PixelField({ cell = 10.5 }) {
       gl.viewport(0, 0, cols, rows);
       gl.uniform2f(u.uGrid, cols, rows);
       gl.uniform1f(u.uAspect, w / h);
-      // Small fixed glow: ~3.5 cells (about 35 px) on every screen size.
-      gl.uniform1f(u.uRadius, 3.5);
+      // Small fixed glow: ~2.5 cells (about 25 px) on every screen size.
+      gl.uniform1f(u.uRadius, 2.5);
     };
 
     const render = () => {
