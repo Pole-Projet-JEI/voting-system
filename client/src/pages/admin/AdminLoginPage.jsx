@@ -29,7 +29,7 @@ function AdminLoginPage() {
 
   // Override global body styles
   useEffect(() => {
-    document.body.style.background = "none";
+    document.body.style.background = "var(--bg)";
     document.body.style.backgroundImage = "none";
     document.body.style.overflow = "auto";
 
@@ -80,15 +80,15 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative z-10">
+    <div className="min-h-screen flex items-center justify-center bg-ground relative z-10">
       <div className="w-full max-w-md p-8 relative z-20">
-        <div className="bg-white rounded-lg shadow-2xl p-8 relative z-30">
+        <div className="bg-panel border border-line-strong shadow-2xl p-8 relative z-30">
           <div className="flex flex-col items-center mb-8">
-            <div className="bg-slate-900 p-4 rounded-full mb-4">
+            <div className="bg-navy p-4 mb-4">
               <Lock className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Login</h1>
-            <p className="text-gray-500 mt-2">
+            <h1 className="text-3xl font-bold text-ink">Admin Login</h1>
+            <p className="text-muted mt-2">
               Enter your credentials to continue
             </p>
           </div>
@@ -97,7 +97,7 @@ function AdminLoginPage() {
             <div className="relative z-40">
               <label
                 htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-ink mb-2"
               >
                 Username
               </label>
@@ -115,7 +115,7 @@ function AdminLoginPage() {
             <div className="relative z-40">
               <label
                 htmlFor="secretKey"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-medium text-ink mb-2"
               >
                 Password
               </label>
@@ -132,7 +132,7 @@ function AdminLoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowSecretKey((visible) => !visible)}
-                  className="absolute right-2 top-1/2 z-[60] -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-900"
+                  className="absolute right-2 top-1/2 z-[60] -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
                   aria-label={showSecretKey ? "Hide password" : "Show password"}
                   disabled={loading}
                 >
@@ -147,7 +147,7 @@ function AdminLoginPage() {
 
             {error && (
 
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="bg-danger-ground border border-danger/40 text-danger px-4 py-3 rounded">
                 {error}
                 {retryAfterSeconds > 0 && (
                   <div className="mt-1 font-medium">
@@ -161,7 +161,7 @@ function AdminLoginPage() {
             <Button
               type="submit"
 
-              className="w-full bg-slate-900 hover:bg-slate-800 relative z-50 pointer-events-auto"
+              className="w-full bg-hackathon hover:bg-hackathon-hover relative z-50 pointer-events-auto"
               disabled={loading || retryAfterSeconds > 0}
             >
               {loading ? (
@@ -178,7 +178,7 @@ function AdminLoginPage() {
           <div className="mt-6 text-center relative z-50">
             <button
               onClick={() => navigate("/home")}
-              className="text-sm text-slate-600 hover:text-slate-900 pointer-events-auto cursor-pointer"
+              className="text-sm text-muted hover:text-ink pointer-events-auto cursor-pointer"
             >
               ← Back to Home
             </button>

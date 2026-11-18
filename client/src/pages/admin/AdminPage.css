@@ -1,5 +1,5 @@
 body:has(.admin-page) {
-  background: white !important;
+  background: var(--bg) !important;
   background-image: none !important;
   overflow: hidden !important;
 }
@@ -15,6 +15,7 @@ body:has(.admin-page)::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background: white;
+  background: var(--bg);
+  color: var(--text);
   z-index: 9999;
 }

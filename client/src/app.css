@@ -1,10 +1,123 @@
 @import "tailwindcss";
 
+/* Design tokens from the Forum INSAT Entreprise 2026 design system:
+   one dark world, night ground, pixel points, one colour per axis.
+   The voting app belongs to the hackathon axis (violet). */
+:root {
+  --bg: #05031a;
+  --bg-deep: #020110;
+  --panel: #0c0928;
+  --panel-2: #120e36;
+  --navy: #090349;
+  --text: #eeedf8;
+  --muted: #a7a3d1;
+  --faint: #8d88bd;
+  --line: rgba(160, 150, 255, 0.14);
+  --line-strong: rgba(160, 150, 255, 0.32);
+
+  --jobfair: #e8102c;
+  --hackathon: #6a3bf0;
+  --hackathon-hover: #5a2be0;
+  --workshops: #2d68ff;
+  --jobfair-ink: #ff6b7d;
+  --hackathon-ink: #b39bff;
+  --workshops-ink: #86a8ff;
+
+  --ok: #3ddc97;
+  --ok-ground: #0b2a22;
+  --warn: #ffc857;
+  --danger: #ff6b7d;
+  --danger-ground: #2b0a14;
+
+  --sans: "Stack Sans Notch", "Helvetica Neue", Arial, sans-serif;
+  --ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --t-press: 160ms;
+  --t-ui: 200ms;
+  --glass-heavy: rgba(12, 9, 40, 0.9);
+  --shadow-lg: 0 24px 60px -24px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+/* Tailwind colour names used by the admin and the shared UI components. */
+@theme inline {
+  --color-ground: var(--bg);
+  --color-ground-deep: var(--bg-deep);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-navy: var(--navy);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-hackathon: var(--hackathon);
+  --color-hackathon-hover: var(--hackathon-hover);
+  --color-hackathon-ink: var(--hackathon-ink);
+  --color-jobfair: var(--jobfair);
+  --color-jobfair-hover: #c70c25;
+  --color-workshops: var(--workshops);
+  --color-ok: var(--ok);
+  --color-ok-ground: var(--ok-ground);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --color-danger-ground: var(--danger-ground);
+
+  /* shadcn-style names used in components/ui */
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-primary: var(--text);
+  --color-primary-foreground: var(--bg);
+  --color-secondary: var(--panel-2);
+  --color-secondary-foreground: var(--text);
+  --color-destructive: var(--jobfair);
+  --color-destructive-foreground: #ffffff;
+  --color-accent: rgba(238, 237, 248, 0.07);
+  --color-accent-foreground: var(--text);
+  --color-card: var(--panel);
+  --color-card-foreground: var(--text);
+  --color-muted-foreground: var(--muted);
+  --color-input: var(--line-strong);
+  --color-border: var(--line);
+  --color-ring: var(--text);
+
+  --font-sans: var(--ui);
+  --font-display: var(--sans);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  /* The design system is strictly square. */
+  border-radius: 0 !important;
+}
+
 html {
   height: 100%;
   margin: 0;
   padding: 0;
+  -webkit-text-size-adjust: 100%;
 }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  font-family: var(--sans);
+  letter-spacing: -0.024em;
+  text-wrap: balance;
+}
+
+::selection { background: var(--hackathon); color: #fff; }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+input, textarea { caret-color: var(--hackathon-ink); }
+* { scrollbar-color: var(--line-strong) transparent; scrollbar-width: thin; }
 
 #root {
   height: 100%;
@@ -15,4 +128,19 @@ html {
 
 img {
   display: block;
+}
+
+/* Thin red / blue / violet band: the edition's three axes. */
+.triband {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 96px;
+  height: 4px;
+}
+.triband span:nth-child(1) { background: var(--jobfair); }
+.triband span:nth-child(2) { background: var(--workshops); }
+.triband span:nth-child(3) { background: var(--hackathon); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }

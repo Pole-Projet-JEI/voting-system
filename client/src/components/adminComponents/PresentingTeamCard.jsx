@@ -15,7 +15,7 @@ export const PresentingTeamCard = ({
 }) => {
   if (!team) {
     return (
-      <p className="text-center py-8 text-sm text-slate-400 italic">
+      <p className="text-center py-8 text-sm text-faint italic">
         No team presenting
       </p>
     );
@@ -26,12 +26,12 @@ export const PresentingTeamCard = ({
     <Card className="bg-white/15 border-white/20 text-white backdrop-blur">
       <CardHeader>
         <CardTitle className="text-lg">{team.teamName}</CardTitle>
-        <CardDescription className="text-slate-300 line-clamp-2">
+        <CardDescription className="text-muted line-clamp-2">
           {team.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-center text-sm text-slate-200">
+        <p className="text-center text-sm text-ink">
           {teamState === "voting"
             ? "Voting is open"
             : "Presentation in progress"}
@@ -50,7 +50,7 @@ export const PresentingTeamCard = ({
           {teamState !== "voting" && (
             <Button
               onClick={onStartVoting}
-              className="flex-1 bg-green-600 hover:bg-green-700 cursor-pointer"
+              className="flex-1 bg-hackathon hover:bg-hackathon-hover cursor-pointer"
             >
               <Play className="mr-2 h-4 w-4" />
               Start Voting

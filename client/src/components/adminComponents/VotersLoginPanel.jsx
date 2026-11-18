@@ -31,24 +31,24 @@ const QrOverlay = ({ onClose }) => {
   // Rendered on <body> so the sidebar's scroll container cannot show through.
   // z-index must stay above .admin-page (z-index 9999 in AdminPage.css).
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-6 bg-white p-6">
+    <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-6 bg-ground p-6">
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-6 top-6 rounded-full p-2 text-gray-500 hover:bg-gray-100"
+        className="absolute right-6 top-6 rounded-full p-2 text-muted hover:bg-white/5"
         aria-label="Close QR code"
       >
         <X className="h-8 w-8" />
       </button>
-      <h2 className="text-center text-4xl font-bold text-gray-900">Scan to vote</h2>
+      <h2 className="text-center text-4xl font-bold text-ink">Scan to vote</h2>
       {dataUrl && (
         <img
           src={dataUrl}
           alt={`QR code for ${votingLink()}`}
-          className="h-auto w-[min(80vh,90vw)]"
+          className="h-auto w-[min(76vh,90vw)] bg-white"
         />
       )}
-      <p className="text-center text-3xl font-semibold text-gray-800">
+      <p className="text-center text-3xl font-semibold text-ink">
         {window.location.host}
       </p>
     </div>,
@@ -132,7 +132,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
   };
 
   if (!summary) {
-    return <p className="text-sm text-slate-300">Loading voters...</p>;
+    return <p className="text-sm text-muted">Loading voters...</p>;
   }
 
   const pastedCount = extractEmails(pasted).length;
@@ -142,7 +142,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
       {showQr && <QrOverlay onClose={() => setShowQr(false)} />}
 
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-300">Login</span>
+        <span className="text-sm text-muted">Login</span>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
             summary.loginOpen ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"
@@ -157,8 +157,8 @@ export const VotersLoginPanel = ({ onNotify }) => {
         disabled={busy}
         className={
           summary.loginOpen
-            ? "w-full bg-red-600 text-white hover:bg-red-700"
-            : "w-full bg-green-600 text-white hover:bg-green-700"
+            ? "w-full bg-jobfair text-white hover:bg-jobfair-hover"
+            : "w-full bg-hackathon text-white hover:bg-hackathon-hover"
         }
       >
         {summary.loginOpen ? (
@@ -167,7 +167,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
           <><Unlock className="mr-2 h-4 w-4" />Open login</>
         )}
       </Button>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-faint">
         Closing stops new logins. Voters already logged in can keep voting.
       </p>
 
@@ -182,7 +182,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
       </Button>
 
       <div>
-        <div className="mb-1 text-sm text-slate-300">Who can log in</div>
+        <div className="mb-1 text-sm text-muted">Who can log in</div>
         <div className="grid grid-cols-2 gap-1 rounded-md bg-white/5 p-1" role="radiogroup">
           {[
             [true, "Anyone with an email"],
@@ -196,14 +196,14 @@ export const VotersLoginPanel = ({ onNotify }) => {
               disabled={busy}
               onClick={() => setMode(value)}
               className={`rounded px-2 py-1.5 text-xs font-semibold transition ${
-                summary.anyEmail === value ? "bg-white text-slate-900" : "text-slate-300 hover:bg-white/10"
+                summary.anyEmail === value ? "bg-panel text-ink" : "text-muted hover:bg-white/10"
               }`}
             >
               {label}
             </button>
           ))}
         </div>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-faint">
           {summary.anyEmail
             ? "Anyone who scans the QR code can log in with their email. Gmail aliases count as one person; temporary inboxes are refused."
             : "Only emails you add below can log in."}
@@ -217,12 +217,12 @@ export const VotersLoginPanel = ({ onNotify }) => {
       )}
 
       <div className="rounded-md bg-white/5 px-3 py-2 text-sm">
-        <div className="text-slate-300">
+        <div className="text-muted">
           {summary.anyEmail ? "Voters logged in by email" : "Allowed voter emails"}
         </div>
         <div className="text-2xl font-bold">{summary.emailVoters}</div>
         {summary.allowedDomains.length > 0 && (
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-faint">
             + any address @{summary.allowedDomains.join(", @")}
           </div>
         )}
@@ -253,7 +253,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
           <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={onFile} className="hidden" />
         </label>
       </div>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-faint">
         Excel: save as CSV first, or copy the email column and paste it above.
       </p>
       </>

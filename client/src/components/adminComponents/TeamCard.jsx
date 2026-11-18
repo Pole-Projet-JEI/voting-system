@@ -27,11 +27,11 @@ export const TeamCard = ({
 
   if (isEditing) {
     return (
-      <Card className="transition-all hover:shadow-lg bg-white">
+      <Card className="transition-all hover:shadow-lg bg-panel">
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">
+              <label className="text-sm font-medium text-ink">
                 Team Name
               </label>
               <Input
@@ -39,11 +39,11 @@ export const TeamCard = ({
                 onChange={(e) =>
                   onEditChange({ ...editingTeam, teamName: e.target.value })
                 }
-                className="bg-white text-gray-900"
+                className="bg-panel text-ink"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">
+              <label className="text-sm font-medium text-ink">
                 Description
               </label>
               <Textarea
@@ -52,20 +52,20 @@ export const TeamCard = ({
                   onEditChange({ ...editingTeam, description: e.target.value })
                 }
                 rows={3}
-                className="bg-white text-gray-900"
+                className="bg-panel text-ink"
               />
             </div>
             <div className="flex gap-2">
               <Button
                 onClick={onSaveEdit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                className="flex-1 bg-transparent border border-line-strong hover:border-ink text-white cursor-pointer"
               >
                 Save
               </Button>
               <Button
                 onClick={onCancelEdit}
                 variant="outline"
-                className="flex-1 text-gray-900 border-gray-300 cursor-pointer"
+                className="flex-1 text-ink border-line-strong cursor-pointer"
               >
                 Cancel
               </Button>
@@ -78,9 +78,9 @@ export const TeamCard = ({
 
   return (
     <Card
-      className={`transition-all hover:shadow-lg bg-white ${
+      className={`transition-all hover:shadow-lg bg-panel ${
         teamState === "presenting" || teamState === "voting"
-          ? "border-green-500 bg-green-50"
+          ? "border-hackathon bg-ok-ground"
           : team.presented
           ? "border-muted opacity-60"
           : ""
@@ -88,7 +88,7 @@ export const TeamCard = ({
     >
       <CardHeader>
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg text-gray-900">
+          <CardTitle className="text-lg text-ink">
             {team.teamName}
           </CardTitle>
           <div className="flex gap-1">
@@ -99,25 +99,25 @@ export const TeamCard = ({
               <Badge className="bg-green-500 text-white">Voting</Badge>
             )}
             {team.presented && (
-              <Badge variant="secondary" className="bg-gray-200 text-gray-800">
+              <Badge variant="secondary" className="bg-gray-200 text-ink">
                 Presented
               </Badge>
             )}
           </div>
         </div>
-        <CardDescription className="line-clamp-2 min-h-[40px] text-gray-600">
+        <CardDescription className="line-clamp-2 min-h-[40px] text-muted">
           {team.description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 p-3 bg-gray-100 rounded-lg">
+        <div className="grid grid-cols-2 gap-3 p-3 bg-panel-2 rounded-lg">
           <div className="text-center">
-            <div className="text-xs text-gray-600 mb-1">👍 Yes</div>
-            <div className="text-xl font-bold text-gray-900">{team.nyes}</div>
+            <div className="text-xs text-muted mb-1">👍 Yes</div>
+            <div className="text-xl font-bold text-ink">{team.nyes}</div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-gray-600 mb-1">👎 No</div>
-            <div className="text-xl font-bold text-gray-900">{team.nno}</div>
+            <div className="text-xs text-muted mb-1">👎 No</div>
+            <div className="text-xl font-bold text-ink">{team.nno}</div>
           </div>
         </div>
 
@@ -125,7 +125,7 @@ export const TeamCard = ({
           {teamState === "pending" && !team.presenting && !team.presented && (
             <Button
               onClick={() => onSetPresenting(team._id)}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              className="flex-1 bg-hackathon hover:bg-hackathon-hover text-white cursor-pointer"
               size="sm"
             >
               <Play className="mr-1 h-3 w-3" />
@@ -138,7 +138,7 @@ export const TeamCard = ({
                 onClick={() => onStartEdit(team)}
                 variant="outline"
                 size="sm"
-                className="text-gray-900 border-gray-300 hover:bg-gray-100 cursor-pointer"
+                className="text-ink border-line-strong hover:bg-white/5 cursor-pointer"
               >
                 <Pencil className="h-3 w-3" />
               </Button>
@@ -146,7 +146,7 @@ export const TeamCard = ({
                 onClick={() => onDelete(team._id, team.teamName)}
                 variant="destructive"
                 size="sm"
-                className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                className="bg-jobfair hover:bg-jobfair-hover text-white cursor-pointer"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>

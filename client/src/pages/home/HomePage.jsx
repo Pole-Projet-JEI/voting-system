@@ -2,8 +2,6 @@ import { useEffect, useRef, useState, useReducer } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./HomePage.css";
-import hourGlass from "../../assets/time.png";
-import checkIcon from "../../assets/check-icon.png";
 import {
   didUserVote,
   getCurrentTeam,
@@ -281,13 +279,13 @@ export default function HomePage() {
   }, []);
 
   const VoteOpen = (
-    <div className="home-container vote-form-container">
+    <div className="home-container vote-form-container fie-panel">
       <h1 className="vote-open-title">
-        Your vote for <span style={{ color: "#790C18" }}>{state.teamName}</span>
+        Your vote for <span className="team-name">{state.teamName}</span>
       </h1>
       <form className="vote-form" onSubmit={voteSubmitHandler}>
         {voteError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700" role="alert">
+          <div className="fie-error" role="alert">
             {voteError}
           </div>
         )}
@@ -317,7 +315,7 @@ export default function HomePage() {
         </div>
         <button
           type="submit"
-          className="submit-vote-button"
+          className="submit-vote-button fie-btn"
           disabled={!state.userVote || Boolean(submitStatus)}
         >
           {submitStatus === "locating"
@@ -337,8 +335,8 @@ export default function HomePage() {
   );
 
   const VoteClosed = (
-    <div className="home-container">
-      <img src={hourGlass} alt="hourglass" width="80px" />
+    <div className="home-container fie-panel">
+      <span className="fie-label">Waiting</span>
       <div className="home-vote-closed-message">
         <p>Voting is now closed - get ready for the next team!</p>
       </div>
@@ -346,16 +344,17 @@ export default function HomePage() {
   );
 
   const TeamIsPresenting = (
-    <div className="home-container">
+    <div className="home-container fie-panel">
+      <span className="fie-label">On stage</span>
       <h1 className="vote-open-title">
-        <span style={{ color: "#790C18" }}>{state.teamName}</span> is presenting
+        <span className="team-name">{state.teamName}</span> is presenting
       </h1>
-      <p className="home-vote-closed-message">Voting will open shortly.</p>
+      <p className="home-vote-progress">Voting will open shortly.</p>
     </div>
   );
 
   const VoteError = (
-    <div className="home-container">
+    <div className="home-container fie-panel">
       <div className="home-vote-closed-message" role="alert">
         <p>{pageError}</p>
       </div>
@@ -363,9 +362,13 @@ export default function HomePage() {
   );
 
   const ThankYouForYourVote = (
-    <div className="thank-you-container">
+    <div className="thank-you-container fie-panel">
+      <span className="thank-you-mark" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="square">
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        </svg>
+      </span>
       <h1>Thank you for your vote</h1>
-      <img src={checkIcon} alt="check-icon" />
       {progress.totalTeams > 0 && (
         <p className="home-vote-progress">
           {progress.votedTeams >= progress.totalTeams

@@ -1,210 +1,166 @@
-.home-container.vote-form-container {
-  padding: 4em 5em;
-  padding-bottom: 2em;
-}
 .home-container {
-  gap: 1em;
-  padding: 2em 5em;
   display: flex;
-  align-items: center;
   flex-direction: column;
-  justify-content: center;
-
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 1em;
+  align-items: center;
+  gap: 18px;
   width: 100%;
-  max-width: 750px;
-  box-sizing: border-box;
+  max-width: 640px;
   margin: 0 auto;
+  padding: 36px 32px;
   text-align: center;
   overflow-wrap: anywhere;
 }
+
+.home-container img {
+  width: 64px;
+  height: auto;
+  opacity: 0.9;
+}
+
 .home-vote-closed-message {
-  font-size: 2em;
-  font-weight: 800;
-  text-align: center;
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(1.35rem, 4.5vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: -0.024em;
+}
+
+.home-vote-closed-message p {
+  margin: 0;
 }
 
 .vote-open-title {
-  font-size: 2em;
-  font-weight: 800;
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 5.5vw, 2.4rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+}
+
+.team-name {
+  color: var(--hackathon-ink);
 }
 
 .vote-form {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2em;
+  align-items: stretch;
+  gap: 16px;
 }
 
 .vote-buttons {
-  display: flex;
-  gap: 2em;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   width: 100%;
-  justify-content: center;
 }
 
+/* Yes / No: chips from the design system; the chosen one is filled. */
 .vote-option {
-  flex: 1;
-  max-width: 200px;
-  border: none;
-  padding: 1.5em 3em;
-  border-radius: 1em;
-  color: white;
-  background-color: #4d4855;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   cursor: pointer;
-  font-size: 1.2em;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  touch-action: manipulation;
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-ui) ease,
+    border-color var(--t-ui) ease, color var(--t-ui) ease;
 }
 
-.vote-option:hover {
-  background-color: #5f5a66;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+.vote-option::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: var(--marker, var(--muted));
+  flex: none;
+}
+
+#vote-yes { --marker: var(--ok); }
+#vote-no { --marker: var(--danger); }
+
+.vote-option:active {
+  transform: scale(0.97);
 }
 
 .vote-option.selected {
-  background-color: #790c18;
-  transform: scale(1.08);
-  box-shadow: 0 0 20px rgba(121, 12, 24, 0.6);
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
 }
 
-.vote-option.selected:hover {
-  background-color: #a40f22;
+@media (hover: hover) and (pointer: fine) {
+  .vote-option:not(.selected):hover {
+    border-color: var(--text);
+  }
 }
 
 .submit-vote-button {
-  border: none;
-  padding: 1em 4em;
-  border-radius: 1em;
-  color: white;
-  background-color: #790c18;
-  cursor: pointer;
-  font-size: 1.3em;
-  font-weight: 700;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.submit-vote-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-  opacity: 0.6;
-  box-shadow: none;
-}
-
-.submit-vote-button:hover:not(:disabled) {
-  background-color: #a40f22;
-  transform: scale(1.05);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
-}
-
-@media (max-width: 500px) {
-  .home-container {
-    gap: 1em;
-    padding: 2em 2em;
-  }
-
-  .home-vote-closed-message {
-    font-size: 1.5em;
-  }
-
-  .vote-buttons {
-    flex-direction: column;
-    gap: 1em;
-  }
-
-  .vote-option {
-    max-width: 100%;
-    padding: 1.2em 2em;
-  }
-
-  .submit-vote-button {
-    width: 100%;
-    padding: 1em 2em;
-  }
-}
-
-@media (max-width: 488px) {
-  .home-container {
-    padding: 1.5em 1.5em;
-  }
-
-  .vote-open-title {
-    font-size: 1.5em;
-  }
-
-  .home-vote-closed-message {
-    font-size: 1.2em;
-  }
-
-  .vote-option {
-    padding: 1em 1.5em;
-    font-size: 1em;
-  }
-
-  .submit-vote-button {
-    padding: 0.8em 1.5em;
-    font-size: 1.1em;
-  }
-}
-
-@media (max-width: 360px) {
-  .home-container,
-  .home-container.vote-form-container {
-    gap: 0.75em;
-    padding: 1.25em 1em;
-  }
-
-  .vote-open-title {
-    font-size: 1.3em;
-  }
-
-  .vote-form {
-    gap: 1.25em;
-  }
-
-  .home-vote-closed-message {
-    font-size: 1em;
-  }
+  width: 100%;
+  min-height: 52px;
+  font-size: 1.05rem;
 }
 
 .home-vote-progress {
-  margin-top: 1rem;
-  max-width: 28rem;
-  text-align: center;
-  font-size: 0.95rem;
-  opacity: 0.85;
-}
-
-@media (max-width: 500px) {
-  .home-container.vote-form-container {
-    padding: 2em 1.25em 1.5em;
-  }
+  margin: 4px 0 0;
+  max-width: 34rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--muted);
 }
 
 .thank-you-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 16px;
   width: 100%;
-  max-width: 750px;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 2em 1.25em;
-  box-sizing: border-box;
+  padding: 40px 28px;
   text-align: center;
 }
 
 .thank-you-container h1 {
-  font-size: clamp(1.4em, 5vw, 2.2em);
-  font-weight: 800;
+  margin: 0;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 6vw, 2.6rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
 }
 
-.thank-you-container img {
-  width: 56px;
-  height: 56px;
+/* The confirmation point: a green square with a check. */
+.thank-you-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  background: var(--ok-ground);
+  border: 1px solid rgba(61, 220, 151, 0.45);
+  color: var(--ok);
+}
+
+@media (max-width: 420px) {
+  .home-container,
+  .thank-you-container {
+    padding: 26px 18px;
+    gap: 14px;
+  }
+
+  .vote-option {
+    min-height: 58px;
+    font-size: 1.2rem;
+  }
 }

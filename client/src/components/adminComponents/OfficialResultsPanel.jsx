@@ -69,14 +69,14 @@ export const OfficialResultsPanel = () => {
     results && results.totalTeams > 0 && results.countedTeams === results.totalTeams;
 
   return (
-    <section className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <section className="mb-8 rounded-xl border border-line-strong bg-panel p-6 shadow-sm">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="flex items-center gap-2 text-xl font-bold text-gray-900">
+          <h3 className="flex items-center gap-2 text-xl font-bold text-ink">
             <Trophy className="h-5 w-5" />
             Official results
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted">
             Ranked by counted yes votes (ties: fewer no votes first). Only voters who voted
             for every team that has opened voting are counted.
             Voters who missed a team have all their votes discarded.
@@ -87,7 +87,7 @@ export const OfficialResultsPanel = () => {
           variant="outline"
           onClick={load}
           disabled={loading}
-          className="text-gray-900 border-gray-300"
+          className="text-ink border-line-strong"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
@@ -95,7 +95,7 @@ export const OfficialResultsPanel = () => {
       </div>
 
       {error && (
-        <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="mb-4 rounded-lg border border-danger/40 bg-danger-ground px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
@@ -109,25 +109,25 @@ export const OfficialResultsPanel = () => {
               ["Voters with any vote", results.votersWithAnyVote],
               ["Discarded voters", results.discardedVoters],
             ].map(([label, value]) => (
-              <div key={label} className="rounded-lg bg-gray-50 p-3">
-                <div className="text-xs text-gray-500">{label}</div>
-                <div className="text-2xl font-bold text-gray-900">{value}</div>
+              <div key={label} className="rounded-lg bg-panel-2 p-3">
+                <div className="text-xs text-muted">{label}</div>
+                <div className="text-2xl font-bold text-ink">{value}</div>
               </div>
             ))}
           </div>
 
           {!allTeamsCounted && results.totalTeams > 0 && (
-            <p className="mb-3 text-sm text-amber-700">
+            <p className="mb-3 text-sm text-warn">
               Not final yet: {results.totalTeams - results.countedTeams} team(s) have not opened voting.
             </p>
           )}
 
           {results.teams.length === 0 ? (
-            <p className="text-sm text-gray-500">No team has opened voting yet.</p>
+            <p className="text-sm text-muted">No team has opened voting yet.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-b text-gray-500">
+                <thead className="border-b text-muted">
                   <tr>
                     <th className="py-2 pr-4">Rank</th>
                     <th className="py-2 pr-4">Team</th>
@@ -138,16 +138,16 @@ export const OfficialResultsPanel = () => {
                 </thead>
                 <tbody>
                   {rankTeams(results.teams).map((team) => (
-                    <tr key={team._id} className="border-b last:border-0 text-gray-900">
+                    <tr key={team._id} className="border-b last:border-0 text-ink">
                       <td className="py-2 pr-4 font-bold whitespace-nowrap">
                         <span aria-hidden="true">{MEDALS[team.rank] || ""} </span>
                         {ordinal(team.rank)}
-                        {team.tied && <span className="ml-1 text-xs font-normal text-gray-500">(tie)</span>}
+                        {team.tied && <span className="ml-1 text-xs font-normal text-muted">(tie)</span>}
                       </td>
                       <td className="py-2 pr-4 font-medium">{team.teamName}</td>
-                      <td className="py-2 pr-4 font-semibold text-green-700">{team.official.yes}</td>
-                      <td className="py-2 pr-4 font-semibold text-red-700">{team.official.no}</td>
-                      <td className="py-2 pr-4 text-gray-500">
+                      <td className="py-2 pr-4 font-semibold text-ok">{team.official.yes}</td>
+                      <td className="py-2 pr-4 font-semibold text-danger">{team.official.no}</td>
+                      <td className="py-2 pr-4 text-muted">
                         {team.raw.yes} / {team.raw.no}
                       </td>
                     </tr>

@@ -49,7 +49,7 @@ function AdminPage() {
   // Override body styles for admin page
 
   useEffect(() => {
-    document.body.style.background = "white";
+    document.body.style.background = "var(--bg)";
     document.body.style.overflow = "hidden";
     const overlay = document.querySelector("body::before");
     if (overlay) overlay.style.display = "none";
@@ -311,21 +311,21 @@ function AdminPage() {
           icon: ArrowDown,
           variant: "default",
           text: "Most Votes",
-          className: `${baseClass} bg-blue-600 hover:bg-blue-700 text-white`,
+          className: `${baseClass} bg-transparent border border-line-strong hover:border-ink text-white`,
         };
       case "yes-asc":
         return {
           icon: ArrowUp,
           variant: "default",
           text: "Least Votes",
-          className: `${baseClass} bg-blue-600 hover:bg-blue-700 text-white`,
+          className: `${baseClass} bg-transparent border border-line-strong hover:border-ink text-white`,
         };
       default:
         return {
           icon: ArrowUpDown,
           variant: "outline",
           text: "Sort by Votes",
-          className: `${baseClass} border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-700`,
+          className: `${baseClass} border-line-strong bg-panel-2 hover:bg-white/10 text-ink`,
         };
     }
   };
@@ -384,14 +384,14 @@ function AdminPage() {
   }
 
   return (
-    <div className="admin-page flex flex-col lg:flex-row h-screen overflow-y-auto lg:overflow-hidden bg-white">
+    <div className="admin-page flex flex-col lg:flex-row h-screen overflow-y-auto lg:overflow-hidden bg-ground">
       {notification && (
         <div
           role="alert"
           className={`fixed right-6 top-6 z-[70] max-w-sm rounded-lg border px-4 py-3 text-sm shadow-lg ${
             notification.type === "error"
-              ? "border-red-200 bg-red-50 text-red-700"
-              : "border-green-200 bg-green-50 text-green-700"
+              ? "border-danger/40 bg-danger-ground text-danger"
+              : "border-ok/40 bg-ok-ground text-ok"
           }`}
         >
           <div className="flex items-start gap-3">
@@ -412,19 +412,19 @@ function AdminPage() {
           <form
             onSubmit={handleChangePassword}
             noValidate
-            className="w-full max-w-md space-y-3 rounded-2xl bg-white p-6 shadow-2xl"
+            className="w-full max-w-md space-y-3 rounded-2xl bg-panel p-6 shadow-2xl"
           >
             <div>
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-xl font-bold text-ink">
                 Set a new password
               </h2>
-              <p className="mt-1 text-sm text-slate-500">Required on first login.</p>
+              <p className="mt-1 text-sm text-muted">Required on first login.</p>
             </div>
 
             <div className="space-y-2">
               <label
                 htmlFor="current-admin-password"
-                className="block text-sm font-medium text-slate-700"
+                className="block text-sm font-medium text-ink"
               >
                 Temporary password
               </label>
@@ -435,13 +435,13 @@ function AdminPage() {
                   placeholder="Temporary password"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border border-line-strong px-4 py-3 pr-11 text-ink outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/30"
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility("current")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-900"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
                   aria-label={
                     visiblePasswords.current
                       ? "Hide temporary password"
@@ -460,7 +460,7 @@ function AdminPage() {
             <div className="space-y-2">
               <label
                 htmlFor="new-admin-password"
-                className="block text-sm font-medium text-slate-700"
+                className="block text-sm font-medium text-ink"
               >
                 New password
               </label>
@@ -471,14 +471,14 @@ function AdminPage() {
                   placeholder="New password"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border border-line-strong px-4 py-3 pr-11 text-ink outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/30"
                   minLength={8}
                   autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility("new")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-900"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
                   aria-label={
                     visiblePasswords.new
                       ? "Hide new password"
@@ -492,7 +492,7 @@ function AdminPage() {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted">
                 8+ chars: A-Z, a-z, 0-9 and a symbol.
               </p>
             </div>
@@ -500,7 +500,7 @@ function AdminPage() {
             <div className="space-y-2">
               <label
                 htmlFor="confirm-admin-password"
-                className="block text-sm font-medium text-slate-700"
+                className="block text-sm font-medium text-ink"
               >
                 Confirm password
               </label>
@@ -511,14 +511,14 @@ function AdminPage() {
                   placeholder="Confirm password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-3 pr-11 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border border-line-strong px-4 py-3 pr-11 text-ink outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/30"
                   minLength={8}
                   autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => togglePasswordVisibility("confirm")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:text-slate-900"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
                   aria-label={
                     visiblePasswords.confirm
                       ? "Hide confirmation password"
@@ -537,7 +537,7 @@ function AdminPage() {
             {passwordError && (
               <div
                 role="alert"
-                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                className="rounded-lg border border-danger/40 bg-danger-ground px-4 py-3 text-sm text-danger"
               >
                 {passwordError}
               </div>
@@ -545,7 +545,7 @@ function AdminPage() {
 
             <Button
               type="submit"
-              className="w-full rounded-lg bg-slate-900 py-3 font-semibold text-white hover:bg-slate-800"
+              className="w-full rounded-lg bg-hackathon py-3 font-semibold text-white hover:bg-hackathon-hover"
             >
               Save password
             </Button>
@@ -553,14 +553,14 @@ function AdminPage() {
         </div>
       )}
       {/* Sidebar */}
-      <aside className="w-full shrink-0 lg:w-80 bg-gradient-to-b from-slate-900 to-slate-800 text-white lg:overflow-y-auto shadow-xl">
+      <aside className="w-full shrink-0 lg:w-80 bg-ground-deep border-r border-line text-white lg:overflow-y-auto shadow-xl">
         <div className="p-6 border-b border-white/10">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-3">
               <BarChart3 className="h-8 w-8" />
               <div>
                 <h1 className="text-2xl font-bold">Admin Panel</h1>
-                <p className="text-sm text-slate-300">Voting Dashboard</p>
+                <p className="text-sm text-muted">Voting Dashboard</p>
               </div>
             </div>
             <Button
@@ -639,10 +639,10 @@ function AdminPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 lg:overflow-y-auto p-4 sm:p-6 lg:p-8 bg-white">
+      <main className="flex-1 min-w-0 lg:overflow-y-auto p-4 sm:p-6 lg:p-8 bg-ground">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6 lg:mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <h2 className="text-2xl sm:text-3xl font-bold text-ink">
               Team Management
             </h2>
             <div className="flex flex-wrap gap-3">
@@ -657,7 +657,7 @@ function AdminPage() {
               <Button
                 onClick={() => setShowAddTeamForm(!showAddTeamForm)}
                 size="lg"
-                className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                className="bg-hackathon hover:bg-hackathon-hover text-white cursor-pointer"
               >
                 {showAddTeamForm ? (
                   <>

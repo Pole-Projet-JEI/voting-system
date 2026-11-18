@@ -134,21 +134,20 @@ export default function RegisterPage() {
   };
 
   const header = (
-    <>
-      <img src={jeiLogo} alt="JEILogo" width="100px" height="50px" />
+    <div className="register-brand">
+      <img src={jeiLogo} alt="Junior Entreprise INSAT" />
+      <span className="triband" aria-hidden="true"><span /><span /><span /></span>
       <div className="title-container">
         <h1 className="title-G">Hack for Good</h1>
         <h1 className="title-2">4.0</h1>
       </div>
-      <h2 style={{ fontSize: "1em", color: "rgba(255,255,255,0.55)" }}>
-        Voting System
-      </h2>
-    </>
+      <span className="fie-label register-subtitle">Voting system</span>
+    </div>
   );
 
   if (loginOpen === false) {
     return (
-      <div className="register-form-container">
+      <div className="register-form-container fie-panel">
         {header}
         <p className="register-closed">
           Login is closed for now. Keep this page open: it will unlock as soon as the
@@ -159,14 +158,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="register-form-container">
+    <div className="register-form-container fie-panel">
       {header}
 
       {info && !error && (
-        <p style={{ color: "rgba(255,255,255,0.8)", textAlign: "center" }}>{info}</p>
+        <p className="fie-info">{info}</p>
       )}
       {error && (
-        <p style={{ color: "#ffb4b4", textAlign: "center" }} role="alert">
+        <p className="fie-error" role="alert">
           {error}
         </p>
       )}

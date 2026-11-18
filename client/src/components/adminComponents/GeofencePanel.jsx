@@ -113,16 +113,16 @@ export const GeofencePanel = ({ onNotify }) => {
   };
 
   if (!loaded) {
-    return <p className="text-sm text-slate-300">Loading location settings...</p>;
+    return <p className="text-sm text-muted">Loading location settings...</p>;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-300">Status</span>
+        <span className="text-sm text-muted">Status</span>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-            enabled ? "bg-green-500/20 text-green-300" : "bg-white/10 text-slate-300"
+            enabled ? "bg-green-500/20 text-green-300" : "bg-white/10 text-muted"
           }`}
         >
           {enabled ? "Enforced" : "Off"}
@@ -130,7 +130,7 @@ export const GeofencePanel = ({ onNotify }) => {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <label className="space-y-1 text-xs text-slate-300">
+        <label className="space-y-1 text-xs text-muted">
           Latitude
           <input
             className={inputClass}
@@ -140,7 +140,7 @@ export const GeofencePanel = ({ onNotify }) => {
             placeholder="36.843200 or paste lat, lng"
           />
         </label>
-        <label className="space-y-1 text-xs text-slate-300">
+        <label className="space-y-1 text-xs text-muted">
           Longitude
           <input
             className={inputClass}
@@ -150,7 +150,7 @@ export const GeofencePanel = ({ onNotify }) => {
             placeholder="10.197100"
           />
         </label>
-        <label className="space-y-1 text-xs text-slate-300">
+        <label className="space-y-1 text-xs text-muted">
           Radius (m)
           <input
             className={inputClass}
@@ -159,7 +159,7 @@ export const GeofencePanel = ({ onNotify }) => {
             onChange={updateField("radiusMeters")}
           />
         </label>
-        <label className="space-y-1 text-xs text-slate-300">
+        <label className="space-y-1 text-xs text-muted">
           Max GPS error (m)
           <input
             className={inputClass}
@@ -190,7 +190,7 @@ export const GeofencePanel = ({ onNotify }) => {
         </div>
       )}
       {lastFixAccuracy !== null && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-faint">
           Fix accuracy: ±{lastFixAccuracy} m. Stand in the middle of the room for the best center.
         </p>
       )}
@@ -211,15 +211,15 @@ export const GeofencePanel = ({ onNotify }) => {
           disabled={Boolean(busy)}
           className={
             enabled
-              ? "bg-red-600 text-white hover:bg-red-700"
-              : "bg-green-600 text-white hover:bg-green-700"
+              ? "bg-jobfair text-white hover:bg-jobfair-hover"
+              : "bg-hackathon text-white hover:bg-hackathon-hover"
           }
         >
           <MapPin className="mr-2 h-4 w-4" />
           {enabled ? "Disable" : "Enable"}
         </Button>
       </div>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-faint">
         When enabled, every vote must come with a phone location inside the radius.
         Indoor GPS can be off by 20–100 m, so start with a generous radius.
       </p>

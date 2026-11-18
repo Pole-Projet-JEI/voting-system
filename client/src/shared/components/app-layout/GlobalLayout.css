@@ -1,73 +1,161 @@
+/* Voter pages: the night ground with a faint field of pixel points. */
 body {
-    /* Vertical scroll must stay possible: on short phones the vote form is
-       taller than the screen. */
-    overflow-x: hidden;
-    overflow-y: auto;
-    font-family: 'JetBrains Mono';
-    background-image: url('../../../assets/auditorium.jpg');
-    background-size: cover;       
-    background-position: center;  
-    background-attachment: fixed;  
-    margin: 0;     
-    padding: 0;               
-    min-height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-  }
+  /* Vertical scroll must stay possible: on short phones the vote form is
+     taller than the screen. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--ui);
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(106, 59, 240, 0.18), transparent 70%),
+    radial-gradient(ellipse 60% 50% at 100% 100%, rgba(45, 104, 255, 0.08), transparent 70%);
+  background-attachment: fixed;
+}
 
+/* Pixel points: a sparse square grid, very low contrast. */
 body::before {
-    content: "";                  
-    position: fixed;            
-    top: 0;                       
-    left: 0;                     
-    width: 100%;                 
-    height: 100%;                  
-    background-color: rgba(8, 2, 73, 0.95);
-    z-index: 1;                   
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: linear-gradient(rgba(179, 155, 255, 0.16) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(179, 155, 255, 0.16) 2px, transparent 2px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 0%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 0%, transparent 75%);
+  opacity: 0.35;
 }
 
 .layout-container {
-    padding: 16px;
-    box-sizing: border-box;
-    min-height: 100vh;
-    min-height: 100dvh;
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    padding-bottom: constant(safe-area-inset-bottom);
-    padding-bottom: env(safe-area-inset-bottom); /* Safe area inset for iOS devices */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .content-container {
-    position: relative;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 2;
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
 }
 
-.top-shadow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 120px;  /* Height of the top shadow */
-    background: linear-gradient(to bottom, rgba(24,24,24,1) 0%, rgba(23,23,26,0.75) 35%, rgba(8,2,73,0.3) 100%);
-    z-index: 1;  /* Makes sure it's above the background but below content */
-}
-  
+/* The previous photo vignettes are not part of this design. */
+.top-shadow,
 .bottom-shadow {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 120px;  /* Height of the bottom shadow */
-    background: linear-gradient(to top, rgba(24,24,24,1) 0%, rgba(23,23,26,0.75) 35%, rgba(8,2,73,0.3) 100%);
-    z-index: 1;  /* Makes sure it's above the background but below content */
+  display: none;
+}
+
+/* ---------- shared voter components ---------- */
+.fie-panel {
+  width: 100%;
+  background: rgba(12, 9, 40, 0.82);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--shadow-lg);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.fie-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* The axis marker: a small violet square. */
+.fie-label::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  background: var(--hackathon);
+  flex: none;
+}
+
+.fie-error {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--danger);
+  background: var(--danger-ground);
+  border: 1px solid rgba(255, 107, 125, 0.35);
+}
+
+.fie-error::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  background: var(--danger);
+  flex: none;
+}
+
+.fie-info {
+  width: 100%;
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: left;
+}
+
+.fie-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border: 1px solid transparent;
+  background: var(--hackathon);
+  color: #fff;
+  font-family: var(--ui);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: -0.005em;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-ui) ease,
+    border-color var(--t-ui) ease, color var(--t-ui) ease;
+}
+
+.fie-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.fie-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fie-btn:not(:disabled):hover {
+    background: var(--hackathon-hover);
+  }
 }
