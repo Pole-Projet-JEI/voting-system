@@ -14,7 +14,7 @@ import "./PixelField.css";
 // stays still when the user prefers reduced motion.
 
 const VIOLET = ["#13042a", "#1d0a3a", "#22104f", "#2c125c", "#36136c", "#40198a", "#4a249e", "#5631b6", "#6639cc", "#7646e6"];
-const RED = ["#000000", "#3d0838", "#540a33", "#760a2c", "#931028", "#b8192a", "#e8102c"];
+const RED = ["#000000", "#2b0840", "#3d0838", "#540a33", "#760a2c", "#931028", "#b8192a"];
 
 const hexToVec = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
 const paletteUniform = (list, size) => {
@@ -141,13 +141,14 @@ void main() {
   col = mix(vec3(0.0196, 0.0118, 0.102), col, 0.72 - 0.38 * calm);
 
   // Stepped red rings around the pointer.
-  float r = 1.05 * warm + 0.04 * flow;
+  // Same pointer response as the design system: peak 0.85 (5th red step).
+  float r = 0.85 * warm + 0.07 * flow;
   int ri = int(floor(clamp(r + grain / 7.0, 0.0, 0.9999) * 7.0));
   if (ri > 0) {
     float w = ri == 1 ? 0.4 : (ri == 2 ? 0.65 : (ri == 3 ? 0.85 : 1.0));
     col = mix(col, redAt(ri), w);
   }
-  col += (1.0 - col) * warm * 0.12;
+  col += (1.0 - col) * warm * 0.06;
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -162,7 +163,7 @@ const compile = (gl, type, source) => {
   return shader;
 };
 
-export default function PixelField({ cell = 10 }) {
+export default function PixelField({ cell = 10.5 }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -215,7 +216,7 @@ export default function PixelField({ cell = 10 }) {
     const resize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      cellPx = w < 640 ? Math.round(cell * 1.2) : cell;
+      cellPx = w < 640 ? cell * 0.85 : cell;
       cols = Math.max(8, Math.round(w / cellPx));
       rows = Math.max(8, Math.round(h / cellPx));
       canvas.width = cols;
@@ -223,7 +224,8 @@ export default function PixelField({ cell = 10 }) {
       gl.viewport(0, 0, cols, rows);
       gl.uniform2f(u.uGrid, cols, rows);
       gl.uniform1f(u.uAspect, w / h);
-      gl.uniform1f(u.uRadius, w < 640 ? 7 : 9);
+      // 6 cells, widened only on very wide screens (as in the design system).
+      gl.uniform1f(u.uRadius, 6 * Math.max(1, cols / 110));
     };
 
     const render = () => {
@@ -238,10 +240,11 @@ export default function PixelField({ cell = 10 }) {
       const dt = Math.min(0.1, (now - (last || now)) / 1000);
       last = now;
       time += dt;
-      const follow = 1 - Math.pow(0.001, dt); // frame-rate independent easing
+      // Frame-rate independent easing: position ~90 ms, heat ~180 ms.
+      const follow = 1 - Math.exp(-dt / 0.09);
       pointer.x += (pointer.tx - pointer.x) * follow;
       pointer.y += (pointer.ty - pointer.y) * follow;
-      pointer.s += (pointer.ts - pointer.s) * (1 - Math.pow(0.02, dt));
+      pointer.s += (pointer.ts - pointer.s) * (1 - Math.exp(-dt / 0.18));
       render();
     };
 
