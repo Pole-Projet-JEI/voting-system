@@ -136,6 +136,9 @@ void main() {
 
   float heat = 0.06 + 0.82 * (1.0 - empty) - 0.4 * calm + 0.08 * flow + 0.3 * warm;
   vec3 col = violetAt(heat + grain / 10.0);
+  // Veil: keep the night ground dominant (darker in the centre) without
+  // dimming the red pointer rings drawn after it.
+  col = mix(vec3(0.0196, 0.0118, 0.102), col, 0.72 - 0.38 * calm);
 
   // Stepped red rings around the pointer.
   float r = 1.05 * warm + 0.04 * flow;
@@ -144,7 +147,7 @@ void main() {
     float w = ri == 1 ? 0.4 : (ri == 2 ? 0.65 : (ri == 3 ? 0.85 : 1.0));
     col = mix(col, redAt(ri), w);
   }
-  col += (1.0 - col) * warm * 0.06;
+  col += (1.0 - col) * warm * 0.12;
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -288,10 +291,5 @@ export default function PixelField({ cell = 10 }) {
     };
   }, [cell]);
 
-  return (
-    <>
-      <canvas ref={canvasRef} className="pixel-field" aria-hidden="true" />
-      <div className="pixel-field-scrim" aria-hidden="true" />
-    </>
-  );
+  return <canvas ref={canvasRef} className="pixel-field" aria-hidden="true" />;
 }
