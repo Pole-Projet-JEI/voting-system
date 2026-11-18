@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import PixelField from "../../shared/components/pixel-field/PixelField";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -81,6 +82,7 @@ function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-ground relative z-10">
+      <PixelField />
       <div className="w-full max-w-md p-8 relative z-20">
         <div className="bg-panel border border-line-strong shadow-2xl p-8 relative z-30">
           <div className="flex flex-col items-center mb-8">
