@@ -1,172 +1,276 @@
 import { useEffect, useRef } from "react";
 import "./PixelField.css";
 
-// A field of large pixels coloured by a slowly flowing "heat", in the
-// hackathon violet palette. The pointer (mouse or finger) warms the cells
-// towards red and leaves a trail that cools down.
-// Canvas 2D at cell resolution, upscaled pixel-sharp; capped at 30 fps.
+// Pixel heat field in the style of the Forum INSAT Entreprise 2026 design
+// system (hackathon axis). Computed on the GPU at cell resolution and
+// upscaled pixel-sharp:
+//   - four soft "team" shapes drift in from the edges, swell and recede,
+//     with faint ripples, over a slow simplex-noise flow;
+//   - heat is quantised into the 10-step violet palette with a per-cell
+//     grain, so edges stay crisp and pixelated;
+//   - the pointer (mouse or finger) adds heat that shows as stepped red
+//     rings, easing in and following smoothly.
+// Falls back to the plain night background when WebGL is unavailable, and
+// stays still when the user prefers reduced motion.
 
-const VIOLET = [
-  "#05031a", "#0d0326", "#13042a", "#1d0a3a", "#22104f",
-  "#2c125c", "#36136c", "#40198a", "#4a249e", "#5631b6",
-];
-const RED = ["#2b0840", "#3d0838", "#540a33", "#760a2c", "#931028", "#b8192a", "#e8102c"];
+const VIOLET = ["#13042a", "#1d0a3a", "#22104f", "#2c125c", "#36136c", "#40198a", "#4a249e", "#5631b6", "#6639cc", "#7646e6"];
+const RED = ["#000000", "#2b0840", "#3d0838", "#540a33", "#760a2c", "#931028", "#b8192a"];
 
-const toRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-const VIOLET_RGB = VIOLET.map(toRgb);
-const RED_RGB = RED.map(toRgb);
-
-// Small value-noise implementation (deterministic, no dependencies).
-const PERM = (() => {
-  const p = Array.from({ length: 256 }, (_, i) => i);
-  let seed = 7;
-  for (let i = 255; i > 0; i--) {
-    seed = (seed * 16807) % 2147483647;
-    const j = seed % (i + 1);
-    [p[i], p[j]] = [p[j], p[i]];
-  }
-  return new Uint8Array([...p, ...p]);
-})();
-const lattice = (x, y) => PERM[(PERM[x & 255] + y) & 255] / 255;
-const smooth = (t) => t * t * (3 - 2 * t);
-const noise = (x, y) => {
-  const xi = Math.floor(x);
-  const yi = Math.floor(y);
-  const xf = smooth(x - xi);
-  const yf = smooth(y - yi);
-  const a = lattice(xi, yi);
-  const b = lattice(xi + 1, yi);
-  const c = lattice(xi, yi + 1);
-  const d = lattice(xi + 1, yi + 1);
-  return a + (b - a) * xf + (c - a) * yf + (a - b - c + d) * xf * yf;
+const hexToVec = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+const paletteUniform = (list, size) => {
+  const out = new Float32Array(size * 3);
+  list.forEach((hex, i) => out.set(hexToVec(hex), i * 3));
+  return out;
 };
 
-const FRAME_MS = 1000 / 30;
+const VERTEX = `
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+`;
 
-export default function PixelField({ cell = 12, calmCenter = true }) {
+// Simplex noise: Ian McEwan / Stefan Gustavson (MIT), widely used GLSL snippet.
+const FRAGMENT = `
+precision highp float;
+uniform vec2 uGrid;
+uniform float uTime;
+uniform vec3 uPointer;   // x, y in cells (top-left origin), strength 0..1
+uniform float uRadius;   // pointer radius in cells
+uniform float uAspect;
+uniform vec3 uViolet[10];
+uniform vec3 uRed[7];
+
+vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
+vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+float snoise(vec3 v) {
+  const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i = floor(v + dot(v, C.yyy));
+  vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g = step(x0.yzx, x0.xyz);
+  vec3 l = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy);
+  vec3 i2 = max(g.xyz, l.zxy);
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy;
+  vec3 x3 = x0 - D.yyy;
+  i = mod289(i);
+  vec4 p = permute(permute(permute(i.z + vec4(0.0, i1.z, i2.z, 1.0)) + i.y + vec4(0.0, i1.y, i2.y, 1.0)) + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+  float n_ = 0.142857142857;
+  vec3 ns = n_ * D.wyz - D.xzx;
+  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+  vec4 x_ = floor(j * ns.z);
+  vec4 y_ = floor(j - 7.0 * x_);
+  vec4 x = x_ * ns.x + ns.yyyy;
+  vec4 y = y_ * ns.x + ns.yyyy;
+  vec4 h = 1.0 - abs(x) - abs(y);
+  vec4 b0 = vec4(x.xy, y.xy);
+  vec4 b1 = vec4(x.zw, y.zw);
+  vec4 s0 = floor(b0) * 2.0 + 1.0;
+  vec4 s1 = floor(b1) * 2.0 + 1.0;
+  vec4 sh = -step(h, vec4(0.0));
+  vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+  vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+  vec3 p0 = vec3(a0.xy, h.x);
+  vec3 p1 = vec3(a0.zw, h.y);
+  vec3 p2 = vec3(a1.xy, h.z);
+  vec3 p3 = vec3(a1.zw, h.w);
+  vec4 norm = taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+  vec4 m = max(0.6 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+  m = m * m;
+  return 42.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+}
+
+float cellHash(vec2 c) { return fract(sin(dot(c, vec2(12.9898, 78.233))) * 43758.5453); }
+
+vec3 violetAt(float t) {
+  int k = int(floor(clamp(t, 0.0, 0.9999) * 10.0));
+  vec3 c = uViolet[0];
+  for (int i = 0; i < 10; i++) { if (i == k) c = uViolet[i]; }
+  return c;
+}
+vec3 redAt(int k) {
+  vec3 c = uRed[0];
+  for (int i = 0; i < 7; i++) { if (i == k) c = uRed[i]; }
+  return c;
+}
+
+// One drifting shape: anchored near an edge, pulled slightly inwards,
+// breathing in size and intensity, with faint ripples inside.
+float shape(vec2 uv, float a, vec2 anchor, float size, float speed, float phase, float t) {
+  float s = t * speed + phase;
+  vec2 c = mix(anchor, vec2(0.5, 0.5), 0.12 * (0.5 + 0.5 * sin(s + 1.1)));
+  float r = size * (1.0 + 0.28 * sin(s));
+  float d = length(vec2((uv.x - c.x) * a / 1.6, uv.y - c.y));
+  float body = exp(-pow(d / r, 2.0));
+  float intensity = 0.72 + 0.28 * sin(s + 0.6);
+  return clamp(intensity * body + 0.045 * sin(18.0 * d - 3.0 * t) * body, 0.0, 1.0);
+}
+
+void main() {
+  vec2 cell = floor(gl_FragCoord.xy);
+  vec2 uv = vec2((cell.x + 0.5) / uGrid.x, 1.0 - (cell.y + 0.5) / uGrid.y);
+  float a = min(uAspect, 2.0);
+  float grain = (cellHash(cell) - 0.5) * 0.55;
+  float t = uTime;
+
+  float flow = 0.62 * snoise(vec3(uv * 2.6 + 0.5 * vec2(cos(t * 0.35), sin(t * 0.35)), 5.7 + t * 0.05));
+
+  float empty = 1.0;
+  empty *= 1.0 - shape(uv, a, vec2(0.02, 0.62), 0.30, 0.35, 0.0, t);
+  empty *= 1.0 - shape(uv, a, vec2(0.97, 0.28), 0.32, 0.70, 1.9, t);
+  empty *= 1.0 - shape(uv, a, vec2(0.62, 1.02), 0.30, 0.35, 3.6, t);
+  empty *= 1.0 - shape(uv, a, vec2(0.35, -0.02), 0.26, 1.05, 5.1, t);
+
+  // Pointer heat (bottom-left GL origin vs top-left pointer coordinates).
+  vec2 pc = vec2(uPointer.x, uGrid.y - uPointer.y);
+  float pd = length(cell + 0.5 - pc) / uRadius;
+  float warm = exp(-pd * pd) * uPointer.z;
+
+  // Darker centre behind the voting panel keeps text legible.
+  vec2 dc = (uv - vec2(0.5, 0.48)) / vec2(0.26, 0.3);
+  float calm = exp(-dot(dc, dc));
+
+  float heat = 0.26 + 0.74 * (1.0 - empty) - 0.34 * calm + 0.07 * flow + 0.35 * warm;
+  vec3 col = violetAt(heat + grain / 10.0);
+
+  // Stepped red rings around the pointer.
+  float r = 0.95 * warm + 0.05 * flow;
+  int ri = int(floor(clamp(r + grain / 7.0, 0.0, 0.9999) * 7.0));
+  if (ri > 0) {
+    float w = ri == 1 ? 0.4 : (ri == 2 ? 0.65 : (ri == 3 ? 0.85 : 1.0));
+    col = mix(col, redAt(ri), w);
+  }
+  col += (1.0 - col) * warm * 0.06;
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+const compile = (gl, type, source) => {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    throw new Error(gl.getShaderInfoLog(shader) || "shader compile failed");
+  }
+  return shader;
+};
+
+export default function PixelField({ cell = 10 }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d", { alpha: false });
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power" });
+    if (!gl) {
+      canvas.style.display = "none";
+      return undefined;
+    }
 
+    let program;
+    try {
+      program = gl.createProgram();
+      gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERTEX));
+      gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAGMENT));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error("link failed");
+    } catch (error) {
+      console.warn("PixelField disabled:", error.message);
+      canvas.style.display = "none";
+      return undefined;
+    }
+    gl.useProgram(program);
+
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const aPos = gl.getAttribLocation(program, "aPos");
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+    const u = Object.fromEntries(
+      ["uGrid", "uTime", "uPointer", "uRadius", "uAspect", "uViolet", "uRed"].map((n) => [n, gl.getUniformLocation(program, n)])
+    );
+    gl.uniform3fv(u.uViolet, paletteUniform(VIOLET, 10));
+    gl.uniform3fv(u.uRed, paletteUniform(RED, 7));
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    let cellPx = cell;
     let cols = 0;
     let rows = 0;
-    let image = null;
-    let warmth = null; // per-cell pointer heat, decays every frame
-    let dither = null; // per-cell fixed offset so quantised steps look pixelated
-    let cellPx = cell;
-    const pointer = { x: -1, y: -1, active: false };
+    // Pointer eases towards its target for a smooth follow.
+    const pointer = { x: -100, y: -100, tx: -100, ty: -100, s: 0, ts: 0 };
     let raf = 0;
     let last = 0;
-    const start = performance.now();
+    let time = 0;
+    const frameMs = coarse ? 1000 / 30 : 1000 / 60;
 
     const resize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      cellPx = w < 640 ? Math.round(cell * 1.35) : cell;
-      cols = Math.max(8, Math.ceil(w / cellPx));
-      rows = Math.max(8, Math.ceil(h / cellPx));
+      cellPx = w < 640 ? Math.round(cell * 1.2) : cell;
+      cols = Math.max(8, Math.round(w / cellPx));
+      rows = Math.max(8, Math.round(h / cellPx));
       canvas.width = cols;
       canvas.height = rows;
-      image = ctx.createImageData(cols, rows);
-      warmth = new Float32Array(cols * rows);
-      dither = new Float32Array(cols * rows);
-      for (let i = 0; i < dither.length; i++) {
-        dither[i] = (lattice(i % cols, Math.floor(i / cols) * 7 + 3) - 0.5) * 0.12;
-      }
+      gl.viewport(0, 0, cols, rows);
+      gl.uniform2f(u.uGrid, cols, rows);
+      gl.uniform1f(u.uAspect, w / h);
+      gl.uniform1f(u.uRadius, w < 640 ? 6 : 7);
     };
 
-    const warm = () => {
-      if (!pointer.active) return;
-      const radius = 6;
-      const r2 = radius * radius;
-      const cx = pointer.x / cellPx;
-      const cy = pointer.y / cellPx;
-      const x0 = Math.max(0, Math.floor(cx - radius * 2));
-      const x1 = Math.min(cols - 1, Math.ceil(cx + radius * 2));
-      const y0 = Math.max(0, Math.floor(cy - radius * 2));
-      const y1 = Math.min(rows - 1, Math.ceil(cy + radius * 2));
-      for (let y = y0; y <= y1; y++) {
-        for (let x = x0; x <= x1; x++) {
-          const d2 = (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2;
-          const add = Math.exp(-d2 / r2) * 0.35;
-          const i = y * cols + x;
-          warmth[i] = Math.min(1, warmth[i] + add);
-        }
-      }
-    };
-
-    const draw = (now) => {
-      const t = reduceMotion ? 0 : (now - start) / 1000;
-      const data = image.data;
-      warm();
-      for (let y = 0; y < rows; y++) {
-        const v = y / rows;
-        for (let x = 0; x < cols; x++) {
-          const u = x / cols;
-          const i = y * cols + x;
-          // Flowing heat: two noise octaves drifting in different directions.
-          let h =
-            0.62 * noise(x * 0.07 + t * 0.12, y * 0.07 - t * 0.08) +
-            0.38 * noise(x * 0.16 - t * 0.2, y * 0.16 + t * 0.1);
-          h = 0.05 + h * 0.95 + 0.18 * v - 0.12;
-          if (calmCenter) {
-            // Keep the middle (where the panel sits) darker for legibility.
-            const dx = (u - 0.5) / 0.36;
-            const dy = (v - 0.48) / 0.42;
-            h -= 0.5 * Math.exp(-(dx * dx + dy * dy));
-          }
-          h += dither[i];
-          let rgb;
-          const w = warmth[i];
-          if (w > 0.06) {
-            rgb = RED_RGB[Math.min(RED_RGB.length - 1, Math.floor(w * RED_RGB.length))];
-          } else {
-            const k = Math.max(0, Math.min(VIOLET_RGB.length - 1, Math.floor(h * VIOLET_RGB.length)));
-            rgb = VIOLET_RGB[k];
-          }
-          const o = i * 4;
-          data[o] = rgb[0];
-          data[o + 1] = rgb[1];
-          data[o + 2] = rgb[2];
-          data[o + 3] = 255;
-          warmth[i] = w * 0.9; // the trail cools down
-        }
-      }
-      ctx.putImageData(image, 0, 0);
+    const render = () => {
+      gl.uniform1f(u.uTime, time);
+      gl.uniform3f(u.uPointer, pointer.x / cellPx, pointer.y / cellPx, pointer.s);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
     const loop = (now) => {
       raf = requestAnimationFrame(loop);
-      if (now - last < FRAME_MS) return;
+      if (now - last < frameMs) return;
+      const dt = Math.min(0.1, (now - (last || now)) / 1000);
       last = now;
-      draw(now);
+      time += dt;
+      const follow = 1 - Math.pow(0.001, dt); // frame-rate independent easing
+      pointer.x += (pointer.tx - pointer.x) * follow;
+      pointer.y += (pointer.ty - pointer.y) * follow;
+      pointer.s += (pointer.ts - pointer.s) * (1 - Math.pow(0.02, dt));
+      render();
     };
 
     const onPointer = (event) => {
-      pointer.x = event.clientX;
-      pointer.y = event.clientY;
-      pointer.active = event.pointerType === "mouse" || event.buttons > 0 || event.type === "pointerdown";
+      if (pointer.s < 0.02) {
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+      }
+      pointer.tx = event.clientX;
+      pointer.ty = event.clientY;
+      pointer.ts = event.pointerType === "mouse" || event.buttons > 0 || event.type === "pointerdown" ? 1 : 0;
+    };
+    const onRelease = (event) => {
+      if (event.pointerType !== "mouse") pointer.ts = 0;
     };
     const onLeave = () => {
-      pointer.active = false;
+      pointer.ts = 0;
     };
 
     resize();
-    if (reduceMotion) {
-      draw(start);
-    } else {
+    time = 4.2; // start mid-motion rather than at a symmetric pose
+    render();
+    if (!reduceMotion) {
       raf = requestAnimationFrame(loop);
       window.addEventListener("pointermove", onPointer, { passive: true });
       window.addEventListener("pointerdown", onPointer, { passive: true });
-      window.addEventListener("pointerup", onLeave, { passive: true });
+      window.addEventListener("pointerup", onRelease, { passive: true });
+      window.addEventListener("pointercancel", onLeave, { passive: true });
       document.documentElement.addEventListener("pointerleave", onLeave);
     }
     const onResize = () => {
       resize();
-      if (reduceMotion) draw(start);
+      render();
     };
     window.addEventListener("resize", onResize);
 
@@ -174,11 +278,14 @@ export default function PixelField({ cell = 12, calmCenter = true }) {
       cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", onPointer);
-      window.removeEventListener("pointerup", onLeave);
+      window.removeEventListener("pointerup", onRelease);
+      window.removeEventListener("pointercancel", onLeave);
       document.documentElement.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("resize", onResize);
+      gl.deleteBuffer(buffer);
+      gl.deleteProgram(program);
     };
-  }, [cell, calmCenter]);
+  }, [cell]);
 
   return <canvas ref={canvasRef} className="pixel-field" aria-hidden="true" />;
 }
