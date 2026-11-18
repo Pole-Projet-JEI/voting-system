@@ -55,8 +55,7 @@ export default function RegisterPage() {
   return (
     <div className="register-form-container">
       <div className="title-container">
-        <h1 className="title-G">Hack for Good</h1>
-        <h1 className="title-2">4.0</h1>
+        <h1 className="title-G">IA ETHIQUE 360</h1>
       </div>
       <h2 style={{ fontSize: "1em", color: "rgba(255,255,255,0.55)" }}>
         Voting System
