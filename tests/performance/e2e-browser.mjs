@@ -7,7 +7,6 @@ const BASE = "http://localhost:3092";
 const ADMIN = "/jvaFHT7xvivJPJqc1QBRWhfayoj";
 const VENUE = { latitude: 36.842563, longitude: 10.19751 };
 const FAR = { latitude: 36.86, longitude: 10.2 }; // ~2 km away
-const VOTER = "browser.tester@loadtest.example";
 const OUT = process.env.OUT;
 
 const results = [];
@@ -19,12 +18,6 @@ const ssh = (cmd) =>
   execFileSync("ssh", ["-o", "ConnectTimeout=15", "voting-jei", cmd], { encoding: "utf8" }).trim();
 const mongo = (js) =>
   ssh(`cd ~/apps/voting-loadtest && docker compose -p voting-loadtest exec -T mongo mongosh --quiet voting_loadtest --eval '${js}'`);
-const latestCode = (email) => {
-  const out = ssh(
-    `docker exec voting-loadtest-backend1-1 node -e 'fetch("http://mailpit:8025/api/v1/search?query=to:${email}&limit=1").then(r=>r.json()).then(j=>console.log(j.messages?.[0]?.Subject||""))'`
-  );
-  return /(\d{6})/.exec(out)?.[1];
-};
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const textOf = async (page) => (await page.locator("body").innerText()).replace(/\s+/g, " ");
 const waitText = async (page, re, timeout = 20000) => {
@@ -74,50 +67,74 @@ try {
   check("login shows Closed by default", /Login Closed/.test(t));
   check("location check shows Enforced", /Status Enforced/.test(t));
 
-  await admin.fill('textarea[placeholder^="Paste emails"]', "Ali <ali.e2e@loadtest.example>; sara.e2e@loadtest.example\nbad-entry");
-  await admin.click('button:has-text("Add 2")');
-  check("pasting emails imports only valid ones", await waitText(admin, /2 added/));
-
-  await admin.click('button:has-text("Show QR code")');
-  const qr = admin.locator('img[alt^="QR code for"]');
-  await qr.waitFor({ timeout: 10000 });
-  const qrAlt = await qr.getAttribute("alt");
-  check("QR code screen shows the voting link", qrAlt.includes(`${BASE}/register`), qrAlt);
-  await admin.screenshot({ path: `${OUT}/admin-qr.png` });
-  await admin.click('button[aria-label="Close QR code"]');
-
   // ---------- voter (phone) ----------
-  const voterCtx = await browser.newContext({
-    viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
-    permissions: ["geolocation"], geolocation: VENUE,
-  });
+  const phone = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, permissions: ["geolocation"], geolocation: VENUE };
+  const voterCtx = await browser.newContext(phone);
   const voter = await voterCtx.newPage();
   watch(voter, "voter");
   await voter.goto(`${BASE}/register`);
   check("voter sees 'login is closed' before admin opens it", await waitText(voter, /Login is closed/));
   await voter.screenshot({ path: `${OUT}/voter-login-closed.png` });
 
+  // QR screen while closed
+  await admin.click('button:has-text("Show QR code")');
+  check("QR screen says login is closed", await waitText(admin, /Login is closed. Open login/));
+  await admin.click('button[aria-label="Close QR code"]');
+
   await admin.click('button:has-text("Open login")');
   check("admin opens login", await waitText(admin, /Login is open/));
-  check("voter page unlocks by itself", await waitText(voter, /Enter your email|You will receive/, 15000));
+  check("voter page switches to 'scan the QR code'", await waitText(voter, /Scan the QR code on the screen/, 15000));
+  await voter.screenshot({ path: `${OUT}/voter-scan.png` });
 
-  await voter.fill('input[type="email"]', "stranger@evil.example");
-  await voter.click('button[aria-label="Send code"]');
-  check("email not on the list is refused", await waitText(voter, /not on the voter list/));
+  // Rotating QR on the projector
+  await admin.click('button:has-text("Show QR code")');
+  const qr = admin.locator('img[alt^="Voting QR code"]');
+  await qr.waitFor({ timeout: 10000 });
+  check("QR screen shows a countdown", await waitText(admin, /New code in \d+s/));
+  await admin.screenshot({ path: `${OUT}/admin-qr.png` });
+  const firstSrc = await qr.getAttribute("src");
+  const tokenOf = async () => (await admin.evaluate(() => fetch("/api/admin/access-qr").then((r) => r.json()))).path;
+  const firstPath = await tokenOf();
+  check("admin API returns a /join?t= link", /^\/join\?t=\d+-[\w-]{22}$/.test(firstPath), firstPath);
+  await admin.waitForFunction((src) => document.querySelector('img[alt^="Voting QR code"]')?.src !== src, firstSrc, { timeout: 25000 }).catch(() => {});
+  check("QR image changes by itself within 20 s", (await qr.getAttribute("src")) !== firstSrc);
+  const secondPath = await tokenOf();
+  check("new link differs from the old one", secondPath !== firstPath);
+  await admin.click('button[aria-label="Close QR code"]');
 
-  await voter.fill('input[type="email"]', VOTER);
-  await voter.click('button[aria-label="Send code"]');
-  check("listed email gets the code step", await waitText(voter, /We sent a 6-digit code/));
-  await sleep(1500);
-  const code = latestCode(VOTER);
-  check("code email arrives", Boolean(code));
-  await voter.fill('input[name="one-time-code"]', code === "000000" ? "111111" : "000000");
-  await voter.click('button[aria-label="Verify code"]');
-  check("wrong code is refused", await waitText(voter, /Wrong code/));
-  await voter.fill('input[name="one-time-code"]', code);
-  await voter.click('button[aria-label="Verify code"]');
+  // Join with the fresh link
+  await voter.goto(`${BASE}${secondPath}`);
   await voter.waitForURL(/\/home/, { timeout: 15000 }).catch(() => {});
-  check("correct code logs the voter in", voter.url().endsWith("/home"), voter.url());
+  check("scanning the fresh QR link logs the voter in", voter.url().endsWith("/home"), voter.url());
+  check("token removed from the address bar", !voter.url().includes("t="));
+
+  // Forged link on a new phone
+  const other = await (await browser.newContext(phone)).newPage();
+  await other.goto(`${BASE}/join?t=${firstPath.split("=")[1].replace(/-./, "-A")}`);
+  check("altered link is refused", await waitText(other, /not valid/));
+
+  // Old link after it rotated + grace (photo sent outside)
+  const waitMs = 31000;
+  console.log(`waiting ${waitMs / 1000}s for the first link to expire...`);
+  await sleep(waitMs);
+  await other.goto(`${BASE}${firstPath}`);
+  check("old QR link (>30 s) is refused as expired", await waitText(other, /expired/));
+  await other.screenshot({ path: `${OUT}/voter-expired.png` });
+  check("expired link gives no session", (await other.evaluate(() => fetch("/api/isconnected").then((r) => r.json()))).connected !== true);
+
+  // Same phone scans again: same voter, no new voter
+  const votersBefore = Number(mongo("db.voters.countDocuments()"));
+  const freshPath = await tokenOf();
+  await voter.context().clearCookies({ name: "connectionCookie" }).catch(async () => {
+    // older playwright: clear everything except the device cookie
+    const keep = (await voter.context().cookies()).filter((c) => c.name === "voterDevice");
+    await voter.context().clearCookies();
+    await voter.context().addCookies(keep);
+  });
+  await voter.goto(`${BASE}${freshPath}`);
+  await voter.waitForURL(/\/home/, { timeout: 15000 }).catch(() => {});
+  check("re-scan on the same phone logs back in", voter.url().endsWith("/home"));
+  check("re-scan on the same phone creates no new voter", Number(mongo("db.voters.countDocuments()")) === votersBefore);
   check("voter waits while no team presents", await waitText(voter, /get ready for the next team/));
 
   // Round 1: Alpha
@@ -179,6 +196,8 @@ try {
   const late = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   await late.goto(`${BASE}/register`);
   check("new voter is blocked after login closes", await waitText(late, /Login is closed/, 15000));
+  await late.goto(`${BASE}${freshPath}`);
+  check("join link refused while login is closed", await waitText(late, /Login is closed|not valid/, 15000));
   check("logged-in voter is still logged in", (await voter.evaluate(() => fetch("/api/isconnected").then((r) => r.json()))).connected === true);
 
   check("no unexpected console errors", consoleErrors.length === 0, consoleErrors.slice(0, 3).join(" | "));
