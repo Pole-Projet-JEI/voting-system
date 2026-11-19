@@ -2,9 +2,9 @@ import "./RegisterPage.css";
 import jeiLogo from "../../assets/jei2.png";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { checkConnection, getLoginStatus } from "../../service/userApi";
+import { checkConnection, joinVoting } from "../../service/userApi";
 
-const LOGIN_STATUS_POLL_MS = 5000;
+const RETRY_MS = 5000;
 
 export const VoterBrand = () => (
   <div className="register-brand">
@@ -18,62 +18,63 @@ export const VoterBrand = () => (
   </div>
 );
 
-const QrIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-    <rect x="3" y="3" width="7" height="7" />
-    <rect x="14" y="3" width="7" height="7" />
-    <rect x="3" y="14" width="7" height="7" />
-    <path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3" />
-  </svg>
-);
-
-// Voters arrive here without a valid QR link (or after their session ended).
-// Access is only through the rotating QR code shown in the room.
+// Landing page of the voting link. There is no login form: the browser gets
+// an anonymous voter session cookie automatically, then goes to the vote.
+// While the admin keeps login closed, it waits and joins as soon as it opens.
 export default function RegisterPage() {
-  const [loginOpen, setLoginOpen] = useState(null); // null = unknown yet
+  const [state, setState] = useState("joining"); // joining | closed | error
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkConnection().then((result) => {
-      if (result.success && result.data.connected) {
-        navigate("/home", { replace: true });
-      }
-    });
-  }, []);
-
-  // Follow the admin's open/close switch without reloading the page.
-  useEffect(() => {
     let active = true;
-    const refresh = async () => {
-      const result = await getLoginStatus();
-      if (active && result.success) {
-        setLoginOpen(result.data.open === true);
+    let timer = 0;
+
+    const attempt = async () => {
+      const connection = await checkConnection();
+      if (!active) return;
+      if (connection.success && connection.data.connected) {
+        navigate("/home", { replace: true });
+        return;
       }
+      const result = await joinVoting();
+      if (!active) return;
+      if (result.success) {
+        navigate("/home", { replace: true });
+        return;
+      }
+      if (result.errorCode === "LOGIN_CLOSED") {
+        setState("closed");
+      } else {
+        setState("error");
+        setError(
+          result.networkError
+            ? "Unable to connect to the server. Retrying..."
+            : result.error
+        );
+      }
+      timer = window.setTimeout(attempt, RETRY_MS);
     };
-    refresh();
-    const timer = window.setInterval(refresh, LOGIN_STATUS_POLL_MS);
+
+    attempt();
     return () => {
       active = false;
-      window.clearInterval(timer);
+      window.clearTimeout(timer);
     };
   }, []);
 
   return (
     <div className="register-form-container fie-panel">
       <VoterBrand />
-      {loginOpen === false ? (
+      {state === "joining" && <p className="fie-info">Joining the vote...</p>}
+      {state === "closed" && (
         <p className="register-closed">
-          Login is closed for now. When the organizers open the vote, scan the QR code
-          shown on the screen.
+          The vote is not open yet. Keep this page open: you will join automatically
+          as soon as the organizers open it.
         </p>
-      ) : (
-        <div className="register-scan">
-          <span className="register-scan-icon"><QrIcon /></span>
-          <p className="fie-info">
-            Scan the <strong>QR code on the screen</strong> with your phone camera to
-            join the vote. The code changes every few seconds, so scan it live in the room.
-          </p>
-        </div>
+      )}
+      {state === "error" && (
+        <p className="fie-error" role="alert">{error}</p>
       )}
     </div>
   );

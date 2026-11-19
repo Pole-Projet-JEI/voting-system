@@ -13,7 +13,7 @@ import { hashVoterCode } from "../mongodb/voter-code.mjs";
 const route = Router();
 
 // Legacy paper-code login. Disabled unless ENABLE_CODE_LOGIN=true, so it
-// cannot bypass the QR join and the admin login window.
+// cannot bypass the session join and the admin login window.
 export const isCodeLoginEnabled = () => process.env.ENABLE_CODE_LOGIN === "true";
 
 route.post("/api/register", voterRegistrationRateLimit, async (req, res) => {
@@ -21,7 +21,7 @@ route.post("/api/register", voterRegistrationRateLimit, async (req, res) => {
     return res.status(410).json({
       status: "failed",
       code: "CODE_LOGIN_DISABLED",
-      message: "Code login is disabled. Scan the QR code on the screen.",
+      message: "Code login is disabled. Open the voting link to join.",
     });
   }
   const userCode = req.body?.code;

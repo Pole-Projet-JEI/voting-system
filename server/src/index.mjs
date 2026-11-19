@@ -108,7 +108,7 @@ initializeChangeStream();
 
 app.use(statusRouter); // /api/isconnected - checks cookie manually
 app.use(registerRouter); // /api/register - public registration
-app.use(accessRouter); // /api/join + /api/login/status (public), /api/admin/access-qr etc. (admin)
+app.use(accessRouter); // /api/join + /api/login/status (public), /api/admin/login-window + voters summary (admin)
 app.use(sendingVoteRouter); // /api/sendvote - SSE stream (public)
 app.use(currentVoteRouter); // /api/currentteam - anyone can view
 app.use(geofenceRouter); // /api/geofence (public) + /api/admin/geofence (admin)

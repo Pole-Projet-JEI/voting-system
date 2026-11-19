@@ -7,7 +7,7 @@ const voterSchema = new mongoose.Schema(
       select: false,
       trim: true,
     },
-    // Legacy paper-code login. QR voters have no code.
+    // Legacy paper-code login. Link-session voters have no code.
     codeHash: {
       type: String,
       unique: true,

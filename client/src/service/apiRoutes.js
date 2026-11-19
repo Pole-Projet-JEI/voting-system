@@ -28,7 +28,6 @@ const routes = {
   ADMIN_RESULTS: baseURL + "admin/results",
   ADMIN_SEND_VOTE: baseURL + "admin/sendvote",
   ADMIN_VOTERS_SUMMARY: baseURL + "admin/voters/summary",
-  ADMIN_ACCESS_QR: baseURL + "admin/access-qr",
   ADMIN_LOGIN_WINDOW: baseURL + "admin/login-window",
 };
 

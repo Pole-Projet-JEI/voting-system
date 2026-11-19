@@ -38,28 +38,6 @@
   margin: -6px 0 0;
 }
 
-.register-scan {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  width: 100%;
-  padding: 14px 16px;
-  background: var(--panel-2);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--hackathon);
-}
-
-.register-scan-icon {
-  flex: none;
-  color: var(--hackathon-ink);
-  margin-top: 2px;
-}
-
-.register-scan strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
 .register-closed {
   margin: 0;
   padding: 14px 16px;

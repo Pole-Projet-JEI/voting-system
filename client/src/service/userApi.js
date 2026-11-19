@@ -117,10 +117,10 @@ export const getLoginStatus = async () => {
   }
 };
 
-// Join with the rotating QR link (t = token from the URL).
-export const joinWithQr = async (t) => {
+// Opening the voting link: get (or keep) an anonymous voter session cookie.
+export const joinVoting = async () => {
   try {
-    const response = await apiClient.post(routes.JOIN, { t });
+    const response = await apiClient.post(routes.JOIN, {});
     return { success: true, data: response.data };
   } catch (error) {
     return toFailure(error, "Could not join");

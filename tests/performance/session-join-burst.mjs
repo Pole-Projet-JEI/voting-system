@@ -1,12 +1,10 @@
-// 600 phones scan the rotating QR code at the same moment, then vote.
-// Runs inside a container built from the backend image (same SESSION_SECRET
-// as the backend, so it can mint the current token). Loadtest database only.
+// 600 phones open the voting link at the same moment (anonymous session
+// cookie), then vote. Runs inside the backend container. Loadtest database only.
 import mongoose from "/app/node_modules/mongoose/index.js";
 import Voter from "/app/src/mongodb/voterSchema.mjs";
 import Team from "/app/src/mongodb/teamSchema.mjs";
 import GeofenceSettings from "/app/src/mongodb/geofenceSchema.mjs";
 import { setLoginOpen } from "/app/src/access/login-window.mjs";
-import { createQrToken } from "/app/src/access/qr-token.mjs";
 
 const BASE = process.env.TARGET || "http://frontend:8080";
 const N = Number(process.env.VOTERS || 600);
@@ -49,29 +47,20 @@ const report = { N };
 
 await Voter.deleteMany({});
 await Team.deleteMany({});
-const team = await Team.create({ teamName: "QrTeam", state: "voting", presenting: true });
+const team = await Team.create({ teamName: "LinkTeam", state: "voting", presenting: true });
 await GeofenceSettings.updateOne({ key: "venue" }, { $set: { enabled: false } }, { upsert: true });
 
-// 1. Login closed: a fresh token is still refused.
+// 1. Login closed: joining is refused.
 await setLoginOpen(false);
 await sleep(3500);
-report.loginClosedStatus = (await post("/api/join", { t: createQrToken().token })).status;
+report.loginClosedStatus = (await post("/api/join", {})).status;
 
 await setLoginOpen(true);
 await sleep(3500);
 
-// 2. Bad tokens.
-const fresh = createQrToken().token;
-report.forgedStatus = (await post("/api/join", { t: fresh.replace(/-./, "-A") === fresh ? fresh.replace(/-./, "-B") : fresh.replace(/-./, "-A") })).status;
-report.missingStatus = (await post("/api/join", {})).status;
-report.oldTokenStatus = (await post("/api/join", { t: createQrToken(Date.now() - 31_000).token })).status;
-report.graceTokenStatus = (await post("/api/join", { t: createQrToken(Date.now() - 21_000).token })).status;
-await Voter.deleteMany({}); // drop the grace-test voter
-
-// 3. N phones scan the same code at once.
-const token = createQrToken().token;
+// 3. N phones open the link at once.
 let t = performance.now();
-const joins = await Promise.all(Array.from({ length: N }, () => timed(() => post("/api/join", { t: token }))));
+const joins = await Promise.all(Array.from({ length: N }, () => timed(() => post("/api/join", {}))));
 report.join = {
   wallMs: Math.round(performance.now() - t),
   statuses: tally(joins.map((j) => j.status)),
@@ -80,18 +69,18 @@ report.join = {
 const sessions = joins.map((j) => (j.res ? cookiesOf(j.res) : ""));
 report.votersAfterJoin = await Voter.countDocuments();
 
-// 4. Same phones re-scan a later code with only their device cookie:
+// 4. Same phones come back with only their device cookie (session lost):
 //    must give back the same voter, not a new one.
 const deviceOnly = sessions.slice(0, RESCANS).map((c) => c.split("; ").filter((p) => p.startsWith("voterDevice=")).join("; "));
-const rescans = await Promise.all(deviceOnly.map((c) => timed(() => post("/api/join", { t: createQrToken().token }, c))));
+const rescans = await Promise.all(deviceOnly.map((c) => timed(() => post("/api/join", {}, c))));
 report.rescan = { statuses: tally(rescans.map((r) => r.status)), reused: rescans.filter((r) => r.res && r.res.status === 201).length };
 report.votersAfterRescan = await Voter.countDocuments();
 for (let i = 0; i < RESCANS; i++) {
   if (rescans[i].res?.status === 201) sessions[i] = cookiesOf(rescans[i].res);
 }
 
-// 5. Phone with a live session opening an old link: still fine, no new voter.
-report.liveSessionOldLinkStatus = (await post("/api/join", { t: "0-AAAAAAAAAAAAAAAAAAAAAA" }, sessions[RESCANS + 1])).status;
+// 5. Phone with a live session opening the link again: kept, no new voter.
+report.liveSessionRejoinStatus = (await post("/api/join", {}, sessions[RESCANS + 1])).status;
 
 // 6. Everyone votes at once.
 t = performance.now();

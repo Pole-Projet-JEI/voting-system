@@ -214,15 +214,6 @@ export const getVotersSummary = async () => {
   }
 };
 
-export const getAccessQr = async () => {
-  try {
-    const response = await adminClient.get(routes.ADMIN_ACCESS_QR);
-    return { success: true, data: response.data };
-  } catch (error) {
-    return { success: false, error: error.response?.data?.message || "Failed to load the QR code" };
-  }
-};
-
 export const setLoginWindow = async (open) => {
   try {
     const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, { open });

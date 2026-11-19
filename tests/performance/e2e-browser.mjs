@@ -73,68 +73,28 @@ try {
   const voter = await voterCtx.newPage();
   watch(voter, "voter");
   await voter.goto(`${BASE}/register`);
-  check("voter sees 'login is closed' before admin opens it", await waitText(voter, /Login is closed/));
+  check("phone waits before admin opens login", await waitText(voter, /not open yet/));
   await voter.screenshot({ path: `${OUT}/voter-login-closed.png` });
 
-  // QR screen while closed
   await admin.click('button:has-text("Show QR code")');
-  check("QR screen says login is closed", await waitText(admin, /Login is closed. Open login/));
+  const qr = admin.locator('img[alt^="QR code for"]');
+  await qr.waitFor({ timeout: 10000 });
+  check("QR code screen shows the plain voting link", (await qr.getAttribute("alt")).includes(`${BASE}/register`));
   await admin.click('button[aria-label="Close QR code"]');
 
   await admin.click('button:has-text("Open login")');
   check("admin opens login", await waitText(admin, /Login is open/));
-  check("voter page switches to 'scan the QR code'", await waitText(voter, /Scan the QR code on the screen/, 15000));
-  await voter.screenshot({ path: `${OUT}/voter-scan.png` });
+  await voter.waitForURL(/\/home/, { timeout: 20000 }).catch(() => {});
+  check("waiting phone joins by itself when login opens", voter.url().endsWith("/home"), voter.url());
+  const cookies = await voterCtx.cookies();
+  check("session id stored in an httpOnly cookie",
+    cookies.some((c) => c.name === "connectionCookie" && c.httpOnly) && cookies.some((c) => c.name === "voterDevice" && c.httpOnly));
 
-  // Rotating QR on the projector
-  await admin.click('button:has-text("Show QR code")');
-  const qr = admin.locator('img[alt^="Voting QR code"]');
-  await qr.waitFor({ timeout: 10000 });
-  check("QR screen shows a countdown", await waitText(admin, /New code in \d+s/));
-  await admin.screenshot({ path: `${OUT}/admin-qr.png` });
-  const firstSrc = await qr.getAttribute("src");
-  const tokenOf = async () => (await admin.evaluate(() => fetch("/api/admin/access-qr").then((r) => r.json()))).path;
-  const firstPath = await tokenOf();
-  check("admin API returns a /join?t= link", /^\/join\?t=\d+-[\w-]{22}$/.test(firstPath), firstPath);
-  await admin.waitForFunction((src) => document.querySelector('img[alt^="Voting QR code"]')?.src !== src, firstSrc, { timeout: 25000 }).catch(() => {});
-  check("QR image changes by itself within 20 s", (await qr.getAttribute("src")) !== firstSrc);
-  const secondPath = await tokenOf();
-  check("new link differs from the old one", secondPath !== firstPath);
-  await admin.click('button[aria-label="Close QR code"]');
-
-  // Join with the fresh link
-  await voter.goto(`${BASE}${secondPath}`);
-  await voter.waitForURL(/\/home/, { timeout: 15000 }).catch(() => {});
-  check("scanning the fresh QR link logs the voter in", voter.url().endsWith("/home"), voter.url());
-  check("token removed from the address bar", !voter.url().includes("t="));
-
-  // Forged link on a new phone
-  const other = await (await browser.newContext(phone)).newPage();
-  await other.goto(`${BASE}/join?t=${firstPath.split("=")[1].replace(/-./, "-A")}`);
-  check("altered link is refused", await waitText(other, /not valid/));
-
-  // Old link after it rotated + grace (photo sent outside)
-  const waitMs = 31000;
-  console.log(`waiting ${waitMs / 1000}s for the first link to expire...`);
-  await sleep(waitMs);
-  await other.goto(`${BASE}${firstPath}`);
-  check("old QR link (>30 s) is refused as expired", await waitText(other, /expired/));
-  await other.screenshot({ path: `${OUT}/voter-expired.png` });
-  check("expired link gives no session", (await other.evaluate(() => fetch("/api/isconnected").then((r) => r.json()))).connected !== true);
-
-  // Same phone scans again: same voter, no new voter
+  // Same phone opens the link again: same voter
   const votersBefore = Number(mongo("db.voters.countDocuments()"));
-  const freshPath = await tokenOf();
-  await voter.context().clearCookies({ name: "connectionCookie" }).catch(async () => {
-    // older playwright: clear everything except the device cookie
-    const keep = (await voter.context().cookies()).filter((c) => c.name === "voterDevice");
-    await voter.context().clearCookies();
-    await voter.context().addCookies(keep);
-  });
-  await voter.goto(`${BASE}${freshPath}`);
+  await voter.goto(`${BASE}/register`);
   await voter.waitForURL(/\/home/, { timeout: 15000 }).catch(() => {});
-  check("re-scan on the same phone logs back in", voter.url().endsWith("/home"));
-  check("re-scan on the same phone creates no new voter", Number(mongo("db.voters.countDocuments()")) === votersBefore);
+  check("re-opening the link on the same phone creates no new voter", Number(mongo("db.voters.countDocuments()")) === votersBefore);
   check("voter waits while no team presents", await waitText(voter, /get ready for the next team/));
 
   // Round 1: Alpha
@@ -195,9 +155,7 @@ try {
   check("admin closes login", await waitText(admin, /Login is closed/));
   const late = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   await late.goto(`${BASE}/register`);
-  check("new voter is blocked after login closes", await waitText(late, /Login is closed/, 15000));
-  await late.goto(`${BASE}${freshPath}`);
-  check("join link refused while login is closed", await waitText(late, /Login is closed|not valid/, 15000));
+  check("new phone waits after login closes", await waitText(late, /not open yet/, 15000));
   check("logged-in voter is still logged in", (await voter.evaluate(() => fetch("/api/isconnected").then((r) => r.json()))).connected === true);
 
   check("no unexpected console errors", consoleErrors.length === 0, consoleErrors.slice(0, 3).join(" | "));
