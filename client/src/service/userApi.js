@@ -117,20 +117,12 @@ export const getLoginStatus = async () => {
   }
 };
 
-export const requestEmailCode = async (email) => {
+// Join with the rotating QR link (t = token from the URL).
+export const joinWithQr = async (t) => {
   try {
-    const response = await apiClient.post(routes.EMAIL_LOGIN_REQUEST, { email });
+    const response = await apiClient.post(routes.JOIN, { t });
     return { success: true, data: response.data };
   } catch (error) {
-    return toFailure(error, "Could not send the code");
-  }
-};
-
-export const verifyEmailCode = async (email, code) => {
-  try {
-    const response = await apiClient.post(routes.EMAIL_LOGIN_VERIFY, { email, code });
-    return { success: true, data: response.data };
-  } catch (error) {
-    return toFailure(error, "Could not verify the code");
+    return toFailure(error, "Could not join");
   }
 };

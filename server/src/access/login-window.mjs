@@ -1,16 +1,12 @@
 import mongoose from "mongoose";
 
-// Admin-controlled login settings:
-//   open      - login window. Closed by default: nobody can request or use a
-//               login code until an admin opens it. Logged-in voters keep
-//               their session when it closes.
-//   anyEmail  - true: anyone can log in with any (non-disposable) email.
-//               false: only emails on the imported list (or allowed domains).
+// Admin-controlled login window. Closed by default: nobody can join with the
+// QR code until an admin opens it. Voters already joined keep their session
+// when it closes.
 const loginWindowSchema = new mongoose.Schema(
   {
     key: { type: String, required: true, unique: true, default: "login" },
     open: { type: Boolean, default: false },
-    anyEmail: { type: Boolean, default: true },
     updatedBy: { type: String, default: null },
   },
   { timestamps: true }
@@ -18,7 +14,6 @@ const loginWindowSchema = new mongoose.Schema(
 
 export const LoginWindow = mongoose.model("login_window", loginWindowSchema);
 
-const DEFAULTS = Object.freeze({ open: false, anyEmail: true });
 const CACHE_TTL_MS = 3_000;
 let cached = null;
 let cachedAt = 0;
@@ -33,10 +28,7 @@ export const getLoginSettings = async ({ fresh = false } = {}) => {
     return cached;
   }
   const doc = await LoginWindow.findOne({ key: "login" }).lean();
-  cached = {
-    open: doc?.open === true,
-    anyEmail: doc?.anyEmail === undefined ? DEFAULTS.anyEmail : doc.anyEmail === true,
-  };
+  cached = { open: doc?.open === true };
   cachedAt = Date.now();
   return cached;
 };

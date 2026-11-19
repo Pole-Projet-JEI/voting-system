@@ -38,107 +38,26 @@
   margin: -6px 0 0;
 }
 
-.register-field {
-  position: relative;
+.register-scan {
   display: flex;
-  align-items: center;
+  gap: 14px;
+  align-items: flex-start;
   width: 100%;
-  min-height: 52px;
-  background: var(--panel);
-  border: 1px solid var(--line-strong);
-  transition: border-color var(--t-ui) ease, box-shadow var(--t-ui) ease;
+  padding: 14px 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--hackathon);
 }
 
-.register-field:focus-within {
-  border-color: var(--text);
-  box-shadow: 0 0 0 1px var(--text);
-}
-
-#unique-code {
-  flex: 1;
-  min-width: 0;
-  padding: 14px 14px;
-  background: transparent;
-  border: 0;
-  outline: none;
-  color: var(--text);
-  font-family: var(--ui);
-  font-size: 1rem;
-}
-
-#unique-code[name="one-time-code"] {
-  font-family: var(--sans);
-  font-size: 1.5rem;
-  letter-spacing: 0.35em;
-}
-
-#unique-code::placeholder {
-  color: var(--faint);
-  letter-spacing: normal;
-  font-family: var(--ui);
-  font-size: 1rem;
-}
-
-#register-form-submit {
+.register-scan-icon {
   flex: none;
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  margin: -1px -1px -1px 0;
-  border: 0;
-  background: var(--hackathon);
-  color: #fff;
-  cursor: pointer;
-  transition: transform var(--t-press) var(--ease-out), background-color var(--t-ui) ease;
+  color: var(--hackathon-ink);
+  margin-top: 2px;
 }
 
-#register-form-submit:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-#register-form-submit:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  #register-form-submit:not(:disabled):hover {
-    background: var(--hackathon-hover);
-  }
-}
-
-.register-hint {
-  margin: 10px 0 0;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.register-links {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin-top: 12px;
-}
-
-.register-link {
-  min-height: 44px;
-  padding: 0;
-  background: none;
-  border: none;
+.register-scan strong {
   color: var(--text);
-  font-family: var(--ui);
-  font-size: 0.9rem;
-  text-decoration: underline;
-  text-underline-offset: 0.25em;
-  text-decoration-color: var(--line-strong);
-  cursor: pointer;
-}
-
-.register-link:disabled {
-  color: var(--faint);
-  cursor: default;
+  font-weight: 600;
 }
 
 .register-closed {

@@ -7,7 +7,7 @@ const voterSchema = new mongoose.Schema(
       select: false,
       trim: true,
     },
-    // Legacy paper-code login. Email voters have no code.
+    // Legacy paper-code login. QR voters have no code.
     codeHash: {
       type: String,
       unique: true,
@@ -15,7 +15,7 @@ const voterSchema = new mongoose.Schema(
       select: false,
       sparse: true,
     },
-    // Email login: allowed voter address (lowercased).
+    // Legacy (email login, removed). Kept so existing documents stay valid.
     email: {
       type: String,
       lowercase: true,

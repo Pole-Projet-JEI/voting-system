@@ -40,7 +40,7 @@ export async function seedVoters() {
 
     if (count === 0) {
       if (!process.env.VOTER_CODES_FILE && !(await fileExists(voterCodesFile))) {
-        console.log("No voter codes file; skipping code seed (email login only)");
+        console.log("No voter codes file; skipping code seed (QR join only)");
         return;
       }
       console.log("Seeding voter database");

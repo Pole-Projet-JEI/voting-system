@@ -1,56 +1,108 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import QRCode from "qrcode";
-import { Lock, QrCode, Unlock, Upload, X } from "lucide-react";
+import { Lock, QrCode, Unlock, X } from "lucide-react";
 import { Button } from "../ui/button";
-import {
-  getVotersSummary,
-  importVoterEmails,
-  setLoginWindow,
-} from "../../service/adminApi";
+import { getAccessQr, getVotersSummary, setLoginWindow } from "../../service/adminApi";
 
-const EMAIL_IN_TEXT = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const SUMMARY_POLL_MS = 10_000;
+const RETRY_MS = 2_000;
 
-export const extractEmails = (text) => [
-  ...new Set((text.match(EMAIL_IN_TEXT) || []).map((email) => email.toLowerCase())),
-];
-
-const votingLink = () => `${window.location.origin}/register`;
-
+// Full-screen rotating QR code for the projector. Each code is a signed link
+// that works for its 20 s window (+ a short grace), then a new one appears.
 const QrOverlay = ({ onClose }) => {
-  const [dataUrl, setDataUrl] = useState("");
+  const [qr, setQr] = useState(null); // { open, url, dataUrl, expiresAt, periodSeconds }
+  const [error, setError] = useState("");
+  const [now, setNow] = useState(Date.now());
+  const skewRef = useRef(0); // server time - local time
 
   useEffect(() => {
-    QRCode.toDataURL(votingLink(), {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      width: 1024,
-    }).then(setDataUrl);
+    let active = true;
+    let timer = 0;
+
+    const load = async () => {
+      const result = await getAccessQr();
+      if (!active) return;
+      if (!result.success) {
+        setError(result.error);
+        timer = window.setTimeout(load, RETRY_MS);
+        return;
+      }
+      setError("");
+      const data = result.data;
+      if (!data.open) {
+        setQr({ open: false });
+        timer = window.setTimeout(load, RETRY_MS);
+        return;
+      }
+      skewRef.current = data.serverTime - Date.now();
+      const url = `${window.location.origin}${data.path}`;
+      const dataUrl = await QRCode.toDataURL(url, { errorCorrectionLevel: "M", margin: 2, width: 1024 });
+      if (!active) return;
+      setQr({ open: true, url, dataUrl, expiresAt: data.expiresAt, periodSeconds: data.periodSeconds });
+      // Next code exactly when this one rotates (in local time).
+      const wait = data.expiresAt - (Date.now() + skewRef.current) + 150;
+      timer = window.setTimeout(load, Math.max(500, wait));
+    };
+
+    load();
+    const tick = window.setInterval(() => setNow(Date.now()), 250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      window.clearInterval(tick);
+    };
   }, []);
+
+  const secondsLeft = qr?.open
+    ? Math.max(0, Math.ceil((qr.expiresAt - (now + skewRef.current)) / 1000))
+    : 0;
+  const fraction = qr?.open ? Math.min(1, secondsLeft / qr.periodSeconds) : 0;
 
   // Rendered on <body> so the sidebar's scroll container cannot show through.
   // z-index must stay above .admin-page (z-index 9999 in AdminPage.css).
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-6 bg-ground p-6">
+    <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-5 bg-ground p-6">
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-6 top-6 rounded-full p-2 text-muted hover:bg-white/5"
+        className="absolute right-6 top-6 p-2 text-muted hover:bg-white/5"
         aria-label="Close QR code"
       >
         <X className="h-8 w-8" />
       </button>
       <h2 className="text-center text-4xl font-bold text-ink">Scan to vote</h2>
-      {dataUrl && (
-        <img
-          src={dataUrl}
-          alt={`QR code for ${votingLink()}`}
-          className="h-auto w-[min(76vh,90vw)] bg-white"
-        />
+
+      {qr?.open === false && (
+        <p className="max-w-xl text-center text-2xl text-muted">
+          Login is closed. Open login in the dashboard to show the QR code.
+        </p>
       )}
-      <p className="text-center text-3xl font-semibold text-ink">
-        {window.location.host}
-      </p>
+
+      {qr?.open && (
+        <>
+          <img
+            key={qr.url}
+            src={qr.dataUrl}
+            alt="Voting QR code (changes every few seconds)"
+            className="h-auto w-[min(70vh,90vw)] bg-white"
+          />
+          <div className="w-[min(70vh,90vw)]">
+            <div className="h-2 w-full bg-white/10">
+              <div
+                className="h-2 bg-hackathon transition-[width] duration-200 ease-linear"
+                style={{ width: `${fraction * 100}%` }}
+              />
+            </div>
+            <p className="mt-3 text-center text-xl text-muted">
+              New code in {secondsLeft}s · {window.location.host}
+            </p>
+          </div>
+        </>
+      )}
+
+      {!qr && !error && <p className="text-xl text-muted">Loading...</p>}
+      {error && <p className="text-lg text-danger">{error} Retrying...</p>}
     </div>,
     document.body
   );
@@ -58,7 +110,6 @@ const QrOverlay = ({ onClose }) => {
 
 export const VotersLoginPanel = ({ onNotify }) => {
   const [summary, setSummary] = useState(null);
-  const [pasted, setPasted] = useState("");
   const [busy, setBusy] = useState(false);
   const [showQr, setShowQr] = useState(false);
 
@@ -73,26 +124,13 @@ export const VotersLoginPanel = ({ onNotify }) => {
 
   useEffect(() => {
     refresh();
+    const timer = window.setInterval(refresh, SUMMARY_POLL_MS);
+    return () => window.clearInterval(timer);
   }, []);
-
-  const setMode = async (anyEmail) => {
-    if (summary?.anyEmail === anyEmail) {
-      return;
-    }
-    setBusy(true);
-    const result = await setLoginWindow({ anyEmail });
-    setBusy(false);
-    if (!result.success) {
-      onNotify?.("error", result.error);
-      return;
-    }
-    onNotify?.("success", result.data.message);
-    refresh();
-  };
 
   const toggleLogin = async () => {
     setBusy(true);
-    const result = await setLoginWindow({ open: !summary?.loginOpen });
+    const result = await setLoginWindow(!summary?.loginOpen);
     setBusy(false);
     if (!result.success) {
       onNotify?.("error", result.error);
@@ -100,42 +138,11 @@ export const VotersLoginPanel = ({ onNotify }) => {
     }
     onNotify?.("success", result.data.message);
     refresh();
-  };
-
-  const importEmails = async (emails) => {
-    if (emails.length === 0) {
-      onNotify?.("error", "No email address found.");
-      return;
-    }
-    setBusy(true);
-    const result = await importVoterEmails(emails);
-    setBusy(false);
-    if (!result.success) {
-      onNotify?.("error", result.error);
-      return;
-    }
-    const { added, alreadyListed, invalidCount } = result.data;
-    onNotify?.(
-      "success",
-      `${added} added, ${alreadyListed} already on the list${invalidCount ? `, ${invalidCount} invalid` : ""}.`
-    );
-    setPasted("");
-    refresh();
-  };
-
-  const onFile = async (event) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (file) {
-      importEmails(extractEmails(await file.text()));
-    }
   };
 
   if (!summary) {
     return <p className="text-sm text-muted">Loading voters...</p>;
   }
-
-  const pastedCount = extractEmails(pasted).length;
 
   return (
     <div className="space-y-3">
@@ -144,7 +151,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted">Login</span>
         <span
-          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+          className={`px-2 py-0.5 text-xs font-semibold ${
             summary.loginOpen ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"
           }`}
         >
@@ -168,7 +175,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
         )}
       </Button>
       <p className="text-xs text-faint">
-        Closing stops new logins. Voters already logged in can keep voting.
+        Closing stops new people joining. Voters already in can keep voting.
       </p>
 
       <Button
@@ -180,84 +187,15 @@ export const VotersLoginPanel = ({ onNotify }) => {
         <QrCode className="mr-2 h-4 w-4" />
         Show QR code
       </Button>
-
-      <div>
-        <div className="mb-1 text-sm text-muted">Who can log in</div>
-        <div className="grid grid-cols-2 gap-1 rounded-md bg-white/5 p-1" role="radiogroup">
-          {[
-            [true, "Anyone with an email"],
-            [false, "Only the list"],
-          ].map(([value, label]) => (
-            <button
-              key={label}
-              type="button"
-              role="radio"
-              aria-checked={summary.anyEmail === value}
-              disabled={busy}
-              onClick={() => setMode(value)}
-              className={`rounded px-2 py-1.5 text-xs font-semibold transition ${
-                summary.anyEmail === value ? "bg-panel text-ink" : "text-muted hover:bg-white/10"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="mt-1 text-xs text-faint">
-          {summary.anyEmail
-            ? "Anyone who scans the QR code can log in with their email. Gmail aliases count as one person; temporary inboxes are refused."
-            : "Only emails you add below can log in."}
-        </p>
-      </div>
-
-      {!summary.mailerConfigured && (
-        <div className="rounded-md border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-          Email sending is not configured on the server: voters cannot receive codes yet.
-        </div>
-      )}
-
-      <div className="rounded-md bg-white/5 px-3 py-2 text-sm">
-        <div className="text-muted">
-          {summary.anyEmail ? "Voters logged in by email" : "Allowed voter emails"}
-        </div>
-        <div className="text-2xl font-bold">{summary.emailVoters}</div>
-        {summary.allowedDomains.length > 0 && (
-          <div className="text-xs text-faint">
-            + any address @{summary.allowedDomains.join(", @")}
-          </div>
-        )}
-      </div>
-
-      {!summary.anyEmail && (
-      <>
-      <textarea
-        value={pasted}
-        onChange={(event) => setPasted(event.target.value)}
-        rows={3}
-        placeholder="Paste emails (any format: one per line, CSV, Excel copy...)"
-        className="w-full rounded-md border border-line-strong bg-panel-2 px-3 py-2 text-sm text-white placeholder:text-slate-400 outline-none focus:border-white/50"
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          type="button"
-          onClick={() => importEmails(extractEmails(pasted))}
-          disabled={busy || pastedCount === 0}
-          variant="outline"
-          className="border-line-strong text-white hover:bg-white/10"
-        >
-          Add {pastedCount || ""}
-        </Button>
-        <label className="flex cursor-pointer items-center justify-center rounded-md border border-line-strong px-3 text-sm text-white hover:bg-white/10">
-          <Upload className="mr-2 h-4 w-4" />
-          CSV / TXT
-          <input type="file" accept=".csv,.txt,text/csv,text/plain" onChange={onFile} className="hidden" />
-        </label>
-      </div>
       <p className="text-xs text-faint">
-        Excel: save as CSV first, or copy the email column and paste it above.
+        Show it on the projector. The code changes every 20 seconds; an old photo of it stops
+        working within about 30 seconds. Scanning again on the same phone keeps the same voter.
       </p>
-      </>
-      )}
+
+      <div className="bg-white/5 px-3 py-2 text-sm">
+        <div className="text-muted">Voters joined</div>
+        <div className="text-2xl font-bold">{summary.voters}</div>
+      </div>
     </div>
   );
 };

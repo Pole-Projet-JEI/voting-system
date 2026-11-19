@@ -214,20 +214,18 @@ export const getVotersSummary = async () => {
   }
 };
 
-export const importVoterEmails = async (emails) => {
+export const getAccessQr = async () => {
   try {
-    const response = await adminClient.post(routes.ADMIN_VOTERS_EMAILS, { emails });
+    const response = await adminClient.get(routes.ADMIN_ACCESS_QR);
     return { success: true, data: response.data };
   } catch (error) {
-    return { success: false, error: error.response?.data?.message || "Import failed" };
+    return { success: false, error: error.response?.data?.message || "Failed to load the QR code" };
   }
 };
 
-// settings: { open?: boolean, anyEmail?: boolean }; a boolean means { open }.
-export const setLoginWindow = async (settings) => {
+export const setLoginWindow = async (open) => {
   try {
-    const body = typeof settings === "boolean" ? { open: settings } : settings;
-    const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, body);
+    const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, { open });
     return { success: true, data: response.data };
   } catch (error) {
     return { success: false, error: error.response?.data?.message || "Failed to update login" };
