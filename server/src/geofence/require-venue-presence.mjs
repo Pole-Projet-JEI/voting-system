@@ -12,6 +12,7 @@ const MESSAGES = {
   LOCATION_INACCURATE:
     "Your location is not precise enough. Enable precise location / GPS and try again.",
   OUTSIDE_VENUE: "You must be inside the venue to vote.",
+  LOCATION_STALE: "Your phone sent an old position. Please try again.",
 };
 
 // Express middleware: rejects votes whose reported position is outside the

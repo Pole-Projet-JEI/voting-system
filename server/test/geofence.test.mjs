@@ -49,9 +49,12 @@ test("parseClientLocation rejects malformed payloads", () => {
   assert.equal(parseClientLocation({ latitude: 0, longitude: 0, accuracy: -1 }), null);
   assert.equal(parseClientLocation({ latitude: "0", longitude: 0, accuracy: 5 }), null);
   assert.deepEqual(
-    parseClientLocation({ latitude: 1, longitude: 2, accuracy: 3, extra: true }),
-    { latitude: 1, longitude: 2, accuracy: 3 }
+    parseClientLocation({ latitude: 1, longitude: 2, accuracy: 3, ageMs: 1200, extra: true }),
+    { latitude: 1, longitude: 2, accuracy: 3, ageMs: 1200 }
   );
+  // Old clients that send no age are treated as too old.
+  assert.equal(parseClientLocation({ latitude: 1, longitude: 2, accuracy: 3 }).ageMs, Infinity);
+  assert.equal(parseClientLocation({ latitude: 1, longitude: 2, accuracy: 3, ageMs: "5" }).ageMs, Infinity);
 });
 
 test("disabled geofence allows any vote, even without location", () => {
@@ -62,7 +65,7 @@ test("disabled geofence allows any vote, even without location", () => {
 test("enabled geofence without coordinates fails closed", () => {
   const result = evaluateLocation(
     { ...venue, latitude: null, longitude: null },
-    { latitude: 0, longitude: 0, accuracy: 5 }
+    { latitude: 0, longitude: 0, accuracy: 5, ageMs: 1000 }
   );
   assert.deepEqual(result, { allowed: false, reason: "GEOFENCE_NOT_CONFIGURED" });
 });
@@ -76,6 +79,7 @@ test("imprecise fix is rejected", () => {
     latitude: venue.latitude,
     longitude: venue.longitude,
     accuracy: 900,
+    ageMs: 1000,
   });
   assert.equal(result.allowed, false);
   assert.equal(result.reason, "LOCATION_INACCURATE");
@@ -87,6 +91,7 @@ test("position inside radius is allowed", () => {
     latitude: offsetNorth(120),
     longitude: venue.longitude,
     accuracy: 30,
+    ageMs: 1000,
   });
   assert.equal(result.allowed, true);
   assert.equal(result.reason, "INSIDE_VENUE");
@@ -98,9 +103,18 @@ test("position outside radius is rejected", () => {
     latitude: offsetNorth(400),
     longitude: venue.longitude,
     accuracy: 20,
+    ageMs: 1000,
   });
   assert.equal(result.allowed, false);
   assert.equal(result.reason, "OUTSIDE_VENUE");
+});
+
+test("a cached (old) position is refused even when it is inside", () => {
+  const inside = { latitude: venue.latitude, longitude: venue.longitude, accuracy: 15 };
+  assert.equal(evaluateLocation(venue, { ...inside, ageMs: 29_000 }).allowed, true);
+  assert.deepEqual(evaluateLocation(venue, { ...inside, ageMs: 55_000 }), { allowed: false, reason: "LOCATION_STALE" });
+  assert.equal(evaluateLocation(venue, { ...inside, ageMs: Infinity }).reason, "LOCATION_STALE");
+  assert.equal(evaluateLocation(venue, parseClientLocation(inside)).reason, "LOCATION_STALE");
 });
 
 test("validateGeofenceUpdate enforces types and ranges", () => {
@@ -123,7 +137,7 @@ test("middleware returns 403 with a reason code when outside the venue", async (
     {
       body: {
         vote: "yes",
-        location: { latitude: offsetNorth(1000), longitude: venue.longitude, accuracy: 15 },
+        location: { latitude: offsetNorth(1000), longitude: venue.longitude, accuracy: 15, ageMs: 1000 },
       },
     },
     res,
@@ -143,7 +157,7 @@ test("middleware attaches the check result and continues when inside", async () 
   const req = {
     body: {
       vote: "yes",
-      location: { latitude: venue.latitude, longitude: venue.longitude, accuracy: 15 },
+      location: { latitude: venue.latitude, longitude: venue.longitude, accuracy: 15, ageMs: 1000 },
     },
   };
   let nextCalled = false;

@@ -60,7 +60,7 @@ const makeLocation = (category) => {
     outside: [between(100, 5000), between(5, 50)],
     inaccurate: [between(0, 30), between(61, 500)],
   }[category];
-  return { ...offset(dist), accuracy: acc };
+  return { ...offset(dist), accuracy: acc, ageMs: Math.round(between(200, 4000)) };
 };
 
 const expectedOutcome = (loc) => {

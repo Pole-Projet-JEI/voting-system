@@ -12,6 +12,10 @@ export const DEFAULT_GEOFENCE_SETTINGS = Object.freeze({
   maxAccuracyMeters: 200,
 });
 
+// A position older than this is refused: it may come from a cache filled
+// while the phone was still inside (or anywhere else).
+export const MAX_LOCATION_AGE_MS = Number(process.env.MAX_LOCATION_AGE_MS || 30_000);
+
 export const GEOFENCE_LIMITS = Object.freeze({
   minRadiusMeters: 10,
   maxRadiusMeters: 5000,
@@ -49,7 +53,7 @@ export const parseClientLocation = (raw) => {
     return null;
   }
 
-  const { latitude, longitude, accuracy } = raw;
+  const { latitude, longitude, accuracy, ageMs } = raw;
   if (
     !isValidLatitude(latitude) ||
     !isValidLongitude(longitude) ||
@@ -59,7 +63,14 @@ export const parseClientLocation = (raw) => {
     return null;
   }
 
-  return { latitude, longitude, accuracy };
+  // ageMs: how old the fix was when sent (position.timestamp vs now on the
+  // phone). Missing means an old client: treated as too old.
+  return {
+    latitude,
+    longitude,
+    accuracy,
+    ageMs: isFiniteNumber(ageMs) && ageMs >= -5_000 ? Math.max(0, ageMs) : Infinity,
+  };
 };
 
 // Decides whether a reported position is inside the venue.
@@ -77,6 +88,10 @@ export const evaluateLocation = (settings, location) => {
 
   if (!location) {
     return { allowed: false, reason: "LOCATION_REQUIRED" };
+  }
+
+  if (!(location.ageMs <= MAX_LOCATION_AGE_MS)) {
+    return { allowed: false, reason: "LOCATION_STALE" };
   }
 
   const accuracyMeters = Math.round(location.accuracy);

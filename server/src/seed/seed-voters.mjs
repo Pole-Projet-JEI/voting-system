@@ -39,6 +39,12 @@ export async function seedVoters() {
     const count = await Voter.countDocuments();
 
     if (count === 0) {
+      // Code voters are only useful when paper-code login is on. Otherwise an
+      // emptied database (e.g. cleaned before the event) must stay empty.
+      if (process.env.ENABLE_CODE_LOGIN !== "true") {
+        console.log("Code login disabled; skipping voter code seed");
+        return;
+      }
       if (!process.env.VOTER_CODES_FILE && !(await fileExists(voterCodesFile))) {
         console.log("No voter codes file; skipping code seed (link session only)");
         return;

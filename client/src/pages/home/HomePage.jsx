@@ -6,7 +6,9 @@ import {
   didUserVote,
   getCurrentTeam,
   checkConnection,
+  getGeofenceStatus,
 } from "../../service/userApi";
+import { getLocationPermission, getVoterLocation } from "../../service/geolocation";
 import {
   attemptVote,
   getPendingVote,
@@ -51,19 +53,43 @@ export default function HomePage() {
   const [pageError, setPageError] = useState("");
   const [voteError, setVoteError] = useState("");
   const [submitStatus, setSubmitStatus] = useState(null); // null | 'locating' | 'sending'
-  const [progress, setProgress] = useState({ votedTeams: 0, totalTeams: 0 });
   const retryInFlight = useRef(false);
+  // Venue location check. geofenceEnabled: null until loaded.
+  // location: "unknown" | "needed" | "checking" | "ready" | "error"
+  const [geofenceEnabled, setGeofenceEnabled] = useState(null);
+  const [locationState, setLocationState] = useState("unknown");
+  const [locationError, setLocationError] = useState("");
 
-  const updateProgress = (data) => {
-    if (Number.isInteger(data?.totalTeams)) {
-      setProgress({ votedTeams: data.votedTeams || 0, totalTeams: data.totalTeams });
-    }
-  };
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const status = await getGeofenceStatus();
+      if (!active || !status.success) return;
+      const enabled = status.data.enabled === true;
+      setGeofenceEnabled(enabled);
+      if (!enabled) {
+        setLocationState("ready");
+        return;
+      }
+      // Already allowed on this browser: no extra step.
+      const permission = await getLocationPermission();
+      if (active) setLocationState(permission === "granted" ? "ready" : "needed");
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  const refreshProgress = async () => {
-    const result = await didUserVote();
+  // Runs directly inside the tap, so iPhone Safari shows its permission prompt.
+  const allowLocation = async () => {
+    setLocationError("");
+    setLocationState("checking");
+    const result = await getVoterLocation({ windowMs: 2500 });
     if (result.success) {
-      updateProgress(result.data);
+      setLocationState("ready");
+    } else {
+      setLocationState("error");
+      setLocationError(result.error);
     }
   };
 
@@ -105,7 +131,6 @@ export default function HomePage() {
   const checkHasVoted = async () => {
     const result = await didUserVote();
     if (result.success) {
-      updateProgress(result.data);
       const teamResult = await getCurrentTeam();
       const teamState =
         teamResult.data?.state ||
@@ -146,13 +171,13 @@ export default function HomePage() {
     setSubmitStatus("sending");
     const outcome = await attemptVote(teamId, vote, {
       onLocating: () => setSubmitStatus("locating"),
+      geofenceEnabled: geofenceEnabled ?? undefined,
     });
     setSubmitStatus(null);
 
     if (outcome.kind === "saved") {
       rememberVotedTeam(teamId);
       showThankYou();
-      refreshProgress();
       return;
     }
 
@@ -161,10 +186,6 @@ export default function HomePage() {
       // the background, and show the normal confirmation.
       setPendingVote({ teamId, vote, createdAt: Date.now() });
       rememberVotedTeam(teamId);
-      setProgress((current) => ({
-        ...current,
-        votedTeams: Math.min(current.totalTeams || Infinity, current.votedTeams + 1),
-      }));
       showThankYou();
       return;
     }
@@ -174,8 +195,38 @@ export default function HomePage() {
       return;
     }
 
+    if (outcome.code === "PERMISSION_DENIED" || outcome.code === "APPROXIMATE") {
+      // Show the step-by-step location card instead of the form.
+      setLocationError(outcome.message);
+      setLocationState("error");
+      return;
+    }
     setVoteError(outcome.message);
   };
+
+  const LocationStep =
+    geofenceEnabled && locationState !== "ready" && locationState !== "unknown" ? (
+      <div className="location-step" role={locationState === "error" ? "alert" : undefined}>
+        <span className="fie-label">Location check</span>
+        <p className="fie-info">
+          Votes are only accepted from inside the room. Allow your location once, and
+          turn on <strong>precise location</strong> if your phone asks.
+        </p>
+        {locationError && <p className="fie-error">{locationError}</p>}
+        <button
+          type="button"
+          className="fie-btn location-step-button"
+          onClick={allowLocation}
+          disabled={locationState === "checking"}
+        >
+          {locationState === "checking"
+            ? "Checking your location..."
+            : locationState === "error"
+              ? "Try again"
+              : "Allow location"}
+        </button>
+      </div>
+    ) : null;
 
   // Background retry for a vote that could not reach the server.
   useEffect(() => {
@@ -194,7 +245,6 @@ export default function HomePage() {
         setPendingVote(null);
         if (outcome.kind === "saved") {
           rememberVotedTeam(pending.teamId);
-          refreshProgress();
         } else {
           console.warn("Pending vote dropped:", outcome.code || outcome.message);
         }
@@ -283,6 +333,8 @@ export default function HomePage() {
       <h1 className="vote-open-title">
         Your vote for <span className="team-name">{state.teamName}</span>
       </h1>
+      {LocationStep}
+      {!LocationStep && (
       <form className="vote-form" onSubmit={voteSubmitHandler}>
         {voteError && (
           <div className="fie-error" role="alert">
@@ -325,10 +377,6 @@ export default function HomePage() {
               : "Submit Vote"}
         </button>
       </form>
-      {progress.totalTeams > 0 && (
-        <p className="home-vote-progress">
-          Vote for all {progress.totalTeams} teams, otherwise none of your votes count.
-        </p>
       )}
       {/* <p style={{ fontSize: '1.5em', fontWeight: '700' }}>01:45</p> */}
     </div>
@@ -340,6 +388,7 @@ export default function HomePage() {
       <div className="home-vote-closed-message">
         <p>Voting is now closed - get ready for the next team!</p>
       </div>
+      {LocationStep}
     </div>
   );
 
@@ -350,6 +399,7 @@ export default function HomePage() {
         <span className="team-name">{state.teamName}</span> is presenting
       </h1>
       <p className="home-vote-progress">Voting will open shortly.</p>
+      {LocationStep}
     </div>
   );
 
@@ -369,13 +419,6 @@ export default function HomePage() {
         </svg>
       </span>
       <h1>Thank you for your vote</h1>
-      {progress.totalTeams > 0 && (
-        <p className="home-vote-progress">
-          {progress.votedTeams >= progress.totalTeams
-            ? `You voted for all ${progress.totalTeams} teams.`
-            : `You have voted for ${progress.votedTeams} of ${progress.totalTeams} teams. Stay for the next teams: your votes count only if you vote for all of them.`}
-        </p>
-      )}
     </div>
   );
 

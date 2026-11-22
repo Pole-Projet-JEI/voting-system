@@ -164,3 +164,26 @@
     font-size: 1.2rem;
   }
 }
+
+/* Location check step (shown until the browser has given a position). */
+.location-step {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--hackathon);
+}
+
+.location-step strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.location-step-button {
+  width: 100%;
+}

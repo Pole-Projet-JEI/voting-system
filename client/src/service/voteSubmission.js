@@ -1,22 +1,30 @@
 import { getGeofenceStatus, voteForId } from "./userApi";
-import { getCurrentLocation } from "./geolocation";
+import { getVoterLocation } from "./geolocation";
 
 // Outcome of one attempt:
 //   { kind: "saved" }                  vote stored (or already stored earlier)
 //   { kind: "retry" }                  server unreachable / server error: keep and retry
 //   { kind: "rejected", message, code } definitive refusal shown to the voter
 //   { kind: "unauthenticated" }        session expired
-export const attemptVote = async (teamId, vote, { onLocating } = {}) => {
+//
+// Pass geofenceEnabled when already known (loaded with the page): the
+// location request then starts right inside the tap on "Submit", which some
+// browsers (iPhone Safari) need to show the permission prompt.
+export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled } = {}) => {
   const payload = { vote };
 
-  const geofence = await getGeofenceStatus();
-  if (!geofence.success) {
-    return { kind: "retry" };
+  let enabled = geofenceEnabled;
+  if (typeof enabled !== "boolean") {
+    const geofence = await getGeofenceStatus();
+    if (!geofence.success) {
+      return { kind: "retry" };
+    }
+    enabled = geofence.data.enabled === true;
   }
 
-  if (geofence.data.enabled) {
+  if (enabled) {
     onLocating?.();
-    const position = await getCurrentLocation();
+    const position = await getVoterLocation();
     if (!position.success) {
       return { kind: "rejected", message: position.error, code: position.errorCode };
     }
@@ -48,7 +56,25 @@ export const attemptVote = async (teamId, vote, { onLocating } = {}) => {
       kind: "rejected",
       code: response.errorCode,
       message:
-        "Your phone reports that you are outside the venue. Move inside the room, turn on precise location / GPS, and try again.",
+        "Your phone reports that you are outside the venue. Votes are only accepted from inside the room.",
+    };
+  }
+
+  if (response.errorCode === "LOCATION_INACCURATE") {
+    return {
+      kind: "rejected",
+      code: response.errorCode,
+      message: `Your location is not precise enough yet${
+        payload.location ? ` (±${Math.round(payload.location.accuracy)} m)` : ""
+      }. Make sure precise location is on, wait a few seconds, then tap Submit again.`,
+    };
+  }
+
+  if (response.errorCode === "LOCATION_STALE") {
+    return {
+      kind: "rejected",
+      code: response.errorCode,
+      message: "Your phone gave an old position. Tap Submit again.",
     };
   }
 
