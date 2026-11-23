@@ -310,14 +310,14 @@ function AdminPage() {
         return {
           icon: ArrowDown,
           variant: "default",
-          text: "Most Votes",
+          text: "Most votes (live)",
           className: `${baseClass} bg-transparent border border-line-strong hover:border-ink text-white`,
         };
       case "yes-asc":
         return {
           icon: ArrowUp,
           variant: "default",
-          text: "Least Votes",
+          text: "Least votes (live)",
           className: `${baseClass} bg-transparent border border-line-strong hover:border-ink text-white`,
         };
       default:

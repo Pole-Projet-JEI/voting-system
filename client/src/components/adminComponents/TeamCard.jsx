@@ -119,6 +119,9 @@ export const TeamCard = ({
             <div className="text-xs text-muted mb-1">👎 No</div>
             <div className="text-xl font-bold text-ink">{team.nno}</div>
           </div>
+          <div className="col-span-2 text-center text-[11px] text-faint">
+            Live count (all votes). Official result: see Official results.
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">

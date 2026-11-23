@@ -46,6 +46,9 @@ export const PresentingTeamCard = ({
             <div className="text-2xl font-bold">{team.nno}</div>
           </div>
         </div>
+        <p className="text-center text-[11px] text-faint">
+          Live count of all votes. Only voters who vote for every team are counted in Official results.
+        </p>
         <div className="flex gap-2">
           {teamState !== "voting" && (
             <Button
