@@ -32,11 +32,11 @@ const STEPS = {
     other: "Location is blocked for this site. Allow Location in your browser's site settings, then try again.",
   },
   APPROXIMATE: {
-    ios: "Your iPhone only shares an approximate location. Open Settings → Privacy & Security → Location Services → Safari Websites (or your browser) and turn on Precise Location. Then tap Try again.",
-    android: "Your phone only shares an approximate location. Open Settings → Apps → Chrome (or your browser) → Permissions → Location and turn on \"Use precise location\". Then tap Try again.",
-    windows: "This computer can only find an approximate location. Turn on Windows Settings → Privacy & security → Location services, and turn on Wi-Fi. For a reliable vote, use your phone.",
-    mac: "This computer can only find an approximate location. Turn on Wi-Fi and allow Location Services for your browser. For a reliable vote, use your phone.",
-    other: "Your device only shares an approximate location. Turn on precise location, then try again — or vote from your phone.",
+    ios: "Your iPhone only gives an approximate position{acc}. Turn on Wi-Fi (no need to connect): indoors it makes the position precise. Also check Settings → Privacy & Security → Location Services → Safari Websites (or your browser) → Precise Location On. Then tap Try again.",
+    android: "Your phone only gives an approximate position{acc}. Turn on Wi-Fi (no need to connect): indoors it makes the position precise. Also check Settings → Location → Google Location Accuracy (\"Improve accuracy\") On, and Settings → Apps → Chrome → Permissions → Location → \"Use precise location\". Then tap Try again.",
+    windows: "This computer can only find an approximate position{acc}. Turn on Windows Settings → Privacy & security → Location services, and turn on Wi-Fi. For a reliable vote, use your phone.",
+    mac: "This computer can only find an approximate position{acc}. Turn on Wi-Fi and allow Location Services for your browser. For a reliable vote, use your phone.",
+    other: "Your device only gives an approximate position{acc}. Turn on Wi-Fi and precise location, then try again — or vote from your phone.",
   },
   POSITION_UNAVAILABLE: {
     ios: "Your iPhone could not find its location. Check Settings → Privacy & Security → Location Services is On, move near a window if you can, then tap Try again.",
@@ -53,8 +53,11 @@ const plain = {
   TIMEOUT: "Getting your location took too long. Please try again.",
 };
 
-export const locationMessage = (errorCode, platform = detectPlatform()) =>
-  STEPS[errorCode]?.[platform] || STEPS[errorCode]?.other || plain[errorCode] || plain.TIMEOUT;
+export const locationMessage = (errorCode, platform = detectPlatform(), { accuracy } = {}) =>
+  (STEPS[errorCode]?.[platform] || STEPS[errorCode]?.other || plain[errorCode] || plain.TIMEOUT).replace(
+    "{acc}",
+    Number.isFinite(accuracy) ? ` (±${Math.round(accuracy)} m)` : ""
+  );
 
 const CODE_BY_ERROR = { 1: "PERMISSION_DENIED", 2: "POSITION_UNAVAILABLE", 3: "TIMEOUT" };
 
@@ -93,16 +96,27 @@ export const getCurrentLocation = async ({ timeoutMs = 15000 } = {}) => {
   return requestPosition({ enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 0 });
 };
 
-// Voter reading: watch the position for up to `windowMs` and keep the most
-// accurate fresh fix; stop early once it is good enough. Falls back to the
-// normal location if the precise one never arrives.
-export const getVoterLocation = async ({ windowMs = 6000, goodEnoughMeters = 20, timeoutMs = 15000 } = {}) => {
+// Voter reading: watch the position and keep the most accurate fresh fix.
+//   - stop at once when a fix is within goodEnoughMeters;
+//   - after windowMs, stop as soon as the best fix is within targetMeters
+//     (the venue's max GPS error);
+//   - otherwise keep waiting up to timeoutMs: indoors, phones first answer
+//     with a rough cell-tower position (1-3 km) and need several seconds for
+//     a GPS / Wi-Fi fix. Only then is the position called approximate.
+// Falls back to the normal location if the precise one never arrives.
+export const getVoterLocation = async ({
+  windowMs = 4000,
+  goodEnoughMeters = 20,
+  targetMeters = 100,
+  timeoutMs = 20000,
+} = {}) => {
   const blocked = preflight();
   if (blocked) return blocked;
 
   const watched = await new Promise((resolve) => {
     let best = null;
     let done = false;
+    let windowPassed = false;
     let watchId = null;
     const timers = [];
     const finish = (result) => {
@@ -118,7 +132,9 @@ export const getVoterLocation = async ({ windowMs = 6000, goodEnoughMeters = 20,
       (position) => {
         const location = toLocation(position);
         if (!best || location.accuracy < best.accuracy) best = location;
-        if (best.accuracy <= goodEnoughMeters) finishWithBest();
+        if (best.accuracy <= goodEnoughMeters || (windowPassed && best.accuracy <= targetMeters)) {
+          finishWithBest();
+        }
       },
       (error) => {
         const errorCode = CODE_BY_ERROR[error.code] || "POSITION_UNAVAILABLE";
@@ -126,8 +142,13 @@ export const getVoterLocation = async ({ windowMs = 6000, goodEnoughMeters = 20,
       },
       { enableHighAccuracy: true, timeout: timeoutMs, maximumAge: 0 }
     );
-    // After the window, use the best fix so far; with none, wait up to timeoutMs.
-    timers.push(setTimeout(() => best && finishWithBest(), windowMs));
+    // After the window, stop if the best fix is precise enough; else keep going.
+    timers.push(
+      setTimeout(() => {
+        windowPassed = true;
+        if (best && best.accuracy <= targetMeters) finishWithBest();
+      }, windowMs)
+    );
     timers.push(setTimeout(finishWithBest, timeoutMs));
   });
 
@@ -136,7 +157,12 @@ export const getVoterLocation = async ({ windowMs = 6000, goodEnoughMeters = 20,
     result = await requestPosition({ enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 0 });
   }
   if (result.success && result.location.accuracy > APPROXIMATE_METERS) {
-    return { ...fail("APPROXIMATE"), location: result.location };
+    return {
+      success: false,
+      errorCode: "APPROXIMATE",
+      error: locationMessage("APPROXIMATE", detectPlatform(), { accuracy: result.location.accuracy }),
+      location: result.location,
+    };
   }
   return result;
 };

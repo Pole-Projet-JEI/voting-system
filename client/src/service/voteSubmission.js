@@ -10,7 +10,7 @@ import { getVoterLocation } from "./geolocation";
 // Pass geofenceEnabled when already known (loaded with the page): the
 // location request then starts right inside the tap on "Submit", which some
 // browsers (iPhone Safari) need to show the permission prompt.
-export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled } = {}) => {
+export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled, maxAccuracyMeters } = {}) => {
   const payload = { vote };
 
   let enabled = geofenceEnabled;
@@ -24,7 +24,9 @@ export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled } 
 
   if (enabled) {
     onLocating?.();
-    const position = await getVoterLocation();
+    const position = await getVoterLocation(
+      Number.isFinite(maxAccuracyMeters) ? { targetMeters: maxAccuracyMeters } : {}
+    );
     if (!position.success) {
       return { kind: "rejected", message: position.error, code: position.errorCode };
     }

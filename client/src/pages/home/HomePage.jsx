@@ -57,6 +57,7 @@ export default function HomePage() {
   // Venue location check. geofenceEnabled: null until loaded.
   // location: "unknown" | "needed" | "checking" | "ready" | "error"
   const [geofenceEnabled, setGeofenceEnabled] = useState(null);
+  const [maxAccuracyMeters, setMaxAccuracyMeters] = useState(undefined);
   const [locationState, setLocationState] = useState("unknown");
   const [locationError, setLocationError] = useState("");
 
@@ -67,6 +68,7 @@ export default function HomePage() {
       if (!active || !status.success) return;
       const enabled = status.data.enabled === true;
       setGeofenceEnabled(enabled);
+      if (Number.isFinite(status.data.maxAccuracyMeters)) setMaxAccuracyMeters(status.data.maxAccuracyMeters);
       if (!enabled) {
         setLocationState("ready");
         return;
@@ -84,7 +86,10 @@ export default function HomePage() {
   const allowLocation = async () => {
     setLocationError("");
     setLocationState("checking");
-    const result = await getVoterLocation({ windowMs: 2500 });
+    const result = await getVoterLocation({
+      windowMs: 2500,
+      ...(Number.isFinite(maxAccuracyMeters) && { targetMeters: maxAccuracyMeters }),
+    });
     if (result.success) {
       setLocationState("ready");
     } else {
@@ -172,6 +177,7 @@ export default function HomePage() {
     const outcome = await attemptVote(teamId, vote, {
       onLocating: () => setSubmitStatus("locating"),
       geofenceEnabled: geofenceEnabled ?? undefined,
+      maxAccuracyMeters,
     });
     setSubmitStatus(null);
 
@@ -212,6 +218,12 @@ export default function HomePage() {
           Votes are only accepted from inside the room. Allow your location once, and
           turn on <strong>precise location</strong> if your phone asks.
         </p>
+        {locationState === "checking" && (
+          <p className="fie-info">
+            Finding a precise position. This can take up to 20 seconds indoors; turning on
+            Wi-Fi (no need to connect) makes it faster.
+          </p>
+        )}
         {locationError && <p className="fie-error">{locationError}</p>}
         <button
           type="button"
@@ -376,6 +388,11 @@ export default function HomePage() {
               ? "Submitting..."
               : "Submit Vote"}
         </button>
+        {submitStatus === "locating" && (
+          <p className="home-vote-progress">
+            Finding a precise position. This can take up to 20 seconds indoors.
+          </p>
+        )}
       </form>
       )}
       {/* <p style={{ fontSize: '1.5em', fontWeight: '700' }}>01:45</p> */}

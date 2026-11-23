@@ -22,11 +22,11 @@ const withGeolocation = async (responses, fn, { watch = [], userAgent = "" } = {
           const next = responses.shift();
           next.error ? fail({ code: next.error }) : ok({ coords: next, timestamp: Date.now() - (next.ageMs || 0) });
         },
-        // Emits the queued watch readings 10 ms apart.
+        // Emits the queued watch readings 10 ms apart (or at next.atMs).
         watchPosition(ok, fail, options) {
           calls.push({ kind: "watch", ...options });
           watch.forEach((next, i) =>
-            setTimeout(() => (next.error ? fail({ code: next.error }) : ok({ coords: next, timestamp: Date.now() })), 10 * (i + 1))
+            setTimeout(() => (next.error ? fail({ code: next.error }) : ok({ coords: next, timestamp: Date.now() })), next.atMs ?? 10 * (i + 1))
           );
           return 7;
         },
@@ -112,10 +112,26 @@ test("voter location stops early once the reading is good enough", async () => {
   }, { watch: [{ latitude: 1, longitude: 1, accuracy: 40 }, { latitude: 1, longitude: 1, accuracy: 12 }] });
 });
 
+test("indoors: rough cell position first, precise fix later -> waits for the precise one", async () => {
+  await withGeolocation([], async () => {
+    const result = await getVoterLocation({ windowMs: 40, targetMeters: 60, timeoutMs: 2000 });
+    assert.equal(result.success, true);
+    assert.equal(result.location.accuracy, 25);
+  }, { watch: [
+    { latitude: 1, longitude: 1, accuracy: 2000, atMs: 10 },
+    { latitude: 1, longitude: 1, accuracy: 900, atMs: 60 },
+    { latitude: 2, longitude: 2, accuracy: 25, atMs: 300 },
+  ] });
+});
+
 test("approximate location (~2 km) is reported with device-specific steps", async () => {
   const iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 Version/18.1 Mobile/15E148 Safari/604.1";
   await withGeolocation([], async () => {
-    const result = await getVoterLocation({ windowMs: 40 });
+    const started = Date.now();
+    const result = await getVoterLocation({ windowMs: 40, timeoutMs: 300 });
+    assert.ok(Date.now() - started >= 290, "keeps waiting for a precise fix until the timeout");
+    assert.match(result.error, /±2000 m/);
+    assert.match(result.error, /Wi-Fi/);
     assert.equal(result.success, false);
     assert.equal(result.errorCode, "APPROXIMATE");
     assert.match(result.error, /Precise Location/);
