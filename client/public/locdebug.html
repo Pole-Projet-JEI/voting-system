@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Location test</title>
+<style>
+  body { font: 15px/1.4 system-ui, sans-serif; background: #120c2a; color: #eee; margin: 0; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  p { color: #bbb; margin: 4px 0 12px; }
+  button { display: block; width: 100%; margin: 8px 0; padding: 14px; font-size: 16px; font-weight: 600;
+           background: #6d3cf0; color: #fff; border: 0; }
+  button:disabled { opacity: .5; }
+  #log { font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; background: #000; padding: 10px; margin-top: 12px; min-height: 120px; }
+  .good { color: #6f6; } .bad { color: #f77; } .mid { color: #fd6; }
+</style>
+</head>
+<body>
+<h1>Location test</h1>
+<p>Run each test in the room and send a screenshot of the result. Nothing is sent to the server.</p>
+<button id="a">A. Old method: one precise reading</button>
+<button id="b">B. New method: watch 20 s</button>
+<button id="c">C. Normal (non-GPS) reading</button>
+<button id="clear">Clear</button>
+<div id="log"></div>
+<script>
+  const VENUE = { lat: 35.828624, lng: 10.620055 };
+  const log = document.getElementById("log");
+  const t0 = () => performance.now();
+  const dist = (a, b) => {
+    const R = 6371000, r = Math.PI / 180;
+    const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  };
+  const line = (html) => { log.innerHTML += html + "\n"; };
+  const fmt = (start, p) => {
+    const acc = Math.round(p.coords.accuracy);
+    const d = Math.round(dist(VENUE, { lat: p.coords.latitude, lng: p.coords.longitude }));
+    const age = Math.round((Date.now() - p.timestamp) / 1000);
+    const cls = acc <= 60 ? "good" : acc <= 1000 ? "mid" : "bad";
+    return `${((t0() - start) / 1000).toFixed(1)}s  <span class="${cls}">±${acc} m</span>  dist ${d} m  age ${age}s`;
+  };
+  const errText = (e) => ["", "PERMISSION_DENIED", "POSITION_UNAVAILABLE", "TIMEOUT"][e.code] || e.message;
+  const once = (label, opts) => {
+    const start = t0();
+    line(`<b>${label}</b> ${JSON.stringify(opts)}`);
+    navigator.geolocation.getCurrentPosition(
+      (p) => line("  " + fmt(start, p)),
+      (e) => line(`  ${((t0() - start) / 1000).toFixed(1)}s  <span class="bad">${errText(e)}</span>`),
+      opts
+    );
+  };
+  document.getElementById("a").onclick = () => once("A", { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  document.getElementById("c").onclick = () => once("C", { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 });
+  document.getElementById("b").onclick = () => {
+    const start = t0();
+    line(`<b>B</b> watchPosition 20 s`);
+    const id = navigator.geolocation.watchPosition(
+      (p) => line("  " + fmt(start, p)),
+      (e) => line(`  ${((t0() - start) / 1000).toFixed(1)}s  <span class="bad">${errText(e)}</span>`),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+    setTimeout(() => { navigator.geolocation.clearWatch(id); line("  (stopped)"); }, 20000);
+  };
+  document.getElementById("clear").onclick = () => { log.innerHTML = ""; };
+  line(navigator.userAgent);
+</script>
+</body>
+</html>
