@@ -4,6 +4,7 @@ import GlobalLayout from "./shared/components/app-layout/GlobalLayout";
 import HomePage from "./pages/home/HomePage";
 import "./app.css";
 import RegisterPage from "./pages/register/RegisterPage";
+import JoinPage from "./pages/join/JoinPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 
@@ -32,6 +33,7 @@ function App() {
           <Route element={<GlobalLayout />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/join" element={<JoinPage />} />
             <Route path="/*" element={<Error404Page />} />
           </Route>
         </Routes>

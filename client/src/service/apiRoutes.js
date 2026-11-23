@@ -5,6 +5,7 @@ const routes = {
   IS_CONNECTED: baseURL + "isconnected",
   REGISTER: baseURL + "register",
   JOIN: baseURL + "join",
+  JOIN_SCAN: baseURL + "join/scan",
   LOGIN_STATUS: baseURL + "login/status",
   SEND_VOTE: baseURL + "sendvote",
   VOTE: baseURL + "vote/:id",
@@ -29,6 +30,8 @@ const routes = {
   ADMIN_SEND_VOTE: baseURL + "admin/sendvote",
   ADMIN_VOTERS_SUMMARY: baseURL + "admin/voters/summary",
   ADMIN_LOGIN_WINDOW: baseURL + "admin/login-window",
+  ADMIN_ACCESS_QR: baseURL + "admin/access-qr",
+  ADMIN_VOTERS: baseURL + "admin/voters",
 };
 
 export { baseURL, routes };

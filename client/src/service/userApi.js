@@ -108,6 +108,16 @@ const toFailure = (error, fallback) => ({
   retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
 });
 
+// qr-email mode: send the token from the scanned QR code.
+export const scanQr = async (token) => {
+  try {
+    const response = await apiClient.post(routes.JOIN_SCAN, { t: token });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return toFailure(error, "Could not check the QR code");
+  }
+};
+
 export const getLoginStatus = async () => {
   try {
     const response = await apiClient.get(routes.LOGIN_STATUS);
@@ -118,9 +128,10 @@ export const getLoginStatus = async () => {
 };
 
 // Opening the voting link: get (or keep) an anonymous voter session cookie.
-export const joinVoting = async () => {
+// body: {} in link mode, { email } in qr-email mode.
+export const joinVoting = async (body = {}) => {
   try {
-    const response = await apiClient.post(routes.JOIN, {});
+    const response = await apiClient.post(routes.JOIN, body);
     return { success: true, data: response.data };
   } catch (error) {
     return toFailure(error, "Could not join");

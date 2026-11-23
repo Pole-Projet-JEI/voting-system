@@ -2,6 +2,7 @@ import { Router } from "express";
 import mongoose from "mongoose";
 import rateLimit from "express-rate-limit";
 import Voter from "../mongodb/voterSchema.mjs";
+import Team from "../mongodb/teamSchema.mjs";
 import { requireAdmin } from "../admin/middleware/requireAdmin.mjs";
 import {
   createParticipantToken,
@@ -11,18 +12,39 @@ import {
 } from "../middleware/participant-session.mjs";
 import { shouldUseSecureCookies } from "../config/cookies.mjs";
 import { getLoginSettings, isLoginOpen, updateLoginSettings } from "./login-window.mjs";
+import { createQrToken, getQrGraceSeconds, verifyQrToken } from "./qr-token.mjs";
 
 const route = Router();
 
-// Opening the voting link gives the browser an anonymous voter session
-// (random id in an httpOnly signed cookie). There is no login form: presence
-// is enforced by the venue location check on every vote, and only voters who
-// voted for every team are counted in the official results.
+// Two ways to join, chosen per deployment with ACCESS_MODE:
 //
-// The device cookie remembers which voter this browser is, so an expired
-// session on the same phone gives back the same voter instead of a new one.
+//   "link" (default): opening the voting link gives the browser an anonymous
+//     voter session (random id in an httpOnly signed cookie). Presence is
+//     enforced by the venue location check on every vote. The device cookie
+//     remembers which voter this browser is, so an expired session on the
+//     same phone gives back the same voter.
+//
+//   "qr-email": the projector shows a QR code that changes every 25 s.
+//     Scanning it (POST /api/join/scan with the token) gives the phone a
+//     10-minute pass, so the voter has time to type an email. POST /api/join
+//     with the email then needs that pass. The email (not verified) is the
+//     voter's identity: the same email on two phones is the same voter.
+//
+// In both modes only voters who voted for every team are counted in the
+// official results.
 export const DEVICE_COOKIE = "voterDevice";
+export const SCAN_COOKIE = "qrPass";
 const DEVICE_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
+export const SCAN_PASS_MAX_AGE = 1000 * 60 * 10;
+
+export const getAccessMode = () => (process.env.ACCESS_MODE === "qr-email" ? "qr-email" : "link");
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const normalizeEmail = (value) => {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  return email.length <= 254 && EMAIL_PATTERN.test(email) ? email : null;
+};
 
 const cookieBase = () => ({
   secure: shouldUseSecureCookies(),
@@ -51,6 +73,42 @@ const joinLimit = rateLimit({
   handler: limitHandler,
 });
 
+const joinFailureMessages = {
+  QR_EXPIRED: "This QR code has expired. Scan the code on the screen again.",
+  QR_INVALID: "This link is not valid. Scan the QR code on the screen.",
+  QR_REQUIRED: "Scan the QR code shown on the screen to vote.",
+  EMAIL_INVALID: "Enter a valid email address.",
+};
+
+const fail = (res, status, code) =>
+  res.status(status).json({ status: "failed", code, message: joinFailureMessages[code] });
+
+const loginClosed = (res) =>
+  res.status(403).json({
+    status: "failed",
+    code: "LOGIN_CLOSED",
+    message: "Login is closed. Wait for the organizers to open it.",
+  });
+
+// Scan pass: signed cookie holding the time of the scan.
+export const hasValidScanPass = (req, now = Date.now()) => {
+  const value = req.signedCookies?.[SCAN_COOKIE];
+  const scannedAt = typeof value === "string" && /^\d{13}$/.test(value) ? Number(value) : NaN;
+  return scannedAt <= now + 5_000 && now - scannedAt < SCAN_PASS_MAX_AGE;
+};
+
+const findEmailVoter = async (email) => {
+  const existing = await Voter.findOne({ email });
+  if (existing) return existing;
+  try {
+    return await Voter.create({ email });
+  } catch (error) {
+    // Two phones joined with the same email at the same moment.
+    if (error?.code === 11000) return Voter.findOne({ email });
+    throw error;
+  }
+};
+
 const findDeviceVoter = async (req) => {
   const id = req.signedCookies?.[DEVICE_COOKIE];
   if (typeof id !== "string" || !mongoose.isValidObjectId(id)) {
@@ -59,12 +117,26 @@ const findDeviceVoter = async (req) => {
   return Voter.findById(id);
 };
 
+const startSession = async (res, voter) => {
+  const token = createParticipantToken();
+  voter.participantSessionHash = hashParticipantToken(token);
+  voter.participantSessionExpiresAt = new Date(Date.now() + PARTICIPANT_SESSION_MAX_AGE);
+  await voter.save();
+  res.cookie("connectionCookie", token, {
+    ...cookieBase(),
+    maxAge: PARTICIPANT_SESSION_MAX_AGE,
+  });
+};
+
 export const createJoinHandler =
   ({
     findSessionVoter = findAuthenticatedVoter,
     findDevice = findDeviceVoter,
+    findByEmail = findEmailVoter,
     createVoter = () => Voter.create({}),
     checkOpen = isLoginOpen,
+    mode = getAccessMode,
+    scanPassOk = hasValidScanPass,
   } = {}) =>
   async (req, res) => {
     try {
@@ -74,25 +146,26 @@ export const createJoinHandler =
       }
 
       if (!(await checkOpen())) {
-        return res.status(403).json({
-          status: "failed",
-          code: "LOGIN_CLOSED",
-          message: "Login is closed. Wait for the organizers to open it.",
-        });
+        return loginClosed(res);
+      }
+
+      if (mode() === "qr-email") {
+        if (!scanPassOk(req)) {
+          return fail(res, 403, "QR_REQUIRED");
+        }
+        const email = normalizeEmail(req.body?.email);
+        if (!email) {
+          return fail(res, 400, "EMAIL_INVALID");
+        }
+        const voter = await findByEmail(email);
+        await startSession(res, voter);
+        res.clearCookie(SCAN_COOKIE, cookieBase());
+        return res.status(201).json({ status: "succeeded" });
       }
 
       const known = await findDevice(req);
       const voter = known || (await createVoter());
-
-      const token = createParticipantToken();
-      voter.participantSessionHash = hashParticipantToken(token);
-      voter.participantSessionExpiresAt = new Date(Date.now() + PARTICIPANT_SESSION_MAX_AGE);
-      await voter.save();
-
-      res.cookie("connectionCookie", token, {
-        ...cookieBase(),
-        maxAge: PARTICIPANT_SESSION_MAX_AGE,
-      });
+      await startSession(res, voter);
       res.cookie(DEVICE_COOKIE, String(voter._id), {
         ...cookieBase(),
         maxAge: DEVICE_MAX_AGE,
@@ -106,14 +179,67 @@ export const createJoinHandler =
     }
   };
 
+// qr-email mode: checks the token from the QR code and gives the scan pass.
+export const createScanHandler =
+  ({ checkOpen = isLoginOpen, verify = verifyQrToken, mode = getAccessMode } = {}) =>
+  async (req, res) => {
+    try {
+      if (mode() !== "qr-email") {
+        return res.status(404).json({ status: "failed", message: "Not found" });
+      }
+      if (!(await checkOpen())) {
+        return loginClosed(res);
+      }
+      const check = verify(req.body?.t);
+      if (!check.ok) {
+        return fail(res, check.error === "QR_EXPIRED" ? 410 : 400, check.error);
+      }
+      res.cookie(SCAN_COOKIE, String(Date.now()), { ...cookieBase(), maxAge: SCAN_PASS_MAX_AGE });
+      return res.status(200).json({ status: "succeeded", passSeconds: SCAN_PASS_MAX_AGE / 1000 });
+    } catch (error) {
+      console.error(
+        JSON.stringify({ event: "qr_scan_failed", requestId: req.requestId, message: error.message })
+      );
+      return res.status(500).json({ status: "failed", message: "Server error. Please try again." });
+    }
+  };
+
+route.post("/api/join/scan", joinLimit, createScanHandler());
 route.post("/api/join", joinLimit, createJoinHandler());
 
 // Public: lets the waiting page show "login is closed".
 route.get("/api/login/status", async (req, res) => {
   try {
-    return res.json({ open: (await getLoginSettings()).open });
+    return res.json({ open: (await getLoginSettings()).open, mode: getAccessMode() });
   } catch (error) {
     console.error("Error reading login window:", error.message);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// Admin screen (qr-email mode): the current join token. The client builds the
+// link from its own origin and fetches again at expiresAt.
+route.get("/api/admin/access-qr", requireAdmin, async (req, res) => {
+  try {
+    if (getAccessMode() !== "qr-email") {
+      return res.status(404).json({ message: "QR access is not enabled" });
+    }
+    const { open } = await getLoginSettings({ fresh: true });
+    res.set("Cache-Control", "no-store");
+    if (!open) {
+      return res.json({ open: false });
+    }
+    const { token, expiresAt, periodSeconds } = createQrToken();
+    return res.json({
+      open: true,
+      path: `/join?t=${token}`,
+      expiresAt,
+      periodSeconds,
+      graceSeconds: getQrGraceSeconds(),
+      serverTime: Date.now(),
+    });
+  } catch (error) {
+    console.error("Error creating access QR:", error.message);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -141,9 +267,37 @@ route.get("/api/admin/voters/summary", requireAdmin, async (req, res) => {
       Voter.countDocuments(),
       getLoginSettings({ fresh: true }),
     ]);
-    return res.json({ loginOpen: settings.open, voters });
+    return res.json({ loginOpen: settings.open, voters, mode: getAccessMode() });
   } catch (error) {
     console.error("Error reading voter summary:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// Per-voter list (email and how many teams they voted for), for the admin.
+route.get("/api/admin/voters", requireAdmin, async (req, res) => {
+  try {
+    const [voters, totalTeams] = await Promise.all([
+      Voter.find({}, { email: 1, votes: 1, createdAt: 1 }).sort({ createdAt: 1 }).lean(),
+      Team.countDocuments(),
+    ]);
+    res.set("Cache-Control", "no-store");
+    return res.json({
+      totalTeams,
+      voters: voters.map((voter) => {
+        const votes = Object.values(voter.votes || {});
+        return {
+          id: String(voter._id),
+          email: voter.email || null,
+          joinedAt: voter.createdAt,
+          teamsVoted: votes.length,
+          yes: votes.filter((v) => v.vote === "yes").length,
+          no: votes.filter((v) => v.vote === "no").length,
+        };
+      }),
+    });
+  } catch (error) {
+    console.error("Error listing voters:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 });

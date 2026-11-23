@@ -15,7 +15,7 @@ const voterSchema = new mongoose.Schema(
       select: false,
       sparse: true,
     },
-    // Legacy (email login, removed). Kept so existing documents stay valid.
+    // Set in ACCESS_MODE=qr-email (typed by the voter, not verified).
     email: {
       type: String,
       lowercase: true,

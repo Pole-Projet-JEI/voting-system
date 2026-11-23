@@ -22,7 +22,7 @@ export const VoterBrand = () => (
 // an anonymous voter session cookie automatically, then goes to the vote.
 // While the admin keeps login closed, it waits and joins as soon as it opens.
 export default function RegisterPage() {
-  const [state, setState] = useState("joining"); // joining | closed | error
+  const [state, setState] = useState("joining"); // joining | closed | scan | error
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -41,6 +41,11 @@ export default function RegisterPage() {
       if (!active) return;
       if (result.success) {
         navigate("/home", { replace: true });
+        return;
+      }
+      if (result.errorCode === "QR_REQUIRED") {
+        // qr-email mode: joining needs the QR code on the screen.
+        setState("scan");
         return;
       }
       if (result.errorCode === "LOGIN_CLOSED") {
@@ -71,6 +76,11 @@ export default function RegisterPage() {
         <p className="register-closed">
           The vote is not open yet. Keep this page open: you will join automatically
           as soon as the organizers open it.
+        </p>
+      )}
+      {state === "scan" && (
+        <p className="register-closed">
+          To vote, scan the QR code shown on the screen with your phone camera.
         </p>
       )}
       {state === "error" && (

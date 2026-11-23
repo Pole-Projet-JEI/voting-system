@@ -55,3 +55,48 @@
     padding: 24px 18px 22px;
   }
 }
+
+/* qr-email mode: email step on /join */
+.join-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.join-email-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.join-email-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color var(--t-ui) ease, box-shadow var(--t-ui) ease;
+}
+
+.join-email-input:focus {
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px var(--text);
+}
+
+.join-email-input::placeholder {
+  color: var(--faint);
+}
+
+.join-email-submit {
+  width: 100%;
+}
+
+.register-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
