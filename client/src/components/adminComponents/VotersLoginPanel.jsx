@@ -2,18 +2,19 @@ import { t } from "../../i18n";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import QRCode from "qrcode";
-import { Lock, QrCode, Unlock, X } from "lucide-react";
+import { ExternalLink, Lock, QrCode, Unlock, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Link } from "react-router-dom";
 import { getAccessQr, getVoters, getVotersSummary, setLoginWindow } from "../../service/adminApi";
 
+export const QR_SCREEN_PATH = "/jvaFHT7xvivJPJqc1QBRWhfayoj/qr";
 const SUMMARY_POLL_MS = 10_000;
 const RETRY_MS = 2_000;
 
 const votingLink = () => `${window.location.origin}/register`;
 
 // Full-screen QR code of the plain voting link, for the projector.
-const QrOverlay = ({ onClose }) => {
+export const QrOverlay = ({ onClose }) => {
   const [dataUrl, setDataUrl] = useState("");
 
   useEffect(() => {
@@ -45,7 +46,7 @@ const QrOverlay = ({ onClose }) => {
 // qr-email mode: full-screen QR code that changes every 15 s. Each code is a
 // signed link that works for its window (+ a short grace), then a new one
 // appears. The server's clock decides when it rotates.
-const RotatingQrOverlay = ({ onClose }) => {
+export const RotatingQrOverlay = ({ onClose }) => {
   const [qr, setQr] = useState(null); // { open, url, dataUrl, expiresAt, periodSeconds }
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
@@ -196,7 +197,6 @@ const VotersTable = () => {
 export const VotersLoginPanel = ({ onNotify }) => {
   const [summary, setSummary] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [showQr, setShowQr] = useState(false);
 
   const refresh = async () => {
     const result = await getVotersSummary();
@@ -233,13 +233,6 @@ export const VotersLoginPanel = ({ onNotify }) => {
 
   return (
     <div className="space-y-3">
-      {showQr &&
-        (qrEmail ? (
-          <RotatingQrOverlay onClose={() => setShowQr(false)} />
-        ) : (
-          <QrOverlay onClose={() => setShowQr(false)} />
-        ))}
-
       <div className="flex items-center justify-between">
         <span className="text-sm text-muted">Connexion</span>
         <span
@@ -270,15 +263,16 @@ export const VotersLoginPanel = ({ onNotify }) => {
         Fermée : les téléphones qui ouvrent le lien attendent. Les votants déjà inscrits peuvent continuer à voter.
       </p>
 
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => setShowQr(true)}
-        className="w-full border-line-strong text-white hover:bg-white/10"
+      <a
+        href={QR_SCREEN_PATH}
+        target="_blank"
+        rel="noopener"
+        className="flex w-full items-center justify-center border border-line-strong px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
       >
         <QrCode className="mr-2 h-4 w-4" />
         Afficher le QR code
-      </Button>
+        <ExternalLink className="ml-2 h-3.5 w-3.5 opacity-70" />
+      </a>
       <p className="text-xs text-faint">
         {qrEmail
           ? "Le QR code change toutes les 15 s. Les votants le scannent puis saisissent leur e-mail (un votant par e-mail). Seuls les votants qui ont voté pour toutes les équipes sont comptés."
@@ -298,12 +292,15 @@ export const VotersLoginPanel = ({ onNotify }) => {
         </Link>
       )}
       {qrEmail && (
-        <Link
-          to="/jvaFHT7xvivJPJqc1QBRWhfayoj/tirage"
+        <a
+          href="/jvaFHT7xvivJPJqc1QBRWhfayoj/tirage"
+          target="_blank"
+          rel="noopener"
           className="flex w-full items-center justify-center bg-hackathon px-4 py-2 text-sm font-semibold text-white hover:bg-hackathon-hover"
         >
           {t("Draw game")}
-        </Link>
+          <ExternalLink className="ml-2 h-3.5 w-3.5 opacity-70" />
+        </a>
       )}
       {qrEmail && <VotersTable />}
     </div>

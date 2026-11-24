@@ -46,7 +46,7 @@ route.post("/api/admin/password", requireAdmin, async (req, res) => {
     res.cookie("adminToken", token, {
       httpOnly: true,
       secure: shouldUseSecureCookies(),
-      sameSite: shouldUseSecureCookies() ? "strict" : "lax",
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
 

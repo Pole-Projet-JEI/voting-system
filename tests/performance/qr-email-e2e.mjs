@@ -158,11 +158,38 @@ try {
   check("9. dashboard shows the per-email table", await waitText(dash, new RegExp(EMAIL.toLowerCase().replace(/\./g, "\\."))));
   await dash.locator(`text=${L("Voters & Login", "Votants et connexion")}`).scrollIntoViewIfNeeded();
   await dash.screenshot({ path: `${OUT}/qr-9-dashboard.png`, fullPage: true });
-  await dash.click(`text=${L("Show QR code", "Afficher le QR code")}`);
-  await dash.waitForSelector("img[alt^='QR code']");
-  await dash.waitForTimeout(800);
-  check("9. projector shows the QR code without the countdown text", !/Nouveau code dans|New code in/.test(await text(dash)));
-  await dash.screenshot({ path: `${OUT}/qr-9-projector.png` });
+  const [qrTab] = await Promise.all([admin.waitForEvent("page"), dash.click(`text=${L("Show QR code", "Afficher le QR code")}`)]);
+  check("9. 'Afficher le QR code' opens a new tab", /\/qr$/.test(qrTab.url()) || (await qrTab.waitForURL(/\/qr$/).then(() => true, () => false)), qrTab.url());
+  await qrTab.waitForSelector("img[alt^='QR code']", { timeout: 60000 });
+  await qrTab.waitForTimeout(800);
+  check("9. the new tab shows only the QR code, no countdown text", !/Nouveau code dans|New code in/.test(await text(qrTab)));
+  check("9. the dashboard stays open in its own tab", /\/dashboard$/.test(dash.url()));
+  await qrTab.screenshot({ path: `${OUT}/qr-9-projector.png` });
+  const [rafTab] = await Promise.all([admin.waitForEvent("page"), dash.click(`text=${L("Draw game", "Tirage au sort")}`)]);
+  check("9. 'Tirage au sort' opens a new tab", await rafTab.waitForURL(/\/tirage$/).then(() => true, () => false), rafTab.url());
+  check("9. the raffle tab loads", await waitText(rafTab, L(/Draw a winner/, /Tirer un gagnant/), 60000));
+
+  // ---- 11. admin session ----
+  const cookie = (await admin.cookies()).find((c) => c.name === "adminToken");
+  check("11. admin cookie lasts 24 h and is SameSite=Lax", cookie && cookie.sameSite === "Lax" && cookie.expires * 1000 - Date.now() > 23 * 3600 * 1000, `${cookie?.sameSite} ${cookie && Math.round((cookie.expires * 1000 - Date.now()) / 3600000)}h`);
+  const fresh = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  await fresh.route("**/api/admin/auth", async (route) => {
+    const r = await route.fetch();
+    const j = await r.json();
+    j.mustChangePassword = false;
+    await route.fulfill({ response: r, json: j });
+  });
+  const lp = await fresh.newPage();
+  await lp.goto(`${BASE}${ADMIN}/qr`);
+  check("11. opening the QR tab while logged out asks to log in", await lp.waitForURL(/\/login\?next=/).then(() => true, () => false), lp.url());
+  await lp.fill("#username", process.env.ADMIN_USER);
+  await lp.fill("#secretKey", process.env.ADMIN_PASS);
+  await lp.click("button[type=submit]");
+  check("11. after logging in it goes back to the QR tab", await lp.waitForURL(/\/qr$/, { timeout: 60000 }).then(() => true, () => false), lp.url());
+  const lp2 = await fresh.newPage();
+  await lp2.goto(`${BASE}${ADMIN}/dashboard`);
+  await lp2.waitForTimeout(2000);
+  check("11. a new tab stays logged in (session kept)", /\/dashboard$/.test(lp2.url()), lp2.url());
 } catch (error) {
   check("run completed", false, error.message.split("\n")[0]);
   for (const [i, pg] of browser.contexts().flatMap((c) => c.pages()).entries()) {

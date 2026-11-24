@@ -6,6 +6,7 @@ import "./app.css";
 import RegisterPage from "./pages/register/RegisterPage";
 import JoinPage from "./pages/join/JoinPage";
 import EmailsPage from "./pages/admin/EmailsPage";
+import QrScreenPage from "./pages/admin/QrScreenPage";
 import RafflePage from "./pages/admin/RafflePage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
@@ -37,6 +38,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <EmailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/jvaFHT7xvivJPJqc1QBRWhfayoj/qr"
+            element={
+              <ProtectedRoute>
+                <QrScreenPage />
               </ProtectedRoute>
             }
           />

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { checkAdminAuth } from "../service/adminApi";
 
 function ProtectedRoute({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -33,7 +34,7 @@ function ProtectedRoute({ children }) {
 
   if (!isAuthenticated) {
     return (
-      <Navigate to="/jvaFHT7xvivJPJqc1QBRWhfayoj/login" replace />
+      <Navigate to={`/jvaFHT7xvivJPJqc1QBRWhfayoj/login?next=${encodeURIComponent(location.pathname)}`} replace />
     );
   }
 

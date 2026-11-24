@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import PixelField from "../../shared/components/pixel-field/PixelField";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Eye, EyeOff, Lock, LogIn } from "lucide-react";
@@ -9,6 +9,10 @@ import { adminLogin } from "../../service/adminApi";
 
 function AdminLoginPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // Only admin pages of this site (no open redirect).
+  const next = params.get("next") || "";
+  const afterLogin = /^\/jvaFHT7xvivJPJqc1QBRWhfayoj\/[a-z]+$/.test(next) ? next : "/jvaFHT7xvivJPJqc1QBRWhfayoj/dashboard";
   const [username, setUsername] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [loading, setLoading] = useState(false);
@@ -71,7 +75,7 @@ function AdminLoginPage() {
     const result = await adminLogin(secretKey, username);
 
     if (result.success) {
-      navigate("/jvaFHT7xvivJPJqc1QBRWhfayoj/dashboard");
+      navigate(afterLogin, { replace: true });
     } else {
       setError(result.error);
       setRetryAfterSeconds(result.retryAfterSeconds || 0);

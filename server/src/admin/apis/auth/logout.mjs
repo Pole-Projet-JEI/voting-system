@@ -30,7 +30,7 @@ route.post("/api/admin/logout", async (req, res) => {
   res.clearCookie("adminToken", {
     httpOnly: true,
     secure,
-    sameSite: secure || IS_STAGING ? "strict" : "lax",
+    sameSite: "lax",
   });
 
   console.log(

@@ -75,7 +75,11 @@ route.post("/api/admin/login", adminLoginRateLimit, async (req, res) => {
     res.cookie("adminToken", token, {
       httpOnly: true,
       secure: shouldUseSecureCookies(),
-      sameSite: shouldUseSecureCookies() || IS_STAGING ? "strict" : "lax",
+      // "lax", not "strict": a strict cookie is not sent when the admin opens
+      // the dashboard from a link in another app (mail, WhatsApp), so they
+      // looked logged out. Changes still need POST/PUT/DELETE, which "lax"
+      // never sends from another site.
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
