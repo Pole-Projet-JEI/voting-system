@@ -28,13 +28,13 @@ const QrOverlay = ({ onClose }) => {
         type="button"
         onClick={onClose}
         className="absolute right-6 top-6 p-2 text-muted hover:bg-white/5"
-        aria-label="Close QR code"
+        aria-label="Fermer le QR code"
       >
         <X className="h-8 w-8" />
       </button>
       <h2 className="text-center text-4xl font-bold text-ink">{t("Scan to vote")}</h2>
       {dataUrl && (
-        <img src={dataUrl} alt={`QR code for ${votingLink()}`} className="h-auto w-[min(72vh,90vw)] bg-white" />
+        <img src={dataUrl} alt={`QR code pour ${votingLink()}`} className="h-auto w-[min(72vh,90vw)] bg-white" />
       )}
       <p className="text-center text-3xl font-semibold text-ink">{window.location.host}</p>
     </div>,
@@ -99,7 +99,7 @@ const RotatingQrOverlay = ({ onClose }) => {
         type="button"
         onClick={onClose}
         className="absolute right-6 top-6 p-2 text-muted hover:bg-white/5"
-        aria-label="Close QR code"
+        aria-label="Fermer le QR code"
       >
         <X className="h-8 w-8" />
       </button>
@@ -116,7 +116,7 @@ const RotatingQrOverlay = ({ onClose }) => {
           <img
             key={qr.url}
             src={qr.dataUrl}
-            alt="Voting QR code (changes every 25 seconds)"
+            alt="QR code de vote (change toutes les 25 secondes)"
             className="h-auto w-[min(70vh,90vw)] bg-white"
           />
           <div className="w-[min(70vh,90vw)]">
@@ -162,21 +162,21 @@ const VotersTable = () => {
   return (
     <div className="space-y-2">
       <div className="text-xs text-faint">
-        {complete} of {data.voters.length} voted for all {data.totalTeams} teams
+        {complete} sur {data.voters.length} ont voté pour les {data.totalTeams} équipes
       </div>
       <div className="max-h-80 overflow-y-auto bg-white/5">
         <table className="w-full text-left text-xs">
           <thead className="sticky top-0 bg-ground text-muted">
             <tr>
-              <th className="px-2 py-1 font-medium">Email</th>
-              <th className="px-2 py-1 text-right font-medium">Teams</th>
+              <th className="px-2 py-1 font-medium">E-mail</th>
+              <th className="px-2 py-1 text-right font-medium">Équipes</th>
             </tr>
           </thead>
           <tbody>
             {data.voters.map((voter) => (
               <tr key={voter.id} className="border-t border-white/5">
                 <td className="max-w-[11rem] truncate px-2 py-1" title={voter.email || ""}>
-                  {voter.email || "(no email)"}
+                  {voter.email || "(sans e-mail)"}
                 </td>
                 <td
                   className={`px-2 py-1 text-right tabular-nums ${
@@ -227,7 +227,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
   };
 
   if (!summary) {
-    return <p className="text-sm text-muted">Loading voters...</p>;
+    return <p className="text-sm text-muted">Chargement des votants…</p>;
   }
 
   const qrEmail = summary.mode === "qr-email";
@@ -242,13 +242,13 @@ export const VotersLoginPanel = ({ onNotify }) => {
         ))}
 
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted">Login</span>
+        <span className="text-sm text-muted">Connexion</span>
         <span
           className={`px-2 py-0.5 text-xs font-semibold ${
             summary.loginOpen ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"
           }`}
         >
-          {summary.loginOpen ? "Open" : "Closed"}
+          {summary.loginOpen ? "Ouverte" : "Fermée"}
         </span>
       </div>
       <Button
@@ -262,13 +262,13 @@ export const VotersLoginPanel = ({ onNotify }) => {
         }
       >
         {summary.loginOpen ? (
-          <><Lock className="mr-2 h-4 w-4" />Close login</>
+          <><Lock className="mr-2 h-4 w-4" />Fermer la connexion</>
         ) : (
-          <><Unlock className="mr-2 h-4 w-4" />Open login</>
+          <><Unlock className="mr-2 h-4 w-4" />Ouvrir la connexion</>
         )}
       </Button>
       <p className="text-xs text-faint">
-        Closed: phones opening the link wait. Voters already in can keep voting.
+        Fermée : les téléphones qui ouvrent le lien attendent. Les votants déjà inscrits peuvent continuer à voter.
       </p>
 
       <Button
@@ -278,16 +278,16 @@ export const VotersLoginPanel = ({ onNotify }) => {
         className="w-full border-line-strong text-white hover:bg-white/10"
       >
         <QrCode className="mr-2 h-4 w-4" />
-        Show QR code
+        Afficher le QR code
       </Button>
       <p className="text-xs text-faint">
         {qrEmail
-          ? "The QR code changes every 25 s. Voters scan it, then type their email (one voter per email). Only voters who voted for every team are counted."
-          : "Opening the link gives each phone its own voter session (cookie). Votes are only accepted from inside the venue, and only voters who voted for every team are counted."}
+          ? "Le QR code change toutes les 25 s. Les votants le scannent puis saisissent leur e-mail (un votant par e-mail). Seuls les votants qui ont voté pour toutes les équipes sont comptés."
+          : "En ouvrant le lien, chaque téléphone reçoit sa propre session de votant (cookie). Les votes ne sont acceptés que depuis la salle, et seuls les votants qui ont voté pour toutes les équipes sont comptés."}
       </p>
 
       <div className="bg-white/5 px-3 py-2 text-sm">
-        <div className="text-muted">Voters joined</div>
+        <div className="text-muted">Votants inscrits</div>
         <div className="text-2xl font-bold">{summary.voters}</div>
       </div>
       {qrEmail && (

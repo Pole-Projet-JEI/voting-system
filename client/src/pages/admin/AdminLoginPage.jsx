@@ -62,7 +62,7 @@ function AdminLoginPage() {
     }
 
     if (!secretKey.trim()) {
-      setError("Secret key is required");
+      setError("Le mot de passe est obligatoire");
       return;
     }
 
@@ -89,9 +89,9 @@ function AdminLoginPage() {
             <div className="bg-navy p-4 mb-4">
               <Lock className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-ink">Admin Login</h1>
+            <h1 className="text-3xl font-bold text-ink">Connexion administrateur</h1>
             <p className="text-muted mt-2">
-              Enter your credentials to continue
+              Saisissez vos identifiants pour continuer
             </p>
           </div>
 
@@ -101,14 +101,14 @@ function AdminLoginPage() {
                 htmlFor="username"
                 className="block text-sm font-medium text-ink mb-2"
               >
-                Username
+                Nom d'utilisateur
               </label>
               <Input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Admin username"
+                placeholder="Nom d'utilisateur admin"
                 className="w-full relative z-50 pointer-events-auto"
                 disabled={loading}
               />
@@ -119,7 +119,7 @@ function AdminLoginPage() {
                 htmlFor="secretKey"
                 className="block text-sm font-medium text-ink mb-2"
               >
-                Password
+                Mot de passe
               </label>
               <div className="relative">
                 <Input
@@ -127,7 +127,7 @@ function AdminLoginPage() {
                   type={showSecretKey ? "text" : "password"}
                   value={secretKey}
                   onChange={(e) => setSecretKey(e.target.value)}
-                  placeholder="Enter admin secret key"
+                  placeholder="Mot de passe administrateur"
                   className="w-full pr-10 relative z-50 pointer-events-auto"
                   disabled={loading}
                 />
@@ -135,7 +135,7 @@ function AdminLoginPage() {
                   type="button"
                   onClick={() => setShowSecretKey((visible) => !visible)}
                   className="absolute right-2 top-1/2 z-[60] -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
-                  aria-label={showSecretKey ? "Hide password" : "Show password"}
+                  aria-label={showSecretKey ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                   disabled={loading}
                 >
                   {showSecretKey ? (
@@ -153,7 +153,7 @@ function AdminLoginPage() {
                 {error}
                 {retryAfterSeconds > 0 && (
                   <div className="mt-1 font-medium">
-                    Retry in {Math.floor(retryAfterSeconds / 60)}:
+                    Réessayez dans {Math.floor(retryAfterSeconds / 60)}:
                     {String(retryAfterSeconds % 60).padStart(2, "0")}
                   </div>
                 )}
@@ -167,11 +167,11 @@ function AdminLoginPage() {
               disabled={loading || retryAfterSeconds > 0}
             >
               {loading ? (
-                "Logging in..."
+                "Connexion…"
               ) : (
                 <>
                   <LogIn className="mr-2 h-4 w-4" />
-                  Login
+                  Se connecter
                 </>
               )}
             </Button>
@@ -182,7 +182,7 @@ function AdminLoginPage() {
               onClick={() => navigate("/home")}
               className="text-sm text-muted hover:text-ink pointer-events-auto cursor-pointer"
             >
-              ← Back to Home
+              ← Retour à l'accueil
             </button>
           </div>
         </div>

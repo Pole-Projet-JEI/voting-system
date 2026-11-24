@@ -124,14 +124,14 @@ export const validateGeofenceUpdate = (body = {}) => {
 
   if (body.enabled !== undefined) {
     if (typeof body.enabled !== "boolean") {
-      return { error: "enabled must be a boolean" };
+      return { error: "enabled doit être un booléen" };
     }
     value.enabled = body.enabled;
   }
 
   for (const [field, validator, label] of [
-    ["latitude", isValidLatitude, "latitude must be between -90 and 90"],
-    ["longitude", isValidLongitude, "longitude must be between -180 and 180"],
+    ["latitude", isValidLatitude, "la latitude doit être comprise entre -90 et 90"],
+    ["longitude", isValidLongitude, "la longitude doit être comprise entre -180 et 180"],
   ]) {
     if (body[field] !== undefined) {
       if (!validator(body[field])) {
@@ -148,7 +148,7 @@ export const validateGeofenceUpdate = (body = {}) => {
   for (const [field, min, max] of ranges) {
     if (body[field] !== undefined) {
       if (!isFiniteNumber(body[field]) || body[field] < min || body[field] > max) {
-        return { error: `${field} must be between ${min} and ${max}` };
+        return { error: `${field} doit être compris entre ${min} et ${max}` };
       }
       value[field] = Math.round(body[field]);
     }
@@ -202,7 +202,7 @@ export const updateGeofenceSettings = async (update, updatedBy = null) => {
     next.enabled &&
     (!isValidLatitude(next.latitude) || !isValidLongitude(next.longitude))
   ) {
-    return { error: "Set the venue latitude and longitude before enabling" };
+    return { error: "Renseignez la latitude et la longitude du lieu avant d'activer" };
   }
 
   const doc = await GeofenceSettings.findOneAndUpdate(

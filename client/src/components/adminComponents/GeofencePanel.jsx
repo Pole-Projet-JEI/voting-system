@@ -94,7 +94,7 @@ export const GeofencePanel = ({ onNotify }) => {
 
     for (const [key, value] of Object.entries(payload)) {
       if (Number.isNaN(value)) {
-        onNotify?.("error", `${key} must be a number`);
+        onNotify?.("error", `${key} doit être un nombre`);
         return;
       }
     }
@@ -113,19 +113,19 @@ export const GeofencePanel = ({ onNotify }) => {
   };
 
   if (!loaded) {
-    return <p className="text-sm text-muted">Loading location settings...</p>;
+    return <p className="text-sm text-muted">Chargement des réglages de position…</p>;
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted">Status</span>
+        <span className="text-sm text-muted">État</span>
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
             enabled ? "bg-green-500/20 text-green-300" : "bg-panel-2 text-muted"
           }`}
         >
-          {enabled ? "Enforced" : "Off"}
+          {enabled ? "Activée" : "Désactivée"}
         </span>
       </div>
 
@@ -137,7 +137,7 @@ export const GeofencePanel = ({ onNotify }) => {
             inputMode="decimal"
             value={form.latitude}
             onChange={updateField("latitude")}
-            placeholder="36.843200 or paste lat, lng"
+            placeholder="36.843200 ou collez lat, lng"
           />
         </label>
         <label className="space-y-1 text-xs text-muted">
@@ -151,7 +151,7 @@ export const GeofencePanel = ({ onNotify }) => {
           />
         </label>
         <label className="space-y-1 text-xs text-muted">
-          Radius (m)
+          Rayon (m)
           <input
             className={inputClass}
             inputMode="numeric"
@@ -160,7 +160,7 @@ export const GeofencePanel = ({ onNotify }) => {
           />
         </label>
         <label className="space-y-1 text-xs text-muted">
-          Max GPS error (m)
+          Erreur GPS max (m)
           <input
             className={inputClass}
             inputMode="numeric"
@@ -178,20 +178,20 @@ export const GeofencePanel = ({ onNotify }) => {
         className="w-full border-line-strong text-white hover:bg-white/10"
       >
         <Crosshair className="mr-2 h-4 w-4" />
-        {busy === "locating" ? "Locating..." : "Use my current location"}
+        {busy === "locating" ? "Localisation…" : "Utiliser ma position actuelle"}
       </Button>
       {locationError && (
         <div role="alert" className="rounded-md border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
           <p>{locationError}</p>
           <p className="mt-1 text-red-100/80">
-            Or open Google Maps, right-click the auditorium, click the coordinates to copy them,
-            and paste them into Latitude.
+            Ou ouvrez Google Maps, faites un clic droit sur l'amphithéâtre, cliquez sur les coordonnées
+            pour les copier, puis collez-les dans Latitude.
           </p>
         </div>
       )}
       {lastFixAccuracy !== null && (
         <p className="text-xs text-faint">
-          Fix accuracy: ±{lastFixAccuracy} m. Stand in the middle of the room for the best center.
+          Précision : ±{lastFixAccuracy} m. Placez-vous au milieu de la salle pour un meilleur centre.
         </p>
       )}
 
@@ -203,7 +203,7 @@ export const GeofencePanel = ({ onNotify }) => {
           variant="outline"
           className="border-line-strong text-white hover:bg-white/10"
         >
-          Save
+          Enregistrer
         </Button>
         <Button
           type="button"
@@ -216,12 +216,12 @@ export const GeofencePanel = ({ onNotify }) => {
           }
         >
           <MapPin className="mr-2 h-4 w-4" />
-          {enabled ? "Disable" : "Enable"}
+          {enabled ? "Désactiver" : "Activer"}
         </Button>
       </div>
       <p className="text-xs text-faint">
-        When enabled, every vote must come with a phone location inside the radius.
-        Indoor GPS can be off by 20–100 m, so start with a generous radius.
+        Une fois activée, chaque vote doit venir d'un téléphone situé dans le rayon.
+        À l'intérieur, le GPS peut se tromper de 20 à 100 m : commencez avec un rayon large.
       </p>
     </div>
   );

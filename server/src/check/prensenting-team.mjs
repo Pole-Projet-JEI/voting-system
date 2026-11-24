@@ -14,7 +14,7 @@ route.get("/api/currentteam", async (req, res) => {
         teamID: null,
         teamName: null,
         description: null,
-        message: "No team is currently presenting",
+        message: "Aucune équipe ne présente en ce moment",
       });
     }
 
@@ -28,7 +28,7 @@ route.get("/api/currentteam", async (req, res) => {
     console.error("Error in /api/currentteam:", error);
     return res
       .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Erreur interne du serveur", error: error.message });
   }
 });
 

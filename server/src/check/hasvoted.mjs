@@ -13,7 +13,7 @@ route.get("/api/hasvoted", requireAuth, async (req, res) => {
     if (!presentingTeam) {
       return res.json({
         hasVoted: false,
-        message: "No team is currently presenting",
+        message: "Aucune équipe ne présente en ce moment",
       });
     }
 
@@ -31,7 +31,7 @@ route.get("/api/hasvoted", requireAuth, async (req, res) => {
     console.error("Error checking vote status:", error);
     return res.status(500).json({
       hasVoted: false,
-      message: "Internal Server Error",
+      message: "Erreur interne du serveur",
       error: error.message,
     });
   }

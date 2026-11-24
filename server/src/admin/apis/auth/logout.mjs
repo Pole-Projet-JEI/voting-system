@@ -21,7 +21,7 @@ route.post("/api/admin/logout", async (req, res) => {
     console.error("Error revoking admin token:", error);
     return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Erreur du serveur",
     });
   }
 
@@ -44,7 +44,7 @@ route.post("/api/admin/logout", async (req, res) => {
 
   return res.status(200).json({
     success: true,
-    message: "Logged out successfully",
+    message: "Déconnexion réussie",
   });
 });
 

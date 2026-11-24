@@ -19,9 +19,9 @@ export const AddTeamForm = ({
   return (
     <Card className="mb-8 border-primary bg-panel">
       <CardHeader>
-        <CardTitle className="text-ink">Create New Team</CardTitle>
+        <CardTitle className="text-ink">Nouvelle équipe</CardTitle>
         <CardDescription className="text-muted">
-          Add a new team to the voting system
+          Ajouter une équipe au système de vote
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -29,12 +29,12 @@ export const AddTeamForm = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-ink">
-                Team Name <span className="text-danger">*</span>
+                Nom de l'équipe <span className="text-danger">*</span>
               </label>
               <Input
                 value={teamName}
                 onChange={(e) => onTeamNameChange(e.target.value)}
-                placeholder="Enter team name"
+                placeholder="Nom de l'équipe"
                 required
                 className="bg-panel text-ink"
               />
@@ -46,7 +46,7 @@ export const AddTeamForm = ({
               <Input
                 value={description}
                 onChange={(e) => onDescriptionChange(e.target.value)}
-                placeholder="Enter team description (optional)"
+                placeholder="Description de l'équipe (facultatif)"
                 className="bg-panel text-ink"
               />
             </div>
@@ -56,7 +56,7 @@ export const AddTeamForm = ({
             className="bg-hackathon hover:bg-hackathon-hover text-white cursor-pointer"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Create Team
+            Créer l'équipe
           </Button>
         </form>
       </CardContent>

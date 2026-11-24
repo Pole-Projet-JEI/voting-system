@@ -25,32 +25,32 @@ export const detectPlatform = (ua = typeof navigator !== "undefined" ? navigator
 
 const STEPS = {
   PERMISSION_DENIED: {
-    ios: "Location is blocked on this iPhone. Open Settings → Privacy & Security → Location Services: turn it On, then tap Safari Websites (or your browser) → \"While Using the App\" and turn on Precise Location. Come back here and tap Try again.",
-    android: "Location is blocked. Tap the icon left of the web address → Permissions → Location → Allow. Also check that Location is On in the phone's quick settings. Then tap Try again.",
-    windows: "Location is blocked. Open Windows Settings → Privacy & security → Location: turn on Location services and \"Let desktop apps access your location\". In the browser, click the icon left of the web address → Location → Allow. Then try again — or simply vote from your phone.",
-    mac: "Location is blocked. Open System Settings → Privacy & Security → Location Services and allow your browser. In the browser, allow Location for this site. Then try again — or vote from your phone.",
-    other: "Location is blocked for this site. Allow Location in your browser's site settings, then try again.",
+    ios: "La position est bloquée sur cet iPhone. Ouvrez Réglages → Confidentialité et sécurité → Service de localisation : activez-le, puis touchez Sites web Safari (ou votre navigateur) → « Lorsque l'app est active » et activez Position exacte. Revenez ici et touchez Réessayer.",
+    android: "La position est bloquée. Touchez l'icône à gauche de l'adresse du site → Autorisations → Position → Autoriser. Vérifiez aussi que la Position est activée dans les réglages rapides du téléphone. Puis touchez Réessayer.",
+    windows: "La position est bloquée. Ouvrez Paramètres Windows → Confidentialité et sécurité → Localisation : activez les services de localisation et « Autoriser les applications de bureau à accéder à votre position ». Dans le navigateur, cliquez sur l'icône à gauche de l'adresse → Position → Autoriser. Puis réessayez — ou votez simplement depuis votre téléphone.",
+    mac: "La position est bloquée. Ouvrez Réglages Système → Confidentialité et sécurité → Service de localisation et autorisez votre navigateur. Dans le navigateur, autorisez la Position pour ce site. Puis réessayez — ou votez depuis votre téléphone.",
+    other: "La position est bloquée pour ce site. Autorisez la Position dans les réglages du site de votre navigateur, puis réessayez.",
   },
   APPROXIMATE: {
-    ios: "Your iPhone only gives an approximate position{acc}. Turn on Wi-Fi (no need to connect): indoors it makes the position precise. Also check Settings → Privacy & Security → Location Services → Safari Websites (or your browser) → Precise Location On. Then tap Try again.",
-    android: "Your phone only gives an approximate position{acc}. Turn on Wi-Fi (no need to connect): indoors it makes the position precise. Also check Settings → Location → Google Location Accuracy (\"Improve accuracy\") On, and Settings → Apps → Chrome → Permissions → Location → \"Use precise location\". Then tap Try again.",
-    windows: "This computer can only find an approximate position{acc}. Turn on Windows Settings → Privacy & security → Location services, and turn on Wi-Fi. For a reliable vote, use your phone.",
-    mac: "This computer can only find an approximate position{acc}. Turn on Wi-Fi and allow Location Services for your browser. For a reliable vote, use your phone.",
-    other: "Your device only gives an approximate position{acc}. Turn on Wi-Fi and precise location, then try again — or vote from your phone.",
+    ios: "Votre iPhone ne donne qu'une position approximative{acc}. Activez le Wi-Fi (inutile de vous connecter) : à l'intérieur, il rend la position précise. Vérifiez aussi Réglages → Confidentialité et sécurité → Service de localisation → Sites web Safari (ou votre navigateur) → Position exacte activée. Puis touchez Réessayer.",
+    android: "Votre téléphone ne donne qu'une position approximative{acc}. Activez le Wi-Fi (inutile de vous connecter) : à l'intérieur, il rend la position précise. Vérifiez aussi Paramètres → Position → Précision de la localisation Google activée, et Paramètres → Applications → Chrome → Autorisations → Position → « Utiliser la position exacte ». Puis touchez Réessayer.",
+    windows: "Cet ordinateur ne trouve qu'une position approximative{acc}. Activez Paramètres Windows → Confidentialité et sécurité → Services de localisation, et activez le Wi-Fi. Pour un vote fiable, utilisez votre téléphone.",
+    mac: "Cet ordinateur ne trouve qu'une position approximative{acc}. Activez le Wi-Fi et autorisez le Service de localisation pour votre navigateur. Pour un vote fiable, utilisez votre téléphone.",
+    other: "Votre appareil ne donne qu'une position approximative{acc}. Activez le Wi-Fi et la position exacte, puis réessayez — ou votez depuis votre téléphone.",
   },
   POSITION_UNAVAILABLE: {
-    ios: "Your iPhone could not find its location. Check Settings → Privacy & Security → Location Services is On, move near a window if you can, then tap Try again.",
-    android: "Your phone could not find its location. Turn on Location in the quick settings, then tap Try again.",
-    windows: "This computer could not find its location. Turn on Location services in Windows Settings and Wi-Fi — or vote from your phone.",
-    mac: "This computer could not find its location. Turn on Wi-Fi and Location Services — or vote from your phone.",
-    other: "Your device could not determine its location. Turn on location services, then try again.",
+    ios: "Votre iPhone n'a pas trouvé sa position. Vérifiez que Réglages → Confidentialité et sécurité → Service de localisation est activé, approchez-vous d'une fenêtre si possible, puis touchez Réessayer.",
+    android: "Votre téléphone n'a pas trouvé sa position. Activez la Position dans les réglages rapides, puis touchez Réessayer.",
+    windows: "Cet ordinateur n'a pas trouvé sa position. Activez les services de localisation dans les Paramètres Windows et le Wi-Fi — ou votez depuis votre téléphone.",
+    mac: "Cet ordinateur n'a pas trouvé sa position. Activez le Wi-Fi et le Service de localisation — ou votez depuis votre téléphone.",
+    other: "Votre appareil n'a pas pu déterminer sa position. Activez la localisation, puis réessayez.",
   },
 };
 
 const plain = {
-  UNSUPPORTED: "Your browser does not support location. Try another browser.",
-  INSECURE: "Location only works over HTTPS. Please use the secure voting link.",
-  TIMEOUT: "Getting your location took too long. Please try again.",
+  UNSUPPORTED: "Votre navigateur ne gère pas la position. Essayez un autre navigateur.",
+  INSECURE: "La position ne fonctionne qu'en HTTPS. Utilisez le lien de vote sécurisé.",
+  TIMEOUT: "La recherche de votre position a pris trop de temps. Réessayez.",
 };
 
 export const locationMessage = (errorCode, platform = detectPlatform(), { accuracy } = {}) =>

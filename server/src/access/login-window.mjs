@@ -56,12 +56,12 @@ export const requireLoginOpen =
         return res.status(403).json({
           status: "failed",
           code: "LOGIN_CLOSED",
-          message: "Login is closed. Wait for the organizers to open it.",
+          message: "La connexion est fermée. Attendez que les organisateurs l'ouvrent.",
         });
       }
       return next();
     } catch (error) {
       console.error("Login window check failed:", error.message);
-      return res.status(500).json({ status: "failed", message: "Server error" });
+      return res.status(500).json({ status: "failed", message: "Erreur du serveur" });
     }
   };

@@ -216,13 +216,13 @@ export default function HomePage() {
       <div className="location-step" role={locationState === "error" ? "alert" : undefined}>
         <span className="fie-label">{t("Location check")}</span>
         <p className="fie-info">
-          Votes are only accepted from inside the room. Allow your location once, and
-          turn on <strong>precise location</strong> if your phone asks.
+          Les votes ne sont acceptés que depuis la salle. Autorisez votre position une fois,
+          et activez la <strong>position exacte</strong> si votre téléphone le demande.
         </p>
         {locationState === "checking" && (
           <p className="fie-info">
-            Finding a precise position. This can take up to 20 seconds indoors; turning on
-            Wi-Fi (no need to connect) makes it faster.
+            Recherche d'une position précise. Cela peut prendre jusqu'à 20 secondes à l'intérieur ;
+            activer le Wi-Fi (inutile de vous connecter) accélère la recherche.
           </p>
         )}
         {locationError && <p className="fie-error">{locationError}</p>}

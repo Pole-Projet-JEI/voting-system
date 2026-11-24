@@ -6,11 +6,11 @@ import {
 
 const MESSAGES = {
   GEOFENCE_NOT_CONFIGURED:
-    "Location check is enabled but the venue is not configured. Please contact the organizers.",
+    "La vérification de la position est activée mais le lieu n'est pas configuré. Contactez les organisateurs.",
   LOCATION_REQUIRED:
-    "Your location is required to vote. Please allow location access and try again.",
+    "Votre position est nécessaire pour voter. Autorisez l'accès à la position et réessayez.",
   LOCATION_INACCURATE:
-    "Your location is not precise enough. Enable precise location / GPS and try again.",
+    "Votre position n'est pas assez précise. Activez la position précise / le GPS et réessayez.",
   OUTSIDE_VENUE: "You must be inside the venue to vote.",
   LOCATION_STALE: "Your phone sent an old position. Please try again.",
 };
@@ -42,7 +42,7 @@ export const createRequireVenuePresence =
         return res.status(403).json({
           voted: false,
           code: result.reason,
-          message: MESSAGES[result.reason] || "Location check failed",
+          message: MESSAGES[result.reason] || "La vérification de la position a échoué",
           ...(result.distanceMeters !== undefined && {
             distanceMeters: result.distanceMeters,
           }),
@@ -56,7 +56,7 @@ export const createRequireVenuePresence =
       return next();
     } catch (error) {
       console.error("Geofence check failed:", error);
-      return res.status(500).json({ voted: false, message: "Server error" });
+      return res.status(500).json({ voted: false, message: "Erreur du serveur" });
     }
   };
 

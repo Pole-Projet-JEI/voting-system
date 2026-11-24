@@ -5,11 +5,8 @@ import { getOfficialResults } from "../../service/adminApi";
 
 const REFRESH_INTERVAL_MS = 10_000;
 
-const ordinal = (n) => {
-  const rem100 = n % 100;
-  if (rem100 >= 11 && rem100 <= 13) return `${n}th`;
-  return `${n}${{ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"}`;
-};
+// 1er, 2e, 3e...
+const ordinal = (n) => (n === 1 ? "1er" : `${n}e`);
 
 // Ranking: most counted "yes" first; on a tie, fewer counted "no" ranks
 // higher; teams still equal share the same place (1st, 1st, 3rd...).
@@ -74,12 +71,12 @@ export const OfficialResultsPanel = () => {
         <div>
           <h3 className="flex items-center gap-2 text-xl font-bold text-ink">
             <Trophy className="h-5 w-5" />
-            Official results
+            Résultats officiels
           </h3>
           <p className="text-sm text-muted">
-            Ranked by counted yes votes (ties: fewer no votes first). Only voters who voted
-            for every team that has opened voting are counted.
-            Voters who missed a team have all their votes discarded.
+            Classement par nombre de « oui » comptés (en cas d'égalité : moins de « non » d'abord).
+            Seuls les votants qui ont voté pour toutes les équipes dont le vote a été ouvert sont comptés.
+            Les votants qui ont manqué une équipe voient tous leurs votes écartés.
           </p>
         </div>
         <Button
@@ -90,7 +87,7 @@ export const OfficialResultsPanel = () => {
           className="text-ink border-line-strong"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
+          Actualiser
         </Button>
       </div>
 
@@ -104,10 +101,10 @@ export const OfficialResultsPanel = () => {
         <>
           <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
-              ["Teams counted", `${results.countedTeams} / ${results.totalTeams}`],
-              ["Complete voters (counted)", results.completeVoters],
-              ["Voters with any vote", results.votersWithAnyVote],
-              ["Discarded voters", results.discardedVoters],
+              ["Équipes comptées", `${results.countedTeams} / ${results.totalTeams}`],
+              ["Votants complets (comptés)", results.completeVoters],
+              ["Votants ayant voté au moins une fois", results.votersWithAnyVote],
+              ["Votants écartés", results.discardedVoters],
             ].map(([label, value]) => (
               <div key={label} className="rounded-lg bg-panel-2 p-3">
                 <div className="text-xs text-muted">{label}</div>
@@ -123,17 +120,17 @@ export const OfficialResultsPanel = () => {
           )}
 
           {results.teams.length === 0 ? (
-            <p className="text-sm text-muted">No team has opened voting yet.</p>
+            <p className="text-sm text-muted">Aucune équipe n'a encore ouvert le vote.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b text-muted">
                   <tr>
-                    <th className="py-2 pr-4">Rank</th>
-                    <th className="py-2 pr-4">Team</th>
-                    <th className="py-2 pr-4">Counted yes</th>
-                    <th className="py-2 pr-4">Counted no</th>
-                    <th className="py-2 pr-4">Raw yes / no (all votes)</th>
+                    <th className="py-2 pr-4">Rang</th>
+                    <th className="py-2 pr-4">Équipe</th>
+                    <th className="py-2 pr-4">Oui comptés</th>
+                    <th className="py-2 pr-4">Non comptés</th>
+                    <th className="py-2 pr-4">Oui / non bruts (tous les votes)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -142,7 +139,7 @@ export const OfficialResultsPanel = () => {
                       <td className="py-2 pr-4 font-bold whitespace-nowrap">
                         <span aria-hidden="true">{MEDALS[team.rank] || ""} </span>
                         {ordinal(team.rank)}
-                        {team.tied && <span className="ml-1 text-xs font-normal text-muted">(tie)</span>}
+                        {team.tied && <span className="ml-1 text-xs font-normal text-muted">(égalité)</span>}
                       </td>
                       <td className="py-2 pr-4 font-medium">{team.teamName}</td>
                       <td className="py-2 pr-4 font-semibold text-ok">{team.official.yes}</td>

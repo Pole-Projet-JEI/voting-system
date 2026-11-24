@@ -57,7 +57,7 @@ const check = (name, ok, detail = "") => {
 const text = async (p) => (await p.locator("body").innerText()).replace(/\s+/g, " ").trim();
 const settle = async (p) => {
   await p.waitForTimeout(150);
-  await p.waitForFunction(() => !/Checking your location|Submitting/.test(document.body.innerText), null, { timeout: 45000 });
+  await p.waitForFunction(() => !/Vérification de votre position|Envoi…/.test(document.body.innerText), null, { timeout: 45000 });
   await p.waitForTimeout(400);
 };
 const open = async (kind) => {
@@ -73,7 +73,7 @@ const open = async (kind) => {
   const page = await ctx.newPage();
   await page.goto(`${BASE}/register`);
   await page.waitForURL(/\/home/, { timeout: 30000 });
-  await page.waitForFunction(() => /Allow location|Submit Vote/.test(document.body.innerText), null, { timeout: 30000 });
+  await page.waitForFunction(() => /Autoriser la position|Envoyer mon vote/.test(document.body.innerText), null, { timeout: 30000 });
   return page;
 };
 const queue = (p, watch = [], get = []) => p.evaluate(([w, g]) => { window.__watchQueue.push(...w); window.__getQueue.push(...g); }, [watch, get]);
@@ -106,25 +106,25 @@ try {
   await allow(indoor, [{ ...at(400, 2000), atMs: 300 }, { ...at(150, 1400), atMs: 1500 }, { ...at(15, 18), atMs: 7000 }]);
   t = await text(indoor);
   check("field case: ±2000 m first, precise fix at 7 s → location accepted, no 'approximate' error",
-    /Submit Vote/.test(t) && !/approximate/.test(t), `${Math.round((Date.now() - t0) / 1000)} s`);
+    /Envoyer mon vote/.test(t) && !/approximative/.test(t), `${Math.round((Date.now() - t0) / 1000)} s`);
   await shot(indoor, "field-indoor-precise-later");
   await submit(indoor, [{ ...at(300, 1800), atMs: 300 }, { ...at(20, 22), atMs: 5000 }]);
-  check("field case: vote with rough-then-precise readings is accepted", /Thank you for your vote/.test(await text(indoor)));
+  check("field case: vote with rough-then-precise readings is accepted", /Merci pour votre vote/.test(await text(indoor)));
 
   // 1. iPhone
   const ios = await open("iphone");
   t = await text(ios);
-  check("1. iPhone: location step with 'Allow location' shown first", /Location check/.test(t) && /Allow location/.test(t) && !/Submit Vote/.test(t));
+  check("1. iPhone: location step with 'Allow location' shown first", /Vérification de la position/.test(t) && /Autoriser la position/.test(t) && !/Envoyer mon vote/.test(t));
   await ios.click("button.location-step-button");
   await ios.waitForTimeout(50);
   check("1. iPhone: the tap itself starts the location request", (await ios.evaluate(() => window.__geoLog[0]?.kind)) === "watch");
   const iosDenied = await open("iphone");
   await allow(iosDenied, [{ error: 1 }]);
   t = await text(iosDenied);
-  check("1. iPhone blocked: iPhone settings path, no 'lock icon'", /Settings → Privacy & Security → Location Services/.test(t) && !/lock icon/.test(t));
+  check("1. iPhone blocked: iPhone settings path, no 'lock icon'", /Réglages → Confidentialité et sécurité → Service de localisation/.test(t) && !/icône/.test(t));
   await allow(iosDenied, [at(10, 15)]);
   t = await text(iosDenied);
-  check("1. iPhone: after allowing, Try again unlocks the vote form", /Submit Vote/.test(t), /Submit Vote/.test(t) ? "" : t.slice(0, 160) + " | geo: " + JSON.stringify(await iosDenied.evaluate(() => window.__geoLog.map((g) => g.kind + ":" + JSON.stringify(g.readings || g.reading)))));
+  check("1. iPhone: after allowing, Try again unlocks the vote form", /Envoyer mon vote/.test(t), /Envoyer mon vote/.test(t) ? "" : t.slice(0, 160) + " | geo: " + JSON.stringify(await iosDenied.evaluate(() => window.__geoLog.map((g) => g.kind + ":" + JSON.stringify(g.readings || g.reading)))));
 
   // 2. Approximate / Windows
   const andApprox = await open("android");
@@ -132,31 +132,31 @@ try {
   await allow(andApprox, [at(5, 2000), { ...at(5, 2100), atMs: 3000 }]);
   t = await text(andApprox);
   check("2. Approximate only (no precise fix in 20 s): steps + measured ±2000 m + Wi-Fi tip",
-    /approximate/.test(t) && /±2000 m/.test(t) && /Wi-Fi/.test(t) && /Use precise location/.test(t), `${Math.round((Date.now() - t1) / 1000)} s`);
+    /approximative/.test(t) && /±2000 m/.test(t) && /Wi-Fi/.test(t) && /Utiliser la position exacte/.test(t), `${Math.round((Date.now() - t1) / 1000)} s`);
   await shot(andApprox, "field-approximate-after-20s");
   const winApprox = await open("windows");
   await allow(winApprox, [{ error: 3 }], [at(5, 2000)]);
   t = await text(winApprox);
-  check("2. Windows approximate: Windows Location services + Wi-Fi, advises phone", /Windows Settings/.test(t) && /Wi-Fi/.test(t) && /phone/.test(t));
+  check("2. Windows approximate: Windows Location services + Wi-Fi, advises phone", /Paramètres Windows/.test(t) && /Wi-Fi/.test(t) && /téléphone/.test(t));
   const winDenied = await open("windows");
   await allow(winDenied, [{ error: 1 }]);
-  check("2. Windows blocked: Windows-specific steps", /Let desktop apps access your location/.test(await text(winDenied)));
+  check("2. Windows blocked: Windows-specific steps", /Autoriser les applications de bureau/.test(await text(winDenied)));
 
   // 3. Radius / jitter / cache
   const inside = await open("android");
   await allow(inside, [at(20, 15)]);
   await submit(inside, [at(78, 48), at(34, 14)]);
-  check("3. Inside voter, noisy first reading → best reading used → accepted", /Thank you for your vote/.test(await text(inside)));
+  check("3. Inside voter, noisy first reading → best reading used → accepted", /Merci pour votre vote/.test(await text(inside)));
   const outside = await open("android");
   await allow(outside, [at(118, 12)]);
   await submit(outside, [at(65, 55), at(118, 12)]);
-  check("3. Outside voter, one lucky reading → best reading used → refused", /outside the venue/.test(await text(outside)));
+  check("3. Outside voter, one lucky reading → best reading used → refused", /hors de la salle/.test(await text(outside)));
   const stale = await open("android");
   await allow(stale, [at(10, 20)]);
   await submit(stale, [{ error: 3 }], [at(5, 30, { ageMs: 55000 })]);
   t = await text(stale);
   const log = await stale.evaluate(() => window.__geoLog.slice(-2).map((g) => g.options?.maximumAge));
-  check("3. Old cached position (55 s) refused by the server", /old position/.test(t) && !/Thank you/.test(t));
+  check("3. Old cached position (55 s) refused by the server", /ancienne position/.test(t) && !/Merci/.test(t));
   check("3. Every location request uses maximumAge 0", log.every((v) => v === 0), JSON.stringify(log));
 
   // 4. Messages
@@ -164,10 +164,10 @@ try {
   await allow(msg, [at(12, 10)]);
   await msg.waitForSelector("button.submit-vote-button", { timeout: 15000 });
   t = await text(msg);
-  check("4. Vote page: no 'vote for all teams' sentence", !/all \d+ teams|none of your votes|count only/i.test(t));
+  check("4. Vote page: no 'vote for all teams' sentence", !/toutes les \d+ équipes|aucun de vos votes|comptent seulement/i.test(t));
   await submit(msg, [at(12, 10)]);
   t = await text(msg);
-  check("4. Thank-you page: only 'Thank you for your vote'", /Thank you for your vote/.test(t) && !/of \d+ teams|count only/i.test(t));
+  check("4. Thank-you page: only 'Thank you for your vote'", /Merci pour votre vote/.test(t) && !/sur \d+ équipes|comptent seulement/i.test(t));
 } catch (error) {
   check("run completed", false, error.message.split("\n")[0]);
 } finally {

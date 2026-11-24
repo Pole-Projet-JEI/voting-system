@@ -357,7 +357,7 @@ const openStream = (registry, label) => async (req, res) => {
   try {
     if (!registry.add(req, res)) {
       return res.status(503).json({
-        message: "SSE connection limit reached",
+        message: "Trop de connexions en direct",
       });
     }
 
@@ -372,7 +372,7 @@ const openStream = (registry, label) => async (req, res) => {
     registry.remove(res);
     console.error(`Error in ${label} stream:`, error);
     if (!res.headersSent) {
-      return res.status(500).json({ message: "Internal Server Error" });
+      return res.status(500).json({ message: "Erreur interne du serveur" });
     }
   }
 };

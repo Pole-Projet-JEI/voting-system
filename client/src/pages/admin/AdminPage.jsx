@@ -128,7 +128,7 @@ function AdminPage() {
     setPasswordError("");
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError("Please fill in all fields.");
+      setPasswordError("Veuillez remplir tous les champs.");
       return;
     }
 
@@ -141,13 +141,13 @@ function AdminPage() {
 
     if (!strongPassword) {
       setPasswordError(
-        "Use 8+ characters with uppercase, lowercase, a number and a symbol."
+        "Au moins 8 caractères avec une majuscule, une minuscule, un chiffre et un symbole."
       );
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match.");
+      setPasswordError("Les mots de passe ne correspondent pas.");
       return;
     }
 
@@ -248,7 +248,7 @@ function AdminPage() {
     e.preventDefault();
 
     if (!newTeamName.trim()) {
-      showNotification("error", "Team name is required");
+      showNotification("error", "Le nom de l'équipe est obligatoire");
       return;
     }
 
@@ -280,7 +280,7 @@ function AdminPage() {
 
   const handleDeleteTeam = async (teamId, teamName) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete team "${teamName}"?`
+      `Voulez-vous vraiment supprimer l'équipe « ${teamName} » ?`
     );
 
     if (!confirmed) return;
@@ -310,21 +310,21 @@ function AdminPage() {
         return {
           icon: ArrowDown,
           variant: "default",
-          text: "Most votes (live)",
+          text: "Plus de votes (en direct)",
           className: `${baseClass} bg-transparent border border-line-strong hover:border-ink text-white`,
         };
       case "yes-asc":
         return {
           icon: ArrowUp,
           variant: "default",
-          text: "Least votes (live)",
+          text: "Moins de votes (en direct)",
           className: `${baseClass} bg-transparent border border-line-strong hover:border-ink text-white`,
         };
       default:
         return {
           icon: ArrowUpDown,
           variant: "outline",
-          text: "Sort by Votes",
+          text: "Trier par votes",
           className: `${baseClass} border-line-strong bg-panel-2 hover:bg-white/10 text-ink`,
         };
     }
@@ -351,7 +351,7 @@ function AdminPage() {
   // Save edited team
   const saveEditedTeam = () => {
     if (!editingTeam.teamName.trim()) {
-      showNotification("error", "Team name cannot be empty");
+      showNotification("error", "Le nom de l'équipe ne peut pas être vide");
       return;
     }
 
@@ -377,7 +377,7 @@ function AdminPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-xl text-muted-foreground">
-          Loading admin panel...
+          Chargement du tableau de bord…
         </div>
       </div>
     );
@@ -400,7 +400,7 @@ function AdminPage() {
               type="button"
               onClick={() => setNotification(null)}
               className="font-bold opacity-70 hover:opacity-100"
-              aria-label="Close notification"
+              aria-label="Fermer la notification"
             >
               x
             </button>
@@ -416,9 +416,9 @@ function AdminPage() {
           >
             <div>
               <h2 className="text-xl font-bold text-ink">
-                Set a new password
+                Définir un nouveau mot de passe
               </h2>
-              <p className="mt-1 text-sm text-muted">Required on first login.</p>
+              <p className="mt-1 text-sm text-muted">Obligatoire à la première connexion.</p>
             </div>
 
             <div className="space-y-2">
@@ -426,13 +426,13 @@ function AdminPage() {
                 htmlFor="current-admin-password"
                 className="block text-sm font-medium text-ink"
               >
-                Temporary password
+                Mot de passe temporaire
               </label>
               <div className="relative">
                 <input
                   id="current-admin-password"
                   type={visiblePasswords.current ? "text" : "password"}
-                  placeholder="Temporary password"
+                  placeholder="Mot de passe temporaire"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
                   className="w-full rounded-lg border border-line-strong px-4 py-3 pr-11 text-ink outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/30"
@@ -444,8 +444,8 @@ function AdminPage() {
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
                   aria-label={
                     visiblePasswords.current
-                      ? "Hide temporary password"
-                      : "Show temporary password"
+                      ? "Masquer le mot de passe temporaire"
+                      : "Afficher le mot de passe temporaire"
                   }
                 >
                   {visiblePasswords.current ? (
@@ -462,13 +462,13 @@ function AdminPage() {
                 htmlFor="new-admin-password"
                 className="block text-sm font-medium text-ink"
               >
-                New password
+                Nouveau mot de passe
               </label>
               <div className="relative">
                 <input
                   id="new-admin-password"
                   type={visiblePasswords.new ? "text" : "password"}
-                  placeholder="New password"
+                  placeholder="Nouveau mot de passe"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
                   className="w-full rounded-lg border border-line-strong px-4 py-3 pr-11 text-ink outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/30"
@@ -481,8 +481,8 @@ function AdminPage() {
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
                   aria-label={
                     visiblePasswords.new
-                      ? "Hide new password"
-                      : "Show new password"
+                      ? "Masquer le nouveau mot de passe"
+                      : "Afficher le nouveau mot de passe"
                   }
                 >
                   {visiblePasswords.new ? (
@@ -493,7 +493,7 @@ function AdminPage() {
                 </button>
               </div>
               <p className="text-xs text-muted">
-                8+ chars: A-Z, a-z, 0-9 and a symbol.
+                8 caractères min. : A-Z, a-z, 0-9 et un symbole.
               </p>
             </div>
 
@@ -502,13 +502,13 @@ function AdminPage() {
                 htmlFor="confirm-admin-password"
                 className="block text-sm font-medium text-ink"
               >
-                Confirm password
+                Confirmer le mot de passe
               </label>
               <div className="relative">
                 <input
                   id="confirm-admin-password"
                   type={visiblePasswords.confirm ? "text" : "password"}
-                  placeholder="Confirm password"
+                  placeholder="Confirmer le mot de passe"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   className="w-full rounded-lg border border-line-strong px-4 py-3 pr-11 text-ink outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/30"
@@ -521,8 +521,8 @@ function AdminPage() {
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted hover:text-ink"
                   aria-label={
                     visiblePasswords.confirm
-                      ? "Hide confirmation password"
-                      : "Show confirmation password"
+                      ? "Masquer la confirmation"
+                      : "Afficher la confirmation"
                   }
                 >
                   {visiblePasswords.confirm ? (
@@ -547,7 +547,7 @@ function AdminPage() {
               type="submit"
               className="w-full rounded-lg bg-hackathon py-3 font-semibold text-white hover:bg-hackathon-hover"
             >
-              Save password
+              Enregistrer le mot de passe
             </Button>
           </form>
         </div>
@@ -559,8 +559,8 @@ function AdminPage() {
             <div className="flex items-center gap-3">
               <BarChart3 className="h-8 w-8" />
               <div>
-                <h1 className="text-2xl font-bold">Admin Panel</h1>
-                <p className="text-sm text-muted">Voting Dashboard</p>
+                <h1 className="text-2xl font-bold">Administration</h1>
+                <p className="text-sm text-muted">Tableau de bord du vote</p>
               </div>
             </div>
             <Button
@@ -568,7 +568,7 @@ function AdminPage() {
               size="sm"
               onClick={handleLogout}
               className="text-white hover:bg-white/10"
-              title="Logout"
+              title="Se déconnecter"
             >
               <LogOut className="h-5 w-5" />
             </Button>
@@ -579,7 +579,7 @@ function AdminPage() {
         <div className="p-6 border-b border-line">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Play className="h-5 w-5" />
-            Currently Presenting
+            Équipe sur scène
           </h3>
           <PresentingTeamCard
             team={presentingTeam}
@@ -592,7 +592,7 @@ function AdminPage() {
         <div className="p-6 border-b border-line">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Voters & Login
+            Votants et connexion
           </h3>
           <VotersLoginPanel onNotify={showNotification} />
         </div>
@@ -601,7 +601,7 @@ function AdminPage() {
         <div className="p-6 border-b border-line">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            Venue Location Check
+            Vérification de la position
           </h3>
           <GeofencePanel onNotify={showNotification} />
         </div>
@@ -610,17 +610,17 @@ function AdminPage() {
         <div className="p-6 space-y-4">
           <StatCard
             icon={Users}
-            title="Total Teams"
+            title="Nombre d'équipes"
             value={stats.teams?.totalTeams || 0}
           />
           <StatCard
             icon={CheckCircle2}
-            title="Presented"
+            title="Passées"
             value={stats.teams?.presentedTeams || 0}
           />
           <StatCard
             icon={Clock}
-            title="Pending"
+            title="En attente"
             value={stats.teams?.notYetPresented || 0}
           />
         </div>
@@ -633,7 +633,7 @@ function AdminPage() {
             className="w-full border-line-strong text-white hover:bg-white/10"
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Logout
+            Se déconnecter
           </Button>
         </div>
       </aside>
@@ -643,7 +643,7 @@ function AdminPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6 lg:mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-ink">
-              Team Management
+              Gestion des équipes
             </h2>
             <div className="flex flex-wrap gap-3">
               <Button
@@ -662,12 +662,12 @@ function AdminPage() {
                 {showAddTeamForm ? (
                   <>
                     <X className="mr-2 h-4 w-4" />
-                    Cancel
+                    Annuler
                   </>
                 ) : (
                   <>
                     <Plus className="mr-2 h-4 w-4" />
-                    Add New Team
+                    Ajouter une équipe
                   </>
                 )}
               </Button>

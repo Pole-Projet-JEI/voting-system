@@ -10,7 +10,7 @@ export const requireAdmin = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Authentication required",
+        message: "Authentification requise",
       });
     }
 
@@ -19,14 +19,14 @@ export const requireAdmin = async (req, res, next) => {
     if (!decoded || decoded.role !== "admin") {
       return res.status(403).json({
         success: false,
-        message: "Invalid or expired token",
+        message: "Session invalide ou expirée",
       });
     }
 
     if (await isAdminTokenRevoked(token)) {
       return res.status(403).json({
         success: false,
-        message: "Invalid or expired token",
+        message: "Session invalide ou expirée",
       });
     }
 
@@ -42,7 +42,7 @@ export const requireAdmin = async (req, res, next) => {
     console.error("Admin auth error:", error);
     return res.status(500).json({
       success: false,
-      message: "Authentication error",
+      message: "Erreur d'authentification",
     });
   }
 };

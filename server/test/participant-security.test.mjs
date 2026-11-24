@@ -260,7 +260,7 @@ test("reusing a consumed ballot is rejected", async () => {
 
       assert.equal(res.statusCode, 400);
       assert.equal(res.body.voted, false);
-      assert.equal(res.body.message, "You have already voted for this team");
+      assert.equal(res.body.message, "Vous avez déjà voté pour cette équipe");
     }
   );
 });

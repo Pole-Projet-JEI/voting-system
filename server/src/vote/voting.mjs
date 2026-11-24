@@ -28,14 +28,14 @@ route.post("/api/vote/:id", requireAuth, requireVenuePresence, async (req, res) 
   if (!["yes", "no"].includes(vote)) {
     return res.status(400).json({
       voted: false,
-      message: "Vote must be 'yes' or 'no'",
+      message: "Le vote doit être « oui » ou « non »",
     });
   }
 
   if (!mongoose.isValidObjectId(teamId)) {
     return res.status(400).json({
       voted: false,
-      message: "Invalid team ID",
+      message: "Équipe invalide",
     });
   }
 
@@ -48,7 +48,7 @@ route.post("/api/vote/:id", requireAuth, requireVenuePresence, async (req, res) 
     if (!votingTeam) {
       return res.status(400).json({
         voted: false,
-        message: "This team is not currently presenting",
+        message: "Cette équipe ne présente pas en ce moment",
       });
     }
 
@@ -74,11 +74,11 @@ route.post("/api/vote/:id", requireAuth, requireVenuePresence, async (req, res) 
       if (existingVoter?.votes?.has(teamId)) {
         return res.status(400).json({
           voted: false,
-          message: "You have already voted for this team",
+          message: "Vous avez déjà voté pour cette équipe",
           existingVote: existingVoter.votes.get(teamId).vote,
         });
       }
-      return res.status(404).json({ voted: false, message: "Voter not found" });
+      return res.status(404).json({ voted: false, message: "Votant introuvable" });
     }
 
     try {
@@ -100,14 +100,14 @@ route.post("/api/vote/:id", requireAuth, requireVenuePresence, async (req, res) 
 
     return res.status(200).json({
       voted: true,
-      message: "Vote recorded successfully",
+      message: "Vote enregistré",
       vote,
     });
   } catch (error) {
     console.error("Error recording vote:", error.message);
     return res.status(500).json({
       voted: false,
-      message: "Server error",
+      message: "Erreur du serveur",
     });
   }
 });

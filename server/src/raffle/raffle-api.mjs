@@ -41,7 +41,7 @@ route.get("/api/admin/raffle", requireAdmin, async (req, res) => {
     return res.json(publicState(await loadState()));
   } catch (error) {
     console.error("Error reading raffle:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
@@ -52,7 +52,7 @@ route.post("/api/admin/raffle/draw", requireAdmin, async (req, res) => {
       const state = await loadState();
       const email = pickWinner(state.pool);
       if (!email) {
-        return res.status(409).json({ code: "POOL_EMPTY", message: "No email left in the game." });
+        return res.status(409).json({ code: "POOL_EMPTY", message: "Plus aucun e-mail en jeu." });
       }
       try {
         const draw = await RaffleDraw.create({
@@ -72,10 +72,10 @@ route.post("/api/admin/raffle/draw", requireAdmin, async (req, res) => {
         if (error?.code !== 11000) throw error;
       }
     }
-    return res.status(409).json({ code: "DRAW_BUSY", message: "Another draw is in progress. Try again." });
+    return res.status(409).json({ code: "DRAW_BUSY", message: "Un autre tirage est en cours. Réessayez." });
   } catch (error) {
     console.error("Error drawing raffle winner:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
@@ -87,7 +87,7 @@ route.delete("/api/admin/raffle", requireAdmin, async (req, res) => {
     return res.json(publicState(await loadState()));
   } catch (error) {
     console.error("Error resetting raffle:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 

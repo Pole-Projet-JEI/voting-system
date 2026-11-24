@@ -21,13 +21,13 @@ route.post("/api/register", voterRegistrationRateLimit, async (req, res) => {
     return res.status(410).json({
       status: "failed",
       code: "CODE_LOGIN_DISABLED",
-      message: "Code login is disabled. Open the voting link to join.",
+      message: "La connexion par code est désactivée. Ouvrez le lien de vote pour participer.",
     });
   }
   const userCode = req.body?.code;
 
   if (!isValidVoterCode(userCode)) {
-    return res.status(400).json({ status: "failed", message: "Invalid code" });
+    return res.status(400).json({ status: "failed", message: "Code invalide" });
   }
 
   const user = await Voter.findOne({ codeHash: hashVoterCode(userCode) });
@@ -53,7 +53,7 @@ route.post("/api/register", voterRegistrationRateLimit, async (req, res) => {
     );
     return res.status(201).json({ status: "succeeded" });
   } else {
-    return res.status(400).json({ status: "failed",message:"Invalid code" });
+    return res.status(400).json({ status: "failed",message:"Code invalide" });
   }
 });
 

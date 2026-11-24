@@ -7,7 +7,7 @@ export const requireAuth = async (req, res, next) => {
     if (!voter) {
       return res.status(401).json({
         authenticated: false,
-        message: "Not authenticated",
+        message: "Non connecté",
       });
     }
 
@@ -19,7 +19,7 @@ export const requireAuth = async (req, res, next) => {
     console.error("Auth middleware error:", error);
     return res.status(500).json({
       authenticated: false,
-      message: "Server error",
+      message: "Erreur du serveur",
     });
   }
 };

@@ -60,7 +60,7 @@ const limitHandler = (req, res) => {
   res.set("Retry-After", String(retryAfterSeconds));
   return res.status(429).json({
     status: "failed",
-    message: "Too many attempts. Please try again later.",
+    message: "Trop de tentatives. Réessayez plus tard.",
     retryAfterSeconds,
   });
 };
@@ -88,7 +88,7 @@ const loginClosed = (res) =>
   res.status(403).json({
     status: "failed",
     code: "LOGIN_CLOSED",
-    message: "Login is closed. Wait for the organizers to open it.",
+    message: "La connexion est fermée. Attendez que les organisateurs l'ouvrent.",
   });
 
 // Scan pass: signed cookie holding the time of the scan.
@@ -176,7 +176,7 @@ export const createJoinHandler =
       console.error(
         JSON.stringify({ event: "session_join_failed", requestId: req.requestId, message: error.message })
       );
-      return res.status(500).json({ status: "failed", message: "Server error. Please try again." });
+      return res.status(500).json({ status: "failed", message: "Erreur du serveur. Réessayez." });
     }
   };
 
@@ -186,7 +186,7 @@ export const createScanHandler =
   async (req, res) => {
     try {
       if (mode() !== "qr-email") {
-        return res.status(404).json({ status: "failed", message: "Not found" });
+        return res.status(404).json({ status: "failed", message: "Introuvable" });
       }
       if (!(await checkOpen())) {
         return loginClosed(res);
@@ -201,7 +201,7 @@ export const createScanHandler =
       console.error(
         JSON.stringify({ event: "qr_scan_failed", requestId: req.requestId, message: error.message })
       );
-      return res.status(500).json({ status: "failed", message: "Server error. Please try again." });
+      return res.status(500).json({ status: "failed", message: "Erreur du serveur. Réessayez." });
     }
   };
 
@@ -214,7 +214,7 @@ route.get("/api/login/status", async (req, res) => {
     return res.json({ open: (await getLoginSettings()).open, mode: getAccessMode() });
   } catch (error) {
     console.error("Error reading login window:", error.message);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
@@ -223,7 +223,7 @@ route.get("/api/login/status", async (req, res) => {
 route.get("/api/admin/access-qr", requireAdmin, async (req, res) => {
   try {
     if (getAccessMode() !== "qr-email") {
-      return res.status(404).json({ message: "QR access is not enabled" });
+      return res.status(404).json({ message: "L'accès par QR code n'est pas activé" });
     }
     const { open } = await getLoginSettings({ fresh: true });
     res.set("Cache-Control", "no-store");
@@ -241,24 +241,24 @@ route.get("/api/admin/access-qr", requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating access QR:", error.message);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
 route.put("/api/admin/login-window", requireAdmin, async (req, res) => {
   if (typeof req.body?.open !== "boolean") {
-    return res.status(400).json({ message: "open must be true or false" });
+    return res.status(400).json({ message: "open doit valoir true ou false" });
   }
   try {
     const settings = await updateLoginSettings({ open: req.body.open }, req.admin?.username || null);
     return res.json({
       success: true,
       ...settings,
-      message: settings.open ? "Login is open" : "Login is closed",
+      message: settings.open ? "Connexion ouverte" : "Connexion fermée",
     });
   } catch (error) {
     console.error("Error updating login window:", error.message);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
@@ -271,7 +271,7 @@ route.get("/api/admin/voters/summary", requireAdmin, async (req, res) => {
     return res.json({ loginOpen: settings.open, voters, mode: getAccessMode() });
   } catch (error) {
     console.error("Error reading voter summary:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
@@ -304,7 +304,7 @@ route.get("/api/admin/voters", requireAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error("Error listing voters:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 

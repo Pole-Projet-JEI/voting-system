@@ -15,7 +15,7 @@ route.get("/api/admin/teams", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Error fetching teams:", error);
     return res.status(500).json({
-      message: "Internal Server Error",
+      message: "Erreur interne du serveur",
     });
   }
 });

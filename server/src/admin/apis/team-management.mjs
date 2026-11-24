@@ -15,7 +15,7 @@ route.post("/api/admin/team", async (req, res) => {
     const { teamName, description } = req.body;
 
     if (!teamName || teamName.trim() === "") {
-      return res.status(400).json({ message: "Team name is required" });
+      return res.status(400).json({ message: "Le nom de l'équipe est obligatoire" });
     }
 
     const newTeam = await createTeam(
@@ -25,7 +25,7 @@ route.post("/api/admin/team", async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: `Team "${newTeam.teamName}" created successfully`,
+      message: `Équipe « ${newTeam.teamName} » créée`,
       team: newTeam,
     });
   } catch (error) {
@@ -33,12 +33,12 @@ route.post("/api/admin/team", async (req, res) => {
 
     if (error.code === 11000) {
       return res.status(409).json({
-        message: "A team with this name already exists",
+        message: "Une équipe porte déjà ce nom",
       });
     }
 
     return res.status(500).json({
-      message: "Internal Server Error",
+      message: "Erreur interne du serveur",
     });
   }
 });
@@ -62,12 +62,12 @@ route.put("/api/admin/team/:id", requireAdmin, async (req, res) => {
     const updatedTeam = await updateTeam(id, updates);
 
     if (!updatedTeam) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(404).json({ message: "Équipe introuvable" });
     }
 
     return res.json({
       success: true,
-      message: `Team "${updatedTeam.teamName}" updated successfully`,
+      message: `Équipe « ${updatedTeam.teamName} » modifiée`,
       team: updatedTeam,
     });
   } catch (error) {
@@ -75,12 +75,12 @@ route.put("/api/admin/team/:id", requireAdmin, async (req, res) => {
 
     if (error.code === 11000) {
       return res.status(409).json({
-        message: "A team with this name already exists",
+        message: "Une équipe porte déjà ce nom",
       });
     }
 
     return res.status(500).json({
-      message: "Internal Server Error",
+      message: "Erreur interne du serveur",
     });
   }
 });
@@ -92,27 +92,27 @@ route.delete("/api/admin/team/:id", requireAdmin, async (req, res) => {
     const deletedTeam = await deleteTeam(id);
 
     if (!deletedTeam) {
-      return res.status(404).json({ message: "Team not found" });
+      return res.status(404).json({ message: "Équipe introuvable" });
     }
 
     return res.json({
       success: true,
-      message: `Team "${deletedTeam.teamName}" deleted successfully`,
+      message: `Équipe « ${deletedTeam.teamName} » supprimée`,
       team: deletedTeam,
     });
   } catch (error) {
     console.error("Error deleting team:", error);
 
     if (error.message === "Cannot delete team that is currently presenting") {
-      return res.status(400).json({ message: error.message });
+      return res.status(400).json({ message: "Impossible de supprimer une équipe sur scène" });
     }
 
     if (error.message === "Cannot delete team that has already presented") {
-      return res.status(400).json({ message: error.message });
+      return res.status(400).json({ message: "Impossible de supprimer une équipe déjà passée" });
     }
 
     return res.status(500).json({
-      message: "Internal Server Error",
+      message: "Erreur interne du serveur",
     });
   }
 });

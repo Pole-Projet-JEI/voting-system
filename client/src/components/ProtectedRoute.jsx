@@ -26,7 +26,7 @@ function ProtectedRoute({ children }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-xl text-gray-600">Verifying authentication...</div>
+        <div className="text-xl text-gray-600">Vérification de la connexion…</div>
       </div>
     );
   }

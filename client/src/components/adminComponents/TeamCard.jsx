@@ -32,7 +32,7 @@ export const TeamCard = ({
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-ink">
-                Team Name
+                Nom de l'équipe
               </label>
               <Input
                 value={editingTeam.teamName}
@@ -60,14 +60,14 @@ export const TeamCard = ({
                 onClick={onSaveEdit}
                 className="flex-1 bg-transparent border border-line-strong hover:border-ink text-white cursor-pointer"
               >
-                Save
+                Enregistrer
               </Button>
               <Button
                 onClick={onCancelEdit}
                 variant="outline"
                 className="flex-1 text-ink border-line-strong cursor-pointer"
               >
-                Cancel
+                Annuler
               </Button>
             </div>
           </div>
@@ -93,14 +93,14 @@ export const TeamCard = ({
           </CardTitle>
           <div className="flex gap-1">
             {teamState === "presenting" && (
-              <Badge className="bg-blue-500 text-white">Presenting</Badge>
+              <Badge className="bg-blue-500 text-white">Sur scène</Badge>
             )}
             {teamState === "voting" && (
-              <Badge className="bg-green-500 text-white">Voting</Badge>
+              <Badge className="bg-green-500 text-white">Vote ouvert</Badge>
             )}
             {team.presented && (
               <Badge variant="secondary" className="bg-gray-200 text-ink">
-                Presented
+                Passée
               </Badge>
             )}
           </div>
@@ -112,15 +112,15 @@ export const TeamCard = ({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-3 p-3 bg-panel-2 rounded-lg">
           <div className="text-center">
-            <div className="text-xs text-muted mb-1">👍 Yes</div>
+            <div className="text-xs text-muted mb-1">👍 Oui</div>
             <div className="text-xl font-bold text-ink">{team.nyes}</div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-muted mb-1">👎 No</div>
+            <div className="text-xs text-muted mb-1">👎 Non</div>
             <div className="text-xl font-bold text-ink">{team.nno}</div>
           </div>
           <div className="col-span-2 text-center text-[11px] text-faint">
-            Live count (all votes). Official result: see Official results.
+            Décompte en direct (tous les votes). Résultat officiel : voir Résultats officiels.
           </div>
         </div>
 
@@ -132,7 +132,7 @@ export const TeamCard = ({
               size="sm"
             >
               <Play className="mr-1 h-3 w-3" />
-              Present
+              Présenter
             </Button>
           )}
           {teamState === "pending" && !team.presenting && !team.presented && (

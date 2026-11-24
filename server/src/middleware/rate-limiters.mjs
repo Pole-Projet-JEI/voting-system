@@ -25,7 +25,7 @@ export const adminLoginRateLimit = rateLimit({
   handler: createRateLimitHandler(
     {
       success: false,
-      message: "Too many attempts. Please try again later.",
+      message: "Trop de tentatives. Réessayez plus tard.",
     },
     15 * 60 * 1000
   ),
@@ -54,7 +54,7 @@ export const voterRegistrationRateLimit = rateLimit({
   handler: createRateLimitHandler(
     {
       status: "failed",
-      message: "Too many attempts. Please try again later.",
+      message: "Trop de tentatives. Réessayez plus tard.",
     },
     15 * 60 * 1000
   ),

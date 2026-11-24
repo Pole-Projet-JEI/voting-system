@@ -9,7 +9,7 @@ route.get("/api/admin/results", requireAdmin, async (req, res) => {
     return res.json(await getOfficialResults());
   } catch (error) {
     console.error("Error computing official results:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 

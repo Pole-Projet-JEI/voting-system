@@ -20,7 +20,7 @@ export const checkConnection = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Connection check failed",
+      error: error.response?.data?.message || "Échec de la vérification de connexion",
     };
   }
 };
@@ -35,13 +35,13 @@ export const registerUser = async (userData) => {
     } else {
       return {
         success: false,
-        error: response.data.message || "Invalid code",
+        error: response.data.message || "Code invalide",
       };
     }
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Registration failed",
+      error: error.response?.data?.message || "Échec de l'inscription",
       networkError: !error.response,
       retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
     };
@@ -56,7 +56,7 @@ export const voteForId = async (id, voteData) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || `Failed to vote for ID ${id}`,
+      error: error.response?.data?.message || `Échec du vote pour l'équipe ${id}`,
       errorCode: error.response?.data?.code,
       status: error.response?.status,
       networkError: !error.response,
@@ -71,7 +71,7 @@ export const getCurrentTeam = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to get current team",
+      error: error.response?.data?.message || "Impossible de charger l'équipe en cours",
     };
   }
 };
@@ -83,7 +83,7 @@ export const didUserVote = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to check vote status",
+      error: error.response?.data?.message || "Impossible de vérifier votre vote",
     };
   }
 };
@@ -95,7 +95,7 @@ export const getGeofenceStatus = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to load location settings",
+      error: error.response?.data?.message || "Impossible de charger les réglages de position",
     };
   }
 };
@@ -114,7 +114,7 @@ export const scanQr = async (token) => {
     const response = await apiClient.post(routes.JOIN_SCAN, { t: token });
     return { success: true, data: response.data };
   } catch (error) {
-    return toFailure(error, "Could not check the QR code");
+    return toFailure(error, "Impossible de vérifier le QR code");
   }
 };
 
@@ -123,7 +123,7 @@ export const getLoginStatus = async () => {
     const response = await apiClient.get(routes.LOGIN_STATUS);
     return { success: true, data: response.data };
   } catch (error) {
-    return toFailure(error, "Could not check login status");
+    return toFailure(error, "Impossible de vérifier l'état de la connexion");
   }
 };
 
@@ -134,6 +134,6 @@ export const joinVoting = async (body = {}) => {
     const response = await apiClient.post(routes.JOIN, body);
     return { success: true, data: response.data };
   } catch (error) {
-    return toFailure(error, "Could not join");
+    return toFailure(error, "Impossible de rejoindre le vote");
   }
 };

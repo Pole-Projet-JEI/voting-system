@@ -20,7 +20,7 @@ route.get("/api/geofence", async (req, res) => {
     });
   } catch (error) {
     console.error("Error reading geofence settings:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
@@ -30,7 +30,7 @@ route.get("/api/admin/geofence", requireAdmin, async (req, res) => {
     return res.json({ settings, limits: GEOFENCE_LIMITS });
   } catch (error) {
     console.error("Error reading geofence settings:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 
@@ -49,13 +49,13 @@ route.put("/api/admin/geofence", requireAdmin, async (req, res) => {
     return res.json({
       success: true,
       message: result.settings.enabled
-        ? "Location check enabled"
-        : "Location settings saved (check disabled)",
+        ? "Vérification de la position activée"
+        : "Réglages de position enregistrés (vérification désactivée)",
       settings: result.settings,
     });
   } catch (error) {
     console.error("Error updating geofence settings:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });
 

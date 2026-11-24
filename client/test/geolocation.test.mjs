@@ -73,7 +73,7 @@ test("blocked permission does not retry and explains how to fix it", async () =>
   await withGeolocation([{ error: 1 }], async (calls) => {
     const result = await getCurrentLocation();
     assert.equal(result.errorCode, "PERMISSION_DENIED");
-    assert.match(result.error, /blocked/);
+    assert.match(result.error, /bloquée/);
     assert.equal(calls.length, 1);
   });
 });
@@ -134,7 +134,7 @@ test("approximate location (~2 km) is reported with device-specific steps", asyn
     assert.match(result.error, /Wi-Fi/);
     assert.equal(result.success, false);
     assert.equal(result.errorCode, "APPROXIMATE");
-    assert.match(result.error, /Precise Location/);
+    assert.match(result.error, /Position exacte/);
   }, { userAgent: iphone, watch: [{ latitude: 1, longitude: 1, accuracy: 2000 }] });
 });
 
@@ -160,8 +160,8 @@ test("platform detection and messages", () => {
   assert.equal(detectPlatform("Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X)"), "ios");
   assert.equal(detectPlatform("Mozilla/5.0 (Linux; Android 14; Pixel 8)"), "android");
   assert.equal(detectPlatform("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"), "windows");
-  assert.match(locationMessage("PERMISSION_DENIED", "ios"), /Settings → Privacy & Security → Location Services/);
-  assert.match(locationMessage("PERMISSION_DENIED", "windows"), /Windows Settings/);
-  assert.match(locationMessage("APPROXIMATE", "android"), /Use precise location/);
-  assert.doesNotMatch(locationMessage("PERMISSION_DENIED", "ios"), /lock icon/);
+  assert.match(locationMessage("PERMISSION_DENIED", "ios"), /Réglages → Confidentialité et sécurité → Service de localisation/);
+  assert.match(locationMessage("PERMISSION_DENIED", "windows"), /Paramètres Windows/);
+  assert.match(locationMessage("APPROXIMATE", "android"), /Utiliser la position exacte/);
+  assert.doesNotMatch(locationMessage("PERMISSION_DENIED", "ios"), /icône/);
 });

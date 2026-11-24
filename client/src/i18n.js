@@ -1,5 +1,5 @@
-// Interface language, chosen at build time: VITE_LANG=fr builds the French
-// site (vote.jeinsat.com); anything else keeps English (voting.jeinsat.com).
+// Interface language, chosen at build time: French by default (both sites);
+// VITE_LANG=en builds the English voter pages.
 //
 // t("English text", { name: value }) returns the French text when LANG is
 // "fr", else the English text; {name} placeholders are filled in both.
@@ -7,7 +7,7 @@
 // English. Server messages go through t() too, so the known ones are shown
 // in French.
 
-export const LANG = import.meta.env.VITE_LANG === "fr" ? "fr" : "en";
+export const LANG = import.meta.env?.VITE_LANG === "en" ? "en" : "fr";
 
 const FR = {
   // Brand / layout

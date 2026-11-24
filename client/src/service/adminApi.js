@@ -15,7 +15,7 @@ export const checkAdminAuth = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Authentication check failed",
+      error: error.response?.data?.message || "Échec de la vérification de connexion",
     };
   }
 };
@@ -30,7 +30,7 @@ export const adminLogin = async (secretKey, username = "") => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Login failed",
+      error: error.response?.data?.message || "Échec de la connexion",
       retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
     };
   }
@@ -43,7 +43,7 @@ export const adminLogout = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Logout failed",
+      error: error.response?.data?.message || "Échec de la déconnexion",
     };
   }
 };
@@ -58,7 +58,7 @@ export const changeAdminPassword = async (currentPassword, newPassword) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Password change failed",
+      error: error.response?.data?.message || "Échec du changement de mot de passe",
     };
   }
 };
@@ -70,7 +70,7 @@ export const getAllTeams = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to fetch teams",
+      error: error.response?.data?.message || "Impossible de charger les équipes",
     };
   }
 };
@@ -82,7 +82,7 @@ export const getPresentingTeam = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to fetch presenting team",
+      error: error.response?.data?.message || "Impossible de charger l'équipe sur scène",
     };
   }
 };
@@ -99,7 +99,7 @@ export const setPresentingTeam = async (teamId) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to set presenting team",
+      error: error.response?.data?.message || "Impossible de mettre l'équipe sur scène",
     };
   }
 };
@@ -111,7 +111,7 @@ export const stopPresentingTeam = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to stop presentation",
+      error: error.response?.data?.message || "Impossible d'arrêter la présentation",
     };
   }
 };
@@ -123,7 +123,7 @@ export const startVoting = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to start voting",
+      error: error.response?.data?.message || "Impossible d'ouvrir le vote",
     };
   }
 };
@@ -138,7 +138,7 @@ export const createTeam = async (teamName, description = "") => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to create team",
+      error: error.response?.data?.message || "Impossible de créer l'équipe",
     };
   }
 };
@@ -151,7 +151,7 @@ export const updateTeam = async (teamId, updates) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to update team",
+      error: error.response?.data?.message || "Impossible de modifier l'équipe",
     };
   }
 };
@@ -164,7 +164,7 @@ export const deleteTeam = async (teamId) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to delete team",
+      error: error.response?.data?.message || "Impossible de supprimer l'équipe",
     };
   }
 };
@@ -176,7 +176,7 @@ export const getGeofenceSettings = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to load location settings",
+      error: error.response?.data?.message || "Impossible de charger les réglages de position",
     };
   }
 };
@@ -188,7 +188,7 @@ export const updateGeofenceSettings = async (settings) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to save location settings",
+      error: error.response?.data?.message || "Impossible d'enregistrer les réglages de position",
     };
   }
 };
@@ -200,7 +200,7 @@ export const getOfficialResults = async () => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to load results",
+      error: error.response?.data?.message || "Impossible de charger les résultats",
     };
   }
 };
@@ -210,7 +210,7 @@ export const getVotersSummary = async () => {
     const response = await adminClient.get(routes.ADMIN_VOTERS_SUMMARY);
     return { success: true, data: response.data };
   } catch (error) {
-    return { success: false, error: error.response?.data?.message || "Failed to load voters" };
+    return { success: false, error: error.response?.data?.message || "Impossible de charger les votants" };
   }
 };
 
@@ -219,7 +219,7 @@ export const getAccessQr = async () => {
     const response = await adminClient.get(routes.ADMIN_ACCESS_QR);
     return { success: true, data: response.data };
   } catch (error) {
-    return { success: false, error: error.response?.data?.message || "Failed to load the QR code" };
+    return { success: false, error: error.response?.data?.message || "Impossible de charger le QR code" };
   }
 };
 
@@ -228,7 +228,7 @@ export const getVoters = async () => {
     const response = await adminClient.get(routes.ADMIN_VOTERS);
     return { success: true, data: response.data };
   } catch (error) {
-    return { success: false, error: error.response?.data?.message || "Failed to load voters" };
+    return { success: false, error: error.response?.data?.message || "Impossible de charger les votants" };
   }
 };
 
@@ -239,7 +239,7 @@ const raffleCall = async (method, url) => {
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || "Failed to reach the draw",
+      error: error.response?.data?.message || "Impossible de joindre le tirage",
       errorCode: error.response?.data?.code,
     };
   }
@@ -254,6 +254,6 @@ export const setLoginWindow = async (open) => {
     const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, { open });
     return { success: true, data: response.data };
   } catch (error) {
-    return { success: false, error: error.response?.data?.message || "Failed to update login" };
+    return { success: false, error: error.response?.data?.message || "Impossible de modifier la connexion" };
   }
 };

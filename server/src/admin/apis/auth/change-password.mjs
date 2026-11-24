@@ -25,7 +25,7 @@ route.post("/api/admin/password", requireAdmin, async (req, res) => {
     return res.status(400).json({
       success: false,
       message:
-        "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character",
+        "Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et un caractère spécial",
     });
   }
 
@@ -34,7 +34,7 @@ route.post("/api/admin/password", requireAdmin, async (req, res) => {
     if (!admin || !(await verifyAdminPassword(currentPassword, admin.passwordHash))) {
       return res.status(401).json({
         success: false,
-        message: "Current password is invalid",
+        message: "Le mot de passe actuel est incorrect",
       });
     }
 
@@ -55,7 +55,7 @@ route.post("/api/admin/password", requireAdmin, async (req, res) => {
     console.error("Error changing admin password:", error);
     return res.status(500).json({
       success: false,
-      message: "Unable to change password",
+      message: "Impossible de changer le mot de passe",
     });
   }
 });

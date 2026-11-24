@@ -38,7 +38,7 @@ export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled, m
   if (response.success) {
     return response.data.voted
       ? { kind: "saved" }
-      : { kind: "rejected", message: response.data.message || "Vote not recorded." };
+      : { kind: "rejected", message: response.data.message || "Vote non enregistré." };
   }
 
   if (response.networkError || response.status >= 500) {
@@ -49,7 +49,7 @@ export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled, m
     return { kind: "unauthenticated" };
   }
 
-  if (/already voted/i.test(response.error || "")) {
+  if (/already voted|déjà voté/i.test(response.error || "")) {
     return { kind: "saved" };
   }
 
@@ -58,7 +58,7 @@ export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled, m
       kind: "rejected",
       code: response.errorCode,
       message:
-        "Your phone reports that you are outside the venue. Votes are only accepted from inside the room.",
+        "Votre téléphone indique que vous êtes hors de la salle. Les votes ne sont acceptés que depuis la salle.",
     };
   }
 
@@ -66,9 +66,9 @@ export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled, m
     return {
       kind: "rejected",
       code: response.errorCode,
-      message: `Your location is not precise enough yet${
+      message: `Votre position n'est pas encore assez précise${
         payload.location ? ` (±${Math.round(payload.location.accuracy)} m)` : ""
-      }. Make sure precise location is on, wait a few seconds, then tap Submit again.`,
+      }. Vérifiez que la position exacte est activée, attendez quelques secondes, puis renvoyez votre vote.`,
     };
   }
 
@@ -76,14 +76,14 @@ export const attemptVote = async (teamId, vote, { onLocating, geofenceEnabled, m
     return {
       kind: "rejected",
       code: response.errorCode,
-      message: "Your phone gave an old position. Tap Submit again.",
+      message: "Votre téléphone a donné une ancienne position. Renvoyez votre vote.",
     };
   }
 
   return {
     kind: "rejected",
     code: response.errorCode,
-    message: response.error || "Failed to submit vote. Please try again.",
+    message: response.error || "Échec de l'envoi du vote. Réessayez.",
   };
 };
 

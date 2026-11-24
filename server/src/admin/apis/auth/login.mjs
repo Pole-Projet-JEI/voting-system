@@ -44,7 +44,7 @@ route.post("/api/admin/login", adminLoginRateLimit, async (req, res) => {
     if (!secretKey) {
       return res.status(400).json({
         success: false,
-        message: "Password or secret key is required",
+        message: "Le mot de passe est obligatoire",
       });
     }
 
@@ -61,7 +61,7 @@ route.post("/api/admin/login", adminLoginRateLimit, async (req, res) => {
       );
       return res.status(401).json({
         success: false,
-        message: "Invalid admin credentials",
+        message: "Identifiants administrateur incorrects",
       });
     }
 
@@ -91,13 +91,13 @@ route.post("/api/admin/login", adminLoginRateLimit, async (req, res) => {
       success: true,
       admin: true,
       mustChangePassword: legacyAuth ? false : accountAuth.mustChangePassword,
-      message: "Login successful",
+      message: "Connexion réussie",
     });
   } catch (error) {
     console.error("Error during admin login:", error);
     return res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Erreur du serveur",
     });
   }
 });
