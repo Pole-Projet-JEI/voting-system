@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, Maximize, RotateCcw, Trophy } from "lucide-react";
+import { ArrowLeft, Maximize, RotateCcw, Trophy } from "lucide-react";
 import { drawRaffle, getRaffle, resetRaffle } from "../../service/adminApi";
 import { t } from "../../i18n";
 
 const DASHBOARD_PATH = "/jvaFHT7xvivJPJqc1QBRWhfayoj/dashboard";
 const SPIN_MS = 3200;
-
-// "rayen.cherif@gmail.com" -> "ra•••@gmail.com": the screen is seen by the
-// whole room, so emails are partly hidden unless the admin reveals them.
-export const maskEmail = (email) => {
-  const [local, domain] = String(email).split("@");
-  return `${local.slice(0, 2)}•••@${domain ?? ""}`;
-};
 
 // Admin "tirage" page: each round the server draws one email among those that
 // have not won yet. The page spins through the emails, then lands on the
@@ -22,7 +15,6 @@ export default function RafflePage() {
   const [display, setDisplay] = useState(""); // email shown in the big box
   const [current, setCurrent] = useState(null); // winner of the last draw
   const [spinning, setSpinning] = useState(false);
-  const [reveal, setReveal] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [error, setError] = useState("");
   const timer = useRef(0);
@@ -35,8 +27,6 @@ export default function RafflePage() {
     })();
     return () => window.clearTimeout(timer.current);
   }, []);
-
-  const show = (email) => (reveal ? email : maskEmail(email));
 
   const spinTo = (pool, winner) =>
     new Promise((resolve) => {
@@ -61,7 +51,6 @@ export default function RafflePage() {
     setError("");
     setSpinning(true);
     setCurrent(null);
-    setReveal(false);
     const poolBefore = state.pool;
     const result = await drawRaffle();
     if (!result.success) {
@@ -134,18 +123,8 @@ export default function RafflePage() {
             }`}
             data-testid="raffle-display"
           >
-            {display ? show(display) : "· · ·"}
+            {display || "· · ·"}
           </div>
-          {current && (
-            <button
-              type="button"
-              onClick={() => setReveal((v) => !v)}
-              className="inline-flex items-center gap-2 text-sm text-muted hover:text-ink"
-            >
-              {reveal ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {reveal ? t("Hide email") : t("Show full email")}
-            </button>
-          )}
         </div>
 
         <div className="flex flex-col items-center gap-2">
@@ -195,7 +174,7 @@ export default function RafflePage() {
                 {[...state.winners].reverse().map((w) => (
                   <li key={w.round} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                     <span className="text-muted">{t("Round {n}", { n: w.round })}</span>
-                    <span className="break-all font-medium">{show(w.email)}</span>
+                    <span className="break-all font-medium">{w.email}</span>
                   </li>
                 ))}
               </ol>

@@ -118,8 +118,6 @@ const FR = {
   "Emails in the game": "E-mails en jeu",
   "Previous winners leave the game. Their votes still count.":
     "Les gagnants précédents sortent du jeu. Leurs votes comptent toujours.",
-  "Show full email": "Afficher l'e-mail complet",
-  "Hide email": "Masquer l'e-mail",
   "Winners": "Gagnants",
   "No winner yet.": "Aucun gagnant pour l'instant.",
   "Start over": "Recommencer",

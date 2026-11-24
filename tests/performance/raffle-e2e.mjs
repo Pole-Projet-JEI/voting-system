@@ -56,14 +56,9 @@ try {
     const ok = await waitText(p, new RegExp(`Gagnant du tour ${round}`), 15000);
     const shown = await p.locator("[data-testid=raffle-display]").innerText();
     if (round === 1) {
-      check("round 1: a winner is shown, partly hidden", ok && /^[a-z.]{2}•••@example\.com$/.test(shown), shown);
-      await p.screenshot({ path: `${OUT}/raffle-2-winner-masked.png` });
-      await p.click("text=Afficher l'e-mail complet");
-      const full = await p.locator("[data-testid=raffle-display]").innerText();
-      check("'Show full email' reveals the winner", /^[a-z.]+@example\.com$/.test(full) && full.startsWith(shown.slice(0, 2)), full);
-      await p.screenshot({ path: `${OUT}/raffle-3-winner-full.png` });
-      winners.push(full);
-      await p.click("text=Masquer l'e-mail");
+      check("round 1: the winner's full email is shown", ok && /^[a-z.]+@example\.com$/.test(shown), shown);
+      await p.screenshot({ path: `${OUT}/raffle-2-winner.png` });
+      winners.push(shown);
     } else {
       const state = await (await api.get(`${BASE}/api/admin/raffle`)).json();
       winners.push(state.winners.find((w) => w.round === round)?.email);
