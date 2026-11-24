@@ -127,9 +127,9 @@ try {
   const dash = await admin.newPage();
   await dash.goto(`${BASE}${ADMIN}/dashboard`);
   check("9. dashboard shows the per-email table", await waitText(dash, new RegExp(EMAIL.toLowerCase().replace(/\./g, "\\."))));
-  await dash.locator("text=Voters & Login").scrollIntoViewIfNeeded();
+  await dash.locator(`text=${L("Voters & Login", "Votants et connexion")}`).scrollIntoViewIfNeeded();
   await dash.screenshot({ path: `${OUT}/qr-9-dashboard.png`, fullPage: true });
-  await dash.click("text=Show QR code");
+  await dash.click(`text=${L("Show QR code", "Afficher le QR code")}`);
   check("9. projector QR shows the countdown", await waitText(dash, L(/New code in \d+s/, /Nouveau code dans \d+ s/)));
   await dash.waitForTimeout(800);
   await dash.screenshot({ path: `${OUT}/qr-9-projector.png` });
