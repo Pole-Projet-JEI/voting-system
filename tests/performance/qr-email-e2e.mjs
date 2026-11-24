@@ -196,6 +196,7 @@ try {
     await pg.screenshot({ path: `${OUT}/fail-${i}.png` }).catch(() => {});
   }
 } finally {
+  for (const context of browser.contexts()) await context.unrouteAll({ behavior: "ignoreErrors" }).catch(() => {});
   await browser.close();
 }
 
