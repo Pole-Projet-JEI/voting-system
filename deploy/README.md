@@ -12,7 +12,7 @@ phones ──HTTPS──> host nginx ──/api/──> backend1 :3000 (Node, on
 
 Every push to the **deploy branch** deploys by itself (`.github/workflows/ci-cd.yml`).
 
-- **Which branch:** during the event it's `system-de-vote-geolocalisation`, the branch with the QR + email entry. It's set in two places, both defaulting to `main`:
+- **Which branch:** during the event it's `system-de-vote-qr-code`, the branch with the QR + email entry. It's set in two places, both defaulting to `main`:
   - the repository variable `DEPLOY_BRANCH` (which pushes trigger a deploy);
   - `DEPLOY_BRANCH=` in the root `.env` on the server (which commits the server accepts).
 - **How:** CI connects over SSH with a key that may only run `deploy/ci-deploy.sh`. That script checks out the pushed commit of the deploy branch, runs `docker compose up -d --build`, and waits until the site and the API answer.
