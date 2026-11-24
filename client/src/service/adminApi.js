@@ -232,6 +232,23 @@ export const getVoters = async () => {
   }
 };
 
+const raffleCall = async (method, url) => {
+  try {
+    const response = await adminClient.request({ method, url });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || "Failed to reach the draw",
+      errorCode: error.response?.data?.code,
+    };
+  }
+};
+
+export const getRaffle = () => raffleCall("get", routes.ADMIN_RAFFLE);
+export const drawRaffle = () => raffleCall("post", routes.ADMIN_RAFFLE_DRAW);
+export const resetRaffle = () => raffleCall("delete", routes.ADMIN_RAFFLE);
+
 export const setLoginWindow = async (open) => {
   try {
     const response = await adminClient.put(routes.ADMIN_LOGIN_WINDOW, { open });

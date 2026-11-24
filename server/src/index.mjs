@@ -18,6 +18,7 @@ import hasVotedRouter from "./check/hasvoted.mjs";
 import geofenceRouter from "./geofence/geofence-api.mjs";
 import officialResultsRouter from "./admin/apis/official-results.mjs";
 import accessRouter from "./access/access-api.mjs";
+import raffleRouter from "./raffle/raffle-api.mjs";
 import presentingRouter from "./admin/apis/presenting.mjs";
 import visualizationRouter from "./admin/apis/visualization.mjs";
 import teamManagementRouter from "./admin/apis/team-management.mjs";
@@ -125,6 +126,7 @@ app.use(hasVotedRouter);
 app.use(presentingRouter);
 app.use(visualizationRouter);
 app.use(officialResultsRouter);
+app.use(raffleRouter); // /api/admin/raffle (admin): email draw game
 app.use(teamManagementRouter);
 
 const server = app.listen(PORT, '0.0.0.0', () => {

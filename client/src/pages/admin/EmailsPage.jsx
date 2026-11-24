@@ -88,6 +88,9 @@ export default function EmailsPage() {
           <ArrowLeft className="h-4 w-4" />
           {t("Back to dashboard")}
         </Link>
+        <Link to="/jvaFHT7xvivJPJqc1QBRWhfayoj/tirage" className="ml-4 inline-flex items-center gap-2 text-sm text-muted hover:text-ink">
+          {t("Draw game")} →
+        </Link>
 
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

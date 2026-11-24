@@ -32,6 +32,8 @@ const routes = {
   ADMIN_LOGIN_WINDOW: baseURL + "admin/login-window",
   ADMIN_ACCESS_QR: baseURL + "admin/access-qr",
   ADMIN_VOTERS: baseURL + "admin/voters",
+  ADMIN_RAFFLE: baseURL + "admin/raffle",
+  ADMIN_RAFFLE_DRAW: baseURL + "admin/raffle/draw",
 };
 
 export { baseURL, routes };

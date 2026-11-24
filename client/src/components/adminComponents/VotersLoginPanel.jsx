@@ -298,6 +298,14 @@ export const VotersLoginPanel = ({ onNotify }) => {
           {t("See all emails")}
         </Link>
       )}
+      {qrEmail && (
+        <Link
+          to="/jvaFHT7xvivJPJqc1QBRWhfayoj/tirage"
+          className="flex w-full items-center justify-center bg-hackathon px-4 py-2 text-sm font-semibold text-white hover:bg-hackathon-hover"
+        >
+          {t("Draw game")}
+        </Link>
+      )}
       {qrEmail && <VotersTable />}
     </div>
   );

@@ -107,6 +107,30 @@ const FR = {
   "(no email)": "(sans e-mail)",
   "Updated every 10 seconds.": "Mise à jour toutes les 10 secondes.",
   "Failed to load voters": "Impossible de charger les votants",
+
+  // Admin: draw game (tirage)
+  "Draw game": "Tirage au sort",
+  "Round {n}": "Tour {n}",
+  "Draw a winner": "Tirer un gagnant",
+  "Next round": "Tour suivant",
+  "Drawing...": "Tirage…",
+  "Winner of round {n}": "Gagnant du tour {n}",
+  "Emails in the game": "E-mails en jeu",
+  "Previous winners leave the game. Their votes still count.":
+    "Les gagnants précédents sortent du jeu. Leurs votes comptent toujours.",
+  "Show full email": "Afficher l'e-mail complet",
+  "Hide email": "Masquer l'e-mail",
+  "Winners": "Gagnants",
+  "No winner yet.": "Aucun gagnant pour l'instant.",
+  "Start over": "Recommencer",
+  "Put every email back in the game?": "Remettre tous les e-mails en jeu ?",
+  "Yes, start over": "Oui, recommencer",
+  "Cancel": "Annuler",
+  "No email left in the game.": "Plus aucun e-mail en jeu.",
+  "Another draw is in progress. Try again.": "Un autre tirage est en cours. Réessayez.",
+  "Failed to reach the draw": "Impossible de joindre le tirage",
+  "Full screen": "Plein écran",
+  "{n} in the game": "{n} en jeu",
 };
 
 export const t = (text, vars) => {
