@@ -25,6 +25,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: /api/
+        VITE_LANG: ${VITE_LANG:-fr} # fr = French site (vote.jeinsat.com), en = English
     networks:
       - app-network
     ports:
