@@ -63,8 +63,7 @@ const FR = {
   // Server messages a voter can see
   "Login is closed. Wait for the organizers to open it.":
     "La connexion est fermée. Attendez que les organisateurs l'ouvrent.",
-  "This QR code has expired. Scan the code on the screen again.":
-    "Ce QR code a expiré. Scannez à nouveau le code affiché à l'écran.",
+  "Scan the QR code shown on the screen again.": "Scannez à nouveau le QR code affiché à l'écran.",
   "This link is not valid. Scan the QR code on the screen.":
     "Ce lien n'est pas valide. Scannez le QR code affiché à l'écran.",
   "Scan the QR code shown on the screen to vote.": "Scannez le QR code affiché à l'écran pour voter.",

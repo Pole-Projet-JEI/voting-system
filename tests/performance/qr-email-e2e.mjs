@@ -40,7 +40,7 @@ try {
   await api.post(`${BASE}/api/admin/presenting/voting`);
   await api.put(`${BASE}/api/admin/login-window`, { data: { open: true } });
   const qr = await (await api.get(`${BASE}/api/admin/access-qr`)).json();
-  check("admin gets a QR link that rotates every 25 s", qr.open && qr.periodSeconds === 25 && /^\/join\?t=\d+-/.test(qr.path), qr.path);
+  check("admin gets a QR link that rotates every 15 s", qr.open && qr.periodSeconds === 15 && /^\/join\?t=\d+-/.test(qr.path), qr.path);
 
   // ---- 1. plain link without QR ----
   const plain = await (await browser.newContext(MOBILE)).newPage();
@@ -55,11 +55,12 @@ try {
   check("2. the token is removed from the address after scanning", !/t=/.test(v1.url()), v1.url());
   await v1.screenshot({ path: `${OUT}/qr-2-email-form.png` });
 
-  // A photo of the same code, opened 36 s later, is refused.
-  await v1.waitForTimeout(36_000);
+  // A photo of the same code, opened 26 s later (15 s + 10 s grace), is refused.
+  await v1.waitForTimeout(26_000);
   const late = await (await browser.newContext(MOBILE)).newPage();
   await late.goto(`${BASE}${qr.path}`);
-  check("3. the same QR opened 36 s later is refused (expired)", await waitText(late, L(/expired/, /a expiré/)));
+  check("3. the same QR opened 26 s later asks to scan again", await waitText(late, L(/Scan the QR code shown on the screen again/, /Scannez à nouveau le QR code/)));
+  check("3. no 'expired' wording and no red error", !L(/expired/i, /expiré/i).test(await text(late)) && !(await late.locator(".fie-error").count()));
   await late.screenshot({ path: `${OUT}/qr-3-expired.png` });
 
   // v1 typed slowly: the 10-minute pass still lets them in.
@@ -68,7 +69,7 @@ try {
   check("4. an invalid email is refused", await waitText(v1, L(/valid email/, /adresse e-mail valide/)));
   await v1.fill("#voter-email", `  ${EMAIL.toUpperCase()} `);
   await v1.click("button.join-email-submit");
-  check("4. 36 s after scanning, typing the email still works (10-min pass)", await waitText(v1, L(/Submit Vote/, /Envoyer mon vote/)), await text(v1).then((t) => t.slice(0, 80)));
+  check("4. 26 s after scanning, typing the email still works (10-min pass)", await waitText(v1, L(/Submit Vote/, /Envoyer mon vote/)), await text(v1).then((t) => t.slice(0, 80)));
   await v1.screenshot({ path: `${OUT}/qr-4-vote-form.png` });
   check("4. no location step in this mode", !L(/Location check/, /Vérification de la position/).test(await text(v1)));
   await v1.click("#vote-yes");

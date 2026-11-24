@@ -15,28 +15,28 @@ const {
   SCAN_PASS_MAX_AGE,
 } = await import("../src/access/access-api.mjs");
 
-const T0 = 1_800_000_000_000; // multiple of 25 s
+const T0 = 1_800_000_000_000; // multiple of 15 s
 
 // ---- rotating token ----
 
-test("a fresh token is accepted during its 25 s window", () => {
+test("a fresh token is accepted during its 15 s window", () => {
   const { token, expiresAt, periodSeconds } = createQrToken(T0 + 1000);
-  assert.equal(periodSeconds, 25);
-  assert.equal(expiresAt, T0 + 25_000);
+  assert.equal(periodSeconds, 15);
+  assert.equal(expiresAt, T0 + 15_000);
   assert.deepEqual(verifyQrToken(token, T0 + 1000), { ok: true });
-  assert.deepEqual(verifyQrToken(token, T0 + 24_999), { ok: true });
+  assert.deepEqual(verifyQrToken(token, T0 + 14_999), { ok: true });
 });
 
 test("the previous token keeps working only for the 10 s grace, then expires", () => {
   const { token } = createQrToken(T0);
-  assert.deepEqual(verifyQrToken(token, T0 + 34_999), { ok: true });
-  assert.deepEqual(verifyQrToken(token, T0 + 35_000), { ok: false, error: "QR_EXPIRED" });
+  assert.deepEqual(verifyQrToken(token, T0 + 24_999), { ok: true });
+  assert.deepEqual(verifyQrToken(token, T0 + 25_000), { ok: false, error: "QR_EXPIRED" });
   assert.deepEqual(verifyQrToken(token, T0 + 3_600_000), { ok: false, error: "QR_EXPIRED" });
 });
 
-test("each 25 s window has a different token", () => {
-  assert.notEqual(createQrToken(T0).token, createQrToken(T0 + 25_000).token);
-  assert.equal(createQrToken(T0).token, createQrToken(T0 + 24_000).token);
+test("each 15 s window has a different token", () => {
+  assert.notEqual(createQrToken(T0).token, createQrToken(T0 + 15_000).token);
+  assert.equal(createQrToken(T0).token, createQrToken(T0 + 14_000).token);
 });
 
 test("forged, altered or malformed tokens are refused", () => {

@@ -42,7 +42,7 @@ const QrOverlay = ({ onClose }) => {
   );
 };
 
-// qr-email mode: full-screen QR code that changes every 25 s. Each code is a
+// qr-email mode: full-screen QR code that changes every 15 s. Each code is a
 // signed link that works for its window (+ a short grace), then a new one
 // appears. The server's clock decides when it rotates.
 const RotatingQrOverlay = ({ onClose }) => {
@@ -116,7 +116,7 @@ const RotatingQrOverlay = ({ onClose }) => {
           <img
             key={qr.url}
             src={qr.dataUrl}
-            alt="QR code de vote (change toutes les 25 secondes)"
+            alt="QR code de vote (change toutes les 15 secondes)"
             className="h-auto w-[min(70vh,90vw)] bg-white"
           />
           <div className="w-[min(70vh,90vw)]">
@@ -282,7 +282,7 @@ export const VotersLoginPanel = ({ onNotify }) => {
       </Button>
       <p className="text-xs text-faint">
         {qrEmail
-          ? "Le QR code change toutes les 25 s. Les votants le scannent puis saisissent leur e-mail (un votant par e-mail). Seuls les votants qui ont voté pour toutes les équipes sont comptés."
+          ? "Le QR code change toutes les 15 s. Les votants le scannent puis saisissent leur e-mail (un votant par e-mail). Seuls les votants qui ont voté pour toutes les équipes sont comptés."
           : "En ouvrant le lien, chaque téléphone reçoit sa propre session de votant (cookie). Les votes ne sont acceptés que depuis la salle, et seuls les votants qui ont voté pour toutes les équipes sont comptés."}
       </p>
 

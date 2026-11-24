@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 // Rotating join link shown as a QR code on the venue screen.
 //
-// Time is cut into windows of QR_ROTATE_SECONDS (default 25 s). Each window
+// Time is cut into windows of QR_ROTATE_SECONDS (default 15 s). Each window
 // has its own token "<window>-<mac>", where mac = HMAC(secret, window). The
 // server keeps no state: any instance can check a token with the secret.
 //
@@ -11,7 +11,7 @@ import crypto from "crypto";
 // last second still gets in while the page loads. After that it is refused,
 // so a photo of the QR code sent outside stops working within ~35 s.
 
-const DEFAULT_PERIOD_SECONDS = 25;
+const DEFAULT_PERIOD_SECONDS = 15;
 const DEFAULT_GRACE_SECONDS = 10;
 const MAC_LENGTH = 22; // base64url chars, ~132 bits
 const TOKEN_PATTERN = /^(\d{1,12})-([A-Za-z0-9_-]{22})$/;

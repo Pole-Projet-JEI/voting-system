@@ -25,7 +25,7 @@ const route = Router();
 //     remembers which voter this browser is, so an expired session on the
 //     same phone gives back the same voter.
 //
-//   "qr-email": the projector shows a QR code that changes every 25 s.
+//   "qr-email": the projector shows a QR code that changes every 15 s.
 //     Scanning it (POST /api/join/scan with the token) gives the phone a
 //     10-minute pass, so the voter has time to type an email. POST /api/join
 //     with the email then needs that pass. The email (not verified) is the
@@ -75,7 +75,7 @@ const joinLimit = rateLimit({
 });
 
 const joinFailureMessages = {
-  QR_EXPIRED: "This QR code has expired. Scan the code on the screen again.",
+  QR_EXPIRED: "Scan the QR code shown on the screen again.",
   QR_INVALID: "This link is not valid. Scan the QR code on the screen.",
   QR_REQUIRED: "Scan the QR code shown on the screen to vote.",
   EMAIL_INVALID: "Enter a valid email address.",
