@@ -27,10 +27,10 @@ test("a fresh token is accepted during its 15 s window", () => {
   assert.deepEqual(verifyQrToken(token, T0 + 14_999), { ok: true });
 });
 
-test("the previous token keeps working only for the 10 s grace, then expires", () => {
+test("the previous token keeps working only for the 20 s grace, then expires", () => {
   const { token } = createQrToken(T0);
-  assert.deepEqual(verifyQrToken(token, T0 + 24_999), { ok: true });
-  assert.deepEqual(verifyQrToken(token, T0 + 25_000), { ok: false, error: "QR_EXPIRED" });
+  assert.deepEqual(verifyQrToken(token, T0 + 34_999), { ok: true });
+  assert.deepEqual(verifyQrToken(token, T0 + 35_000), { ok: false, error: "QR_EXPIRED" });
   assert.deepEqual(verifyQrToken(token, T0 + 3_600_000), { ok: false, error: "QR_EXPIRED" });
 });
 

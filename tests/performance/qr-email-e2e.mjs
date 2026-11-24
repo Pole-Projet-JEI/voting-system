@@ -55,11 +55,11 @@ try {
   check("2. the token is removed from the address after scanning", !/t=/.test(v1.url()), v1.url());
   await v1.screenshot({ path: `${OUT}/qr-2-email-form.png` });
 
-  // A photo of the same code, opened 26 s later (15 s + 10 s grace), is refused.
-  await v1.waitForTimeout(26_000);
+  // A photo of the same code, opened 36 s later (15 s + 20 s grace), is refused.
+  await v1.waitForTimeout(36_000);
   const late = await (await browser.newContext(MOBILE)).newPage();
   await late.goto(`${BASE}${qr.path}`);
-  check("3. the same QR opened 26 s later asks to scan again", await waitText(late, L(/Scan the QR code shown on the screen again/, /Scannez à nouveau le QR code/)));
+  check("3. the same QR opened 36 s later asks to scan again", await waitText(late, L(/Scan the QR code shown on the screen again/, /Scannez à nouveau le QR code/)));
   check("3. no 'expired' wording and no red error", !L(/expired/i, /expiré/i).test(await text(late)) && !(await late.locator(".fie-error").count()));
   await late.screenshot({ path: `${OUT}/qr-3-expired.png` });
 
@@ -69,7 +69,7 @@ try {
   check("4. an invalid email is refused", await waitText(v1, L(/valid email/, /adresse e-mail valide/)));
   await v1.fill("#voter-email", `  ${EMAIL.toUpperCase()} `);
   await v1.click("button.join-email-submit");
-  check("4. 26 s after scanning, typing the email still works (10-min pass)", await waitText(v1, L(/Submit Vote/, /Envoyer mon vote/)), await text(v1).then((t) => t.slice(0, 80)));
+  check("4. 36 s after scanning, typing the email still works (10-min pass)", await waitText(v1, L(/Submit Vote/, /Envoyer mon vote/)), await text(v1).then((t) => t.slice(0, 80)));
   await v1.screenshot({ path: `${OUT}/qr-4-vote-form.png` });
   check("4. no location step in this mode", !L(/Location check/, /Vérification de la position/).test(await text(v1)));
   await v1.click("#vote-yes");
@@ -86,8 +86,12 @@ try {
   check("6. typing an email without scanning is refused", await waitText(nopass, L(/Scan the QR code/, /Scannez le QR code/)));
 
   // ---- 7. same email typed by someone else = refused ----
-  const qr2 = await (await api.get(`${BASE}/api/admin/access-qr`)).json();
+  // Load the site once first: on a slow test link the cold page load alone can
+  // outlast the code; a real phone does this in a few seconds.
   const v2 = await (await browser.newContext(MOBILE)).newPage();
+  await v2.goto(`${BASE}/register`);
+  await waitText(v2, L(/scan the QR code/, /scannez le QR code/));
+  const qr2 = await (await api.get(`${BASE}/api/admin/access-qr`)).json();
   await v2.goto(`${BASE}${qr2.path}`);
   await waitText(v2, L(/Your email/, /Votre adresse e-mail/));
   await v2.fill("#voter-email", EMAIL);
@@ -100,9 +104,10 @@ try {
 
   // 5 phones type the same new email at the same instant: only one gets in.
   const RACE = `race.${Date.now()}@example.com`;
+  const qr3 = await (await api.get(`${BASE}/api/admin/access-qr`)).json();
   const phones = await Promise.all([1, 2, 3, 4, 5].map(async () => {
     const ctx = await browser.newContext(MOBILE);
-    await ctx.request.post(`${BASE}/api/join/scan`, { data: { t: new URL(`${BASE}${qr2.path}`).searchParams.get("t") } });
+    await ctx.request.post(`${BASE}/api/join/scan`, { data: { t: new URL(`${BASE}${qr3.path}`).searchParams.get("t") } });
     return ctx;
   }));
   const raced = await Promise.all(phones.map((ctx) => ctx.request.post(`${BASE}/api/join`, { data: { email: RACE } })));
@@ -152,6 +157,9 @@ try {
   await dash.screenshot({ path: `${OUT}/qr-9-projector.png` });
 } catch (error) {
   check("run completed", false, error.message.split("\n")[0]);
+  for (const [i, pg] of browser.contexts().flatMap((c) => c.pages()).entries()) {
+    await pg.screenshot({ path: `${OUT}/fail-${i}.png` }).catch(() => {});
+  }
 } finally {
   await browser.close();
 }

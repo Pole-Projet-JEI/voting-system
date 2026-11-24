@@ -6,7 +6,7 @@ import { VoterBrand } from "../register/RegisterPage";
 import { t } from "../../i18n";
 
 // qr-email mode. The QR code on the screen opens /join?t=<token>:
-//   1. the token is checked at once (it only lives 15 s + 10 s) and the phone
+//   1. the token is checked at once (it only lives 15 s + 20 s) and the phone
 //      gets a 10-minute pass; the token is then removed from the address;
 //   2. the voter types an email at their own pace and joins.
 // /join without a token shows the email form directly (reload, or pass

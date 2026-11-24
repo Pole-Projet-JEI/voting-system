@@ -7,12 +7,12 @@ import crypto from "crypto";
 // server keeps no state: any instance can check a token with the secret.
 //
 // A token is accepted during its own window, plus a short grace period after
-// it rotates (QR_GRACE_SECONDS, default 10 s) so someone who scanned at the
-// last second still gets in while the page loads. After that it is refused,
-// so a photo of the QR code sent outside stops working within ~35 s.
+// it rotates (QR_GRACE_SECONDS, default 20 s) so someone who scanned at the
+// last second still gets in while the page loads on a slow phone. After that it is refused,
+// so a photo of the QR code sent outside stops working within 35 s.
 
 const DEFAULT_PERIOD_SECONDS = 15;
-const DEFAULT_GRACE_SECONDS = 10;
+const DEFAULT_GRACE_SECONDS = 20;
 const MAC_LENGTH = 22; // base64url chars, ~132 bits
 const TOKEN_PATTERN = /^(\d{1,12})-([A-Za-z0-9_-]{22})$/;
 
