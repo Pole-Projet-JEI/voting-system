@@ -126,7 +126,6 @@ const RotatingQrOverlay = ({ onClose }) => {
                 style={{ width: `${fraction * 100}%` }}
               />
             </div>
-            <p className="mt-3 text-center text-xl text-muted">{t("New code in {s}s", { s: secondsLeft })}</p>
           </div>
         </>
       )}

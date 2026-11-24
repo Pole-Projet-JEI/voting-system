@@ -83,7 +83,6 @@ const FR = {
 
   // Projector (admin "Show QR code")
   "Scan to vote": "Scannez pour voter",
-  "New code in {s}s": "Nouveau code dans {s} s",
   "Login is closed. Open login in the dashboard to show the QR code.":
     "La connexion est fermée. Ouvrez la connexion dans le tableau de bord pour afficher le QR code.",
   "Loading...": "Chargement…",

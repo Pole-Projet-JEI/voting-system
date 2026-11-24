@@ -159,8 +159,9 @@ try {
   await dash.locator(`text=${L("Voters & Login", "Votants et connexion")}`).scrollIntoViewIfNeeded();
   await dash.screenshot({ path: `${OUT}/qr-9-dashboard.png`, fullPage: true });
   await dash.click(`text=${L("Show QR code", "Afficher le QR code")}`);
-  check("9. projector QR shows the countdown", await waitText(dash, L(/New code in \d+s/, /Nouveau code dans \d+ s/)));
+  await dash.waitForSelector("img[alt^='QR code']");
   await dash.waitForTimeout(800);
+  check("9. projector shows the QR code without the countdown text", !/Nouveau code dans|New code in/.test(await text(dash)));
   await dash.screenshot({ path: `${OUT}/qr-9-projector.png` });
 } catch (error) {
   check("run completed", false, error.message.split("\n")[0]);
