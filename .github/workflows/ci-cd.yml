@@ -1,0 +1,67 @@
+# Tests every pull request; deploys every push to main to the event server (https://vote.jeinsat.com, AWS Milan).
+#
+# Deploying is one SSH command. CI's key is a forced command on the server (deploy/ci-deploy.sh):
+# it can only check out a commit of main and restart the stack. Settings, in the GitHub
+# environment "production" (deployments from main only):
+#   secret DEPLOY_SSH_KEY, variables DEPLOY_HOST and DEPLOY_KNOWN_HOSTS.
+# Without DEPLOY_HOST (after the event), the deploy job is skipped.
+name: CI/CD
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+permissions:
+    contents: read
+
+jobs:
+    test:
+        name: Tests and build
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 22 # same as the Dockerfiles
+                  cache: npm
+                  cache-dependency-path: |
+                      server/package-lock.json
+                      client/package-lock.json
+            - name: Server tests
+              working-directory: server
+              env:
+                  VOTER_CODE_PEPPER: ci-only-test-pepper
+              run: npm ci && npm test
+            - name: Client tests and build
+              working-directory: client
+              run: npm ci && node --test test/ && npm run build
+            - name: Deploy script check
+              run: bash deploy/ci-deploy.test.sh
+
+    deploy:
+        name: Deploy to the server
+        needs: test
+        if: github.event_name == 'push' && vars.DEPLOY_HOST != ''
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        concurrency:
+            group: deploy # one deploy at a time; a second merge waits for the first
+            cancel-in-progress: false
+        environment:
+            name: production
+            url: https://vote.jeinsat.com
+        steps:
+            - name: Deploy
+              env:
+                  SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+                  KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+                  SERVER: ubuntu@${{ vars.DEPLOY_HOST }}
+              run: |
+                  install -m 700 -d ~/.ssh
+                  printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+                  chmod 600 ~/.ssh/id_ed25519
+                  printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+                  # shellcheck disable=SC2029 # $GITHUB_SHA is meant to expand here
+                  ssh "$SERVER" "deploy $GITHUB_SHA"
