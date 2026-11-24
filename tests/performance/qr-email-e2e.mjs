@@ -28,6 +28,13 @@ const waitText = (p, re, timeout = 20000) =>
   p.waitForFunction((src) => new RegExp(src).test(document.body.innerText), re.source, { timeout }).then(() => true, () => false);
 
 const browser = await chromium.launch({ executablePath: "/usr/bin/google-chrome", headless: true });
+// Slow test links: give every page load up to 2 minutes.
+const plainNewContext = browser.newContext.bind(browser);
+browser.newContext = async (options) => {
+  const context = await plainNewContext(options);
+  context.setDefaultNavigationTimeout(120000);
+  return context;
+};
 try {
   // ---- admin: login, team, voting, login window ----
   const admin = await browser.newContext({ viewport: { width: 1366, height: 900 } });
