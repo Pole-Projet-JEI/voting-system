@@ -28,8 +28,10 @@ const FR = {
   "name@example.com": "nom@exemple.com",
   "Joining...": "Connexion…",
   "Start voting": "Commencer à voter",
-  "One email per person. Use the same email if you switch phones.":
-    "Une adresse e-mail par personne. Utilisez la même si vous changez de téléphone.",
+  "One email per person. An email can be used only once.":
+    "Une adresse e-mail par personne. Chaque adresse ne peut être utilisée qu'une seule fois.",
+  "This email has already been used. Each email can join only once.":
+    "Cette adresse e-mail a déjà été utilisée. Chaque adresse ne peut voter qu'une seule fois.",
   "Scan the QR code shown on the screen again with your phone camera.":
     "Scannez à nouveau le QR code affiché à l'écran avec l'appareil photo de votre téléphone.",
   "Unable to connect to the server. Check your connection and try again.":

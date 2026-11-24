@@ -84,20 +84,36 @@ try {
   await nopass.click("button.join-email-submit");
   check("6. typing an email without scanning is refused", await waitText(nopass, L(/Scan the QR code/, /Scannez le QR code/)));
 
-  // ---- 7. same email on a second phone = same voter ----
+  // ---- 7. same email typed by someone else = refused ----
   const qr2 = await (await api.get(`${BASE}/api/admin/access-qr`)).json();
   const v2 = await (await browser.newContext(MOBILE)).newPage();
   await v2.goto(`${BASE}${qr2.path}`);
   await waitText(v2, L(/Your email/, /Votre adresse e-mail/));
   await v2.fill("#voter-email", EMAIL);
   await v2.click("button.join-email-submit");
-  check("7. same email on another phone: already voted, cannot vote twice", await waitText(v2, L(/Thank you for your vote/, /Merci pour votre vote/)), await text(v2).then((t) => t.slice(0, 80)));
+  check("7. same email on another phone is refused", await waitText(v2, L(/already been used/, /déjà été utilisée/)), await text(v2).then((t) => t.slice(0, 120)));
+  check("7. the other phone stays on the email form (no vote page)", !L(/Submit Vote/, /Envoyer mon vote/).test(await text(v2)));
+  await v2.screenshot({ path: `${OUT}/qr-7-email-taken.png` });
+  await v1.reload();
+  check("7. the first phone is still logged in (not kicked out)", await waitText(v1, L(/Thank you for your vote/, /Merci pour votre vote/)));
+
+  // 5 phones type the same new email at the same instant: only one gets in.
+  const RACE = `race.${Date.now()}@example.com`;
+  const phones = await Promise.all([1, 2, 3, 4, 5].map(async () => {
+    const ctx = await browser.newContext(MOBILE);
+    await ctx.request.post(`${BASE}/api/join/scan`, { data: { t: new URL(`${BASE}${qr2.path}`).searchParams.get("t") } });
+    return ctx;
+  }));
+  const raced = await Promise.all(phones.map((ctx) => ctx.request.post(`${BASE}/api/join`, { data: { email: RACE } })));
+  const codes = raced.map((r) => r.status()).sort();
+  check("7. same email at the same instant on 5 phones: 1 accepted, 4 refused", codes.join(",") === "201,409,409,409,409", codes.join(","));
 
   // ---- 8. admin list ----
   const list = await (await api.get(`${BASE}/api/admin/voters`)).json();
   const mine = list.voters.filter((v) => v.email === EMAIL.toLowerCase());
   check("8. admin list: one voter for that email, 1/1 team", mine.length === 1 && mine[0].teamsVoted === 1 && list.totalTeams === 1, JSON.stringify(mine));
   check("8. the email typed without scanning was not recorded", !list.voters.some((v) => v.email === "someone@example.com"));
+  check("8. the raced email exists once", list.voters.filter((v) => v.email === RACE).length === 1);
 
   // Test browser only: hide the first-login password dialog.
   await admin.route("**/api/admin/auth", async (route) => {

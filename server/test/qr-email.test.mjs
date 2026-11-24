@@ -150,3 +150,10 @@ test("an invalid email is refused", async () => {
   assert.equal(res.statusCode, 400);
   assert.equal(res.body.code, "EMAIL_INVALID");
 });
+
+test("an email already used by someone else is refused (409 EMAIL_TAKEN), no session given", async () => {
+  const res = await join({ scanPassOk: () => true, findByEmail: async () => null }, { email: "ali@gmail.com" });
+  assert.equal(res.statusCode, 409);
+  assert.equal(res.body.code, "EMAIL_TAKEN");
+  assert.equal(res.cookies.connectionCookie, undefined);
+});

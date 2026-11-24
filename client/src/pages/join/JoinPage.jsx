@@ -93,7 +93,7 @@ export default function JoinPage() {
           <button type="submit" className="fie-btn join-email-submit" disabled={busy || !email.trim()}>
             {busy ? t("Joining...") : t("Start voting")}
           </button>
-          <p className="register-hint">{t("One email per person. Use the same email if you switch phones.")}</p>
+          <p className="register-hint">{t("One email per person. An email can be used only once.")}</p>
           {error && <p className="fie-error" role="alert">{error}</p>}
         </form>
       )}

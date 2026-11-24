@@ -79,6 +79,7 @@ const joinFailureMessages = {
   QR_INVALID: "This link is not valid. Scan the QR code on the screen.",
   QR_REQUIRED: "Scan the QR code shown on the screen to vote.",
   EMAIL_INVALID: "Enter a valid email address.",
+  EMAIL_TAKEN: "This email has already been used. Each email can join only once.",
 };
 
 const fail = (res, status, code) =>
@@ -98,14 +99,14 @@ export const hasValidScanPass = (req, now = Date.now()) => {
   return scannedAt <= now + 5_000 && now - scannedAt < SCAN_PASS_MAX_AGE;
 };
 
-const findEmailVoter = async (email) => {
-  const existing = await Voter.findOne({ email });
-  if (existing) return existing;
+// Each email can join only once: the first phone that types it owns it.
+// Returns null when the email is already taken (even at the same instant:
+// the unique index lets only one create succeed).
+const claimEmailVoter = async (email) => {
   try {
     return await Voter.create({ email });
   } catch (error) {
-    // Two phones joined with the same email at the same moment.
-    if (error?.code === 11000) return Voter.findOne({ email });
+    if (error?.code === 11000) return null;
     throw error;
   }
 };
@@ -133,7 +134,7 @@ export const createJoinHandler =
   ({
     findSessionVoter = findAuthenticatedVoter,
     findDevice = findDeviceVoter,
-    findByEmail = findEmailVoter,
+    findByEmail = claimEmailVoter,
     createVoter = () => Voter.create({}),
     checkOpen = isLoginOpen,
     mode = getAccessMode,
@@ -159,6 +160,9 @@ export const createJoinHandler =
           return fail(res, 400, "EMAIL_INVALID");
         }
         const voter = await findByEmail(email);
+        if (!voter) {
+          return fail(res, 409, "EMAIL_TAKEN");
+        }
         await startSession(res, voter);
         res.clearCookie(SCAN_COOKIE, cookieBase());
         return res.status(201).json({ status: "succeeded" });
