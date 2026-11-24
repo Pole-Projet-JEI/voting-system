@@ -36,7 +36,7 @@ jobs:
               run: npm ci && npm test
             - name: Client tests and build
               working-directory: client
-              run: npm ci && node --test test/ && npm run build
+              run: npm ci && node --test test/*.test.mjs && npm run build
             - name: Deploy script check
               run: bash deploy/ci-deploy.test.sh
 
