@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # The only command CI's SSH key may run on the server. It is a forced command in ~/.ssh/authorized_keys:
 #   restrict,command="bash /home/ubuntu/apps/voting-system/deploy/ci-deploy.sh" ssh-ed25519 AAAA... github-actions
-# so a leaked key can redeploy a commit of main, nothing else.
+# so a leaked key can redeploy a commit of the deploy branch, nothing else.
 #
 # CI sends:  deploy <commit sha>
+# The deploy branch is DEPLOY_BRANCH in the root .env on the server (default main), not something CI chooses.
 #
 # Everything sits inside { } so bash reads the whole file before running it:
 # "git reset" may rewrite this very file.
@@ -16,8 +17,13 @@
     fi
 
     cd "$(dirname "$0")/.."
-    git fetch -q origin main
-    git merge-base --is-ancestor "$sha" origin/main || { echo "refused: $sha is not on main" >&2; exit 1; }
+    branch=main
+    if [ -f .env ]; then
+        branch=$(sed -n 's/^DEPLOY_BRANCH=//p' .env | tail -1)
+        branch=${branch:-main}
+    fi
+    git fetch -q origin "$branch"
+    git merge-base --is-ancestor "$sha" "origin/$branch" || { echo "refused: $sha is not on $branch" >&2; exit 1; }
     git reset -q --hard "$sha"
 
     # Rebuilds what changed. A new backend drops the live connections; pages reconnect on their own.

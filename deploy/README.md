@@ -10,9 +10,12 @@ phones ──HTTPS──> host nginx ──/api/──> backend1 :3000 (Node, on
 
 ## Deploys
 
-Every merge to `main` deploys by itself (`.github/workflows/ci-cd.yml`).
+Every push to the **deploy branch** deploys by itself (`.github/workflows/ci-cd.yml`).
 
-- **How:** CI connects over SSH with a key that may only run `deploy/ci-deploy.sh`. That script checks out the merged commit of `main`, runs `docker compose up -d --build`, and waits until the site and the API answer.
+- **Which branch:** during the event it's `system-de-vote-geolocalisation`, the branch with the QR + email entry. It's set in two places, both defaulting to `main`:
+  - the repository variable `DEPLOY_BRANCH` (which pushes trigger a deploy);
+  - `DEPLOY_BRANCH=` in the root `.env` on the server (which commits the server accepts).
+- **How:** CI connects over SSH with a key that may only run `deploy/ci-deploy.sh`. That script checks out the pushed commit of the deploy branch, runs `docker compose up -d --build`, and waits until the site and the API answer.
 - **Logs:** each run is in the repo's Actions tab.
 
 **Don't merge while a vote is open.** A new backend closes the live connections. Pages reconnect within seconds, but a vote sent during the restart fails.
@@ -34,10 +37,11 @@ Every merge to `main` deploys by itself (`.github/workflows/ci-cd.yml`).
    - Make a key with `ssh-keygen -t ed25519 -N "" -f ci`.
    - On the server, add this line to `~/.ssh/authorized_keys`:
      `restrict,command="bash /home/ubuntu/apps/voting-system/deploy/ci-deploy.sh" <contents of ci.pub>`.
-   - In GitHub, environment `production` (deployments from `main` only), set:
+   - In GitHub, environment `production` (deployments from the deploy branch only), set:
      - the secret `DEPLOY_SSH_KEY` (the contents of `ci`),
      - the variable `DEPLOY_HOST` (the IP),
      - the variable `DEPLOY_KNOWN_HOSTS` (the output of `ssh-keyscan <IP>`).
+   - Set the repository variable `DEPLOY_BRANCH` and `DEPLOY_BRANCH=` in the server's root `.env` to the same branch, and add that branch to the environment's allowed branches.
 
 ## After the event
 
