@@ -9,11 +9,13 @@ const { createQrToken, verifyQrToken } = await import("../src/access/qr-token.mj
 const {
   createJoinHandler,
   createScanHandler,
+  createScreenHandler,
   hasValidScanPass,
   normalizeEmail,
   SCAN_COOKIE,
   SCAN_PASS_MAX_AGE,
 } = await import("../src/access/access-api.mjs");
+const { newScreenKey, SCREEN_KEY_PATTERN } = await import("../src/access/login-window.mjs");
 
 const T0 = 1_800_000_000_000; // multiple of 15 s
 
@@ -156,4 +158,40 @@ test("an email already used by someone else is refused (409 EMAIL_TAKEN), no ses
   assert.equal(res.statusCode, 409);
   assert.equal(res.body.code, "EMAIL_TAKEN");
   assert.equal(res.cookies.connectionCookie, undefined);
+});
+
+// ---- public projector screen ----
+
+const screen = async (deps, key) => {
+  const res = createResponse();
+  res.set = () => res;
+  await createScreenHandler({ mode: () => "qr-email", payload: async () => ({ open: true, path: "/join?t=x" }), ...deps })(
+    { params: { key } },
+    res
+  );
+  return res;
+};
+
+test("public screen: the right key gets the QR code", async () => {
+  const res = await screen({ checkKey: async (k) => k === "Ab3dEf7hJk" }, "Ab3dEf7hJk");
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.path, "/join?t=x");
+});
+
+test("public screen: a wrong key gets 404 and no QR code", async () => {
+  let asked = 0;
+  const res = await screen({ checkKey: async () => false, payload: async () => { asked += 1; } }, "wrongKey00");
+  assert.equal(res.statusCode, 404);
+  assert.equal(asked, 0);
+});
+
+test("public screen: off outside qr-email mode", async () => {
+  const res = await screen({ mode: () => "link", checkKey: async () => true }, "Ab3dEf7hJk");
+  assert.equal(res.statusCode, 404);
+});
+
+test("screen keys are 10 random letters/digits", () => {
+  const keys = new Set(Array.from({ length: 200 }, newScreenKey));
+  assert.equal(keys.size, 200);
+  for (const key of keys) assert.match(key, SCREEN_KEY_PATTERN);
 });

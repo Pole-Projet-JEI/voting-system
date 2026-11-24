@@ -104,6 +104,7 @@ const toFailure = (error, fallback) => ({
   success: false,
   error: error.response?.data?.message || fallback,
   errorCode: error.response?.data?.code,
+  status: error.response?.status,
   networkError: !error.response,
   retryAfterSeconds: Number(error.response?.data?.retryAfterSeconds || 0),
 });
@@ -135,5 +136,15 @@ export const joinVoting = async (body = {}) => {
     return { success: true, data: response.data };
   } catch (error) {
     return toFailure(error, "Impossible de rejoindre le vote");
+  }
+};
+
+// Public projector screen (/qr/<key>): the rotating QR code, no login.
+export const getScreenQr = async (key) => {
+  try {
+    const response = await apiClient.get(routes.SCREEN + encodeURIComponent(key));
+    return { success: true, data: response.data };
+  } catch (error) {
+    return toFailure(error, "Impossible de charger le QR code");
   }
 };

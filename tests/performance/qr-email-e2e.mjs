@@ -190,6 +190,30 @@ try {
   await lp2.goto(`${BASE}${ADMIN}/dashboard`);
   await lp2.waitForTimeout(2000);
   check("11. a new tab stays logged in (session kept)", /\/dashboard$/.test(lp2.url()), lp2.url());
+
+  // ---- 12. public projector screen /qr/<key>, no login ----
+  await dash.bringToFront();
+  await dash.reload();
+  const link = await dash.locator("[data-testid=public-screen] a").getAttribute("href", { timeout: 60000 });
+  check("12. dashboard shows the public screen link", /\/qr\/[A-Za-z0-9]{10}$/.test(link || ""), link);
+  const pub = await (await browser.newContext({ viewport: { width: 1366, height: 900 } })).newPage();
+  await pub.goto(link.replace(/^https?:\/\/[^/]+/, BASE));
+  check("12. the public screen shows the QR without logging in", await pub.waitForSelector("img[alt^='QR code']", { timeout: 60000 }).then(() => true, () => false) && !/\/login/.test(pub.url()), pub.url());
+  await pub.screenshot({ path: `${OUT}/qr-12-public-screen.png` });
+  const key = link.split("/").pop();
+  const pubQr = await (await (await browser.newContext()).request.get(`${BASE}/api/screen/${key}`)).json();
+  const scanCtx = await browser.newContext(MOBILE);
+  const scanRes = await scanCtx.request.post(`${BASE}/api/join/scan`, { data: { t: new URL(`${BASE}${pubQr.path}`).searchParams.get("t") } });
+  check("12. the public screen's QR code lets a phone in", scanRes.ok(), String(scanRes.status()));
+  const bad = await (await browser.newContext()).newPage();
+  await bad.goto(`${BASE}/qr/AAAAAAAAAA`);
+  check("12. a wrong key shows 'lien non valide' and no QR", await waitText(bad, /lien d'écran n'est pas valide/) && !(await bad.locator("img[alt^='QR code']").count()));
+  await dash.click("text=Changer le lien");
+  await dash.click("text=Oui, changer");
+  await dash.waitForFunction((old) => document.querySelector("[data-testid=public-screen] a")?.getAttribute("href") !== old, link, { timeout: 20000 });
+  const oldRes = await (await browser.newContext()).request.get(`${BASE}/api/screen/${key}`);
+  check("12. after 'Changer le lien' the old link stops working", oldRes.status() === 404, String(oldRes.status()));
+  check("12. the open public screen switches to 'lien non valide'", await waitText(pub, /lien d'écran n'est pas valide/, 30000));
 } catch (error) {
   check("run completed", false, error.message.split("\n")[0]);
   for (const [i, pg] of browser.contexts().flatMap((c) => c.pages()).entries()) {

@@ -34,6 +34,8 @@ const routes = {
   ADMIN_VOTERS: baseURL + "admin/voters",
   ADMIN_RAFFLE: baseURL + "admin/raffle",
   ADMIN_RAFFLE_DRAW: baseURL + "admin/raffle/draw",
+  ADMIN_SCREEN_KEY: baseURL + "admin/screen-key",
+  SCREEN: baseURL + "screen/",
 };
 
 export { baseURL, routes };

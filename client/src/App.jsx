@@ -6,6 +6,7 @@ import "./app.css";
 import RegisterPage from "./pages/register/RegisterPage";
 import JoinPage from "./pages/join/JoinPage";
 import EmailsPage from "./pages/admin/EmailsPage";
+import PublicQrPage from "./pages/PublicQrPage";
 import QrScreenPage from "./pages/admin/QrScreenPage";
 import RafflePage from "./pages/admin/RafflePage";
 import AdminPage from "./pages/admin/AdminPage";
@@ -57,6 +58,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/qr/:key" element={<PublicQrPage />} />
           <Route element={<GlobalLayout />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/register" element={<RegisterPage />} />

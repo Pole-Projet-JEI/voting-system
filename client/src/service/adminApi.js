@@ -223,6 +223,24 @@ export const getAccessQr = async () => {
   }
 };
 
+export const getScreenKey = async () => {
+  try {
+    const response = await adminClient.get(routes.ADMIN_SCREEN_KEY);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Impossible de charger le lien d'écran" };
+  }
+};
+
+export const changeScreenKey = async () => {
+  try {
+    const response = await adminClient.post(routes.ADMIN_SCREEN_KEY);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.message || "Impossible de changer le lien d'écran" };
+  }
+};
+
 export const getVoters = async () => {
   try {
     const response = await adminClient.get(routes.ADMIN_VOTERS);

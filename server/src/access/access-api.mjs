@@ -12,7 +12,14 @@ import {
   PARTICIPANT_SESSION_MAX_AGE,
 } from "../middleware/participant-session.mjs";
 import { shouldUseSecureCookies } from "../config/cookies.mjs";
-import { getLoginSettings, isLoginOpen, updateLoginSettings } from "./login-window.mjs";
+import {
+  getLoginSettings,
+  getScreenKey,
+  isLoginOpen,
+  isScreenKey,
+  rotateScreenKey,
+  updateLoginSettings,
+} from "./login-window.mjs";
 import { createQrToken, getQrGraceSeconds, verifyQrToken } from "./qr-token.mjs";
 
 const route = Router();
@@ -222,6 +229,23 @@ route.get("/api/login/status", async (req, res) => {
   }
 });
 
+// The current join token for the projector: { open, path, expiresAt, ... }.
+const currentQrPayload = async () => {
+  const { open } = await getLoginSettings({ fresh: true });
+  if (!open) {
+    return { open: false };
+  }
+  const { token, expiresAt, periodSeconds } = createQrToken();
+  return {
+    open: true,
+    path: `/join?t=${token}`,
+    expiresAt,
+    periodSeconds,
+    graceSeconds: getQrGraceSeconds(),
+    serverTime: Date.now(),
+  };
+};
+
 // Admin screen (qr-email mode): the current join token. The client builds the
 // link from its own origin and fetches again at expiresAt.
 route.get("/api/admin/access-qr", requireAdmin, async (req, res) => {
@@ -229,22 +253,56 @@ route.get("/api/admin/access-qr", requireAdmin, async (req, res) => {
     if (getAccessMode() !== "qr-email") {
       return res.status(404).json({ message: "L'accès par QR code n'est pas activé" });
     }
-    const { open } = await getLoginSettings({ fresh: true });
     res.set("Cache-Control", "no-store");
-    if (!open) {
-      return res.json({ open: false });
-    }
-    const { token, expiresAt, periodSeconds } = createQrToken();
-    return res.json({
-      open: true,
-      path: `/join?t=${token}`,
-      expiresAt,
-      periodSeconds,
-      graceSeconds: getQrGraceSeconds(),
-      serverTime: Date.now(),
-    });
+    return res.json(await currentQrPayload());
   } catch (error) {
     console.error("Error creating access QR:", error.message);
+    return res.status(500).json({ message: "Erreur interne du serveur" });
+  }
+});
+
+// Public projector screen, no login: /qr/<key> shows the same rotating QR
+// code. Only the key protects it, so the admin can change the key.
+const screenLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: Number(process.env.SCREEN_REQUESTS_PER_IP || 600),
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler: limitHandler,
+});
+
+export const createScreenHandler =
+  ({ mode = getAccessMode, checkKey = isScreenKey, payload = currentQrPayload } = {}) =>
+  async (req, res) => {
+    try {
+      res.set("Cache-Control", "no-store");
+      if (mode() !== "qr-email" || !(await checkKey(req.params.key))) {
+        return res.status(404).json({ message: "Lien d'écran invalide" });
+      }
+      return res.json(await payload());
+    } catch (error) {
+      console.error("Error serving screen QR:", error.message);
+      return res.status(500).json({ message: "Erreur interne du serveur" });
+    }
+  };
+
+route.get("/api/screen/:key", screenLimit, createScreenHandler());
+
+route.get("/api/admin/screen-key", requireAdmin, async (req, res) => {
+  try {
+    return res.json({ key: await getScreenKey({ fresh: true }) });
+  } catch (error) {
+    console.error("Error reading screen key:", error.message);
+    return res.status(500).json({ message: "Erreur interne du serveur" });
+  }
+});
+
+// New key: the old public screen link stops working at once.
+route.post("/api/admin/screen-key", requireAdmin, async (req, res) => {
+  try {
+    return res.json({ key: await rotateScreenKey(req.admin?.username || null) });
+  } catch (error) {
+    console.error("Error changing screen key:", error.message);
     return res.status(500).json({ message: "Erreur interne du serveur" });
   }
 });

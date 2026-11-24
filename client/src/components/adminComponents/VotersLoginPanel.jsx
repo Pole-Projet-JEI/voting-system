@@ -5,7 +5,8 @@ import QRCode from "qrcode";
 import { ExternalLink, Lock, QrCode, Unlock, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Link } from "react-router-dom";
-import { getAccessQr, getVoters, getVotersSummary, setLoginWindow } from "../../service/adminApi";
+import { changeScreenKey, getAccessQr, getScreenKey, getVoters, getVotersSummary, setLoginWindow } from "../../service/adminApi";
+import { screenLink } from "../../config/screenHosts";
 
 export const QR_SCREEN_PATH = "/jvaFHT7xvivJPJqc1QBRWhfayoj/qr";
 const SUMMARY_POLL_MS = 10_000;
@@ -46,7 +47,7 @@ export const QrOverlay = ({ onClose }) => {
 // qr-email mode: full-screen QR code that changes every 15 s. Each code is a
 // signed link that works for its window (+ a short grace), then a new one
 // appears. The server's clock decides when it rotates.
-export const RotatingQrOverlay = ({ onClose }) => {
+export const RotatingQrOverlay = ({ onClose, fetchQr = getAccessQr, joinOrigin = window.location.origin, onNotFound }) => {
   const [qr, setQr] = useState(null); // { open, url, dataUrl, expiresAt, periodSeconds }
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
@@ -57,8 +58,12 @@ export const RotatingQrOverlay = ({ onClose }) => {
     let timer = 0;
 
     const load = async () => {
-      const result = await getAccessQr();
+      const result = await fetchQr();
       if (!active) return;
+      if (!result.success && result.status === 404 && onNotFound) {
+        onNotFound();
+        return;
+      }
       if (!result.success) {
         setError(result.error);
         timer = window.setTimeout(load, RETRY_MS);
@@ -72,7 +77,7 @@ export const RotatingQrOverlay = ({ onClose }) => {
         return;
       }
       skewRef.current = data.serverTime - Date.now();
-      const url = `${window.location.origin}${data.path}`;
+      const url = `${joinOrigin}${data.path}`;
       const dataUrl = await QRCode.toDataURL(url, { errorCorrectionLevel: "M", margin: 2, width: 1024 });
       if (!active) return;
       setQr({ open: true, url, dataUrl, expiresAt: data.expiresAt, periodSeconds: data.periodSeconds });
@@ -96,6 +101,7 @@ export const RotatingQrOverlay = ({ onClose }) => {
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-5 bg-ground p-6">
+      {onClose && (
       <button
         type="button"
         onClick={onClose}
@@ -104,6 +110,7 @@ export const RotatingQrOverlay = ({ onClose }) => {
       >
         <X className="h-8 w-8" />
       </button>
+      )}
       <h2 className="text-center text-4xl font-bold text-ink">{t("Scan to vote")}</h2>
 
       {qr?.open === false && (
@@ -194,6 +201,66 @@ const VotersTable = () => {
   );
 };
 
+// Link to the public projector screen (no login). The key in the link is its
+// only protection: "Changer le lien" makes the old one stop working.
+const PublicScreenLink = ({ onNotify }) => {
+  const [key, setKey] = useState("");
+  const [confirming, setConfirming] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    getScreenKey().then((result) => result.success && setKey(result.data.key));
+  }, []);
+
+  const change = async () => {
+    setConfirming(false);
+    const result = await changeScreenKey();
+    if (!result.success) {
+      onNotify?.("error", result.error);
+      return;
+    }
+    setKey(result.data.key);
+    onNotify?.("success", "Nouveau lien d'écran créé. L'ancien ne marche plus.");
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(screenLink(key));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* the link stays selectable */
+    }
+  };
+
+  if (!key) return null;
+  return (
+    <div className="space-y-1 bg-white/5 px-3 py-2 text-sm" data-testid="public-screen">
+      <div className="text-muted">Écran public (sans connexion)</div>
+      <a href={screenLink(key)} target="_blank" rel="noopener" className="block break-all font-mono text-xs text-ink underline">
+        {screenLink(key)}
+      </a>
+      <div className="flex flex-wrap gap-3 pt-1 text-xs">
+        <button type="button" onClick={copy} className="text-muted hover:text-ink">
+          {copied ? "Copié ✓" : "Copier"}
+        </button>
+        {confirming ? (
+          <span className="flex gap-3">
+            <span className="text-faint">L'ancien lien ne marchera plus.</span>
+            <button type="button" onClick={change} className="font-semibold text-red-300 hover:underline">Oui, changer</button>
+            <button type="button" onClick={() => setConfirming(false)} className="text-muted hover:underline">Annuler</button>
+          </span>
+        ) : (
+          <button type="button" onClick={() => setConfirming(true)} className="text-muted hover:text-ink">
+            Changer le lien
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-faint">Ne le partagez pas : quiconque l'ouvre voit le QR code et peut voter.</p>
+    </div>
+  );
+};
+
 export const VotersLoginPanel = ({ onNotify }) => {
   const [summary, setSummary] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -278,6 +345,8 @@ export const VotersLoginPanel = ({ onNotify }) => {
           ? "Le QR code change toutes les 15 s. Les votants le scannent puis saisissent leur e-mail (un votant par e-mail). Seuls les votants qui ont voté pour toutes les équipes sont comptés."
           : "En ouvrant le lien, chaque téléphone reçoit sa propre session de votant (cookie). Les votes ne sont acceptés que depuis la salle, et seuls les votants qui ont voté pour toutes les équipes sont comptés."}
       </p>
+
+      {qrEmail && <PublicScreenLink onNotify={onNotify} />}
 
       <div className="bg-white/5 px-3 py-2 text-sm">
         <div className="text-muted">Votants inscrits</div>
