@@ -1,15 +1,18 @@
-# Tests every pull request; deploys every push to main to the event server (https://vote.jeinsat.com, AWS Milan).
+# Tests every push and pull request; deploys every push to the deploy branch to the event server
+# (https://vote.jeinsat.com, AWS Milan).
+#
+# The deploy branch is the repository variable DEPLOY_BRANCH (default main). During the event it is
+# system-de-vote-qr-code, the branch with the QR + email entry.
 #
 # Deploying is one SSH command. CI's key is a forced command on the server (deploy/ci-deploy.sh):
-# it can only check out a commit of main and restart the stack. Settings, in the GitHub
-# environment "production" (deployments from main only):
+# it can only check out a commit of the server's deploy branch and restart the stack. Settings, in the
+# GitHub environment "production" (deployments from the deploy branch only):
 #   secret DEPLOY_SSH_KEY, variables DEPLOY_HOST and DEPLOY_KNOWN_HOSTS.
-# Without DEPLOY_HOST (after the event), the deploy job is skipped.
+# Without DEPLOY_HOST (after the event), the deploy step does nothing.
 name: CI/CD
 
 on:
-    push:
-        branches: [main]
+    push: # every branch, so renaming the deploy branch needs no change here
     pull_request:
 
 permissions:
@@ -43,7 +46,7 @@ jobs:
     deploy:
         name: Deploy to the server
         needs: test
-        if: github.event_name == 'push' && vars.DEPLOY_HOST != ''
+        if: github.event_name == 'push' && github.ref_name == (vars.DEPLOY_BRANCH || 'main')
         runs-on: ubuntu-latest
         timeout-minutes: 20
         concurrency:
@@ -58,7 +61,10 @@ jobs:
                   SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
                   KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
                   SERVER: ubuntu@${{ vars.DEPLOY_HOST }}
+                  HOST: ${{ vars.DEPLOY_HOST }}
               run: |
+                  # Environment variables are not visible in the job's if:, so the check is here.
+                  if [ -z "$HOST" ]; then echo "DEPLOY_HOST is not set: nothing to deploy to."; exit 0; fi
                   install -m 700 -d ~/.ssh
                   printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
                   chmod 600 ~/.ssh/id_ed25519

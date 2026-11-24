@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Check of deploy/ci-deploy.sh: it must refuse everything but "deploy <commit on main>".
+# Check of deploy/ci-deploy.sh: it must refuse everything but "deploy <commit on the deploy branch>".
 #   bash deploy/ci-deploy.test.sh
 # Works in a throw-away repo with stub docker and curl; touches nothing else.
 set -euo pipefail
@@ -45,4 +45,12 @@ if [[ $out != *"deployed $ON_MAIN"* ]] || ! grep -q "docker compose up -d --buil
     exit 1
 fi
 echo "ok deployed: deploy $ON_MAIN"
+
+# Deploy branch set on the server: its commits deploy, main stays allowed only if it is part of it.
+echo "DEPLOY_BRANCH=side" >"$W/app/.env"
+out=$(run "deploy $OFF_MAIN")
+if [[ $out != *"deployed $OFF_MAIN"* ]]; then echo "FAIL: DEPLOY_BRANCH=side -> $out"; exit 1; fi
+echo "ok deployed: deploy $OFF_MAIN (DEPLOY_BRANCH=side)"
+git checkout -qb other main && git commit -q --allow-empty -m other && git push -q origin other
+refused "deploy $(git rev-parse HEAD)"
 echo "all checks passed"
