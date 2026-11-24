@@ -1,8 +1,8 @@
-# Tests every pull request; deploys every push to the deploy branch to the event server
+# Tests every push and pull request; deploys every push to the deploy branch to the event server
 # (https://vote.jeinsat.com, AWS Milan).
 #
 # The deploy branch is the repository variable DEPLOY_BRANCH (default main). During the event it is
-# system-de-vote-geolocalisation, the branch with the QR + email entry.
+# system-de-vote-qr-code, the branch with the QR + email entry.
 #
 # Deploying is one SSH command. CI's key is a forced command on the server (deploy/ci-deploy.sh):
 # it can only check out a commit of the server's deploy branch and restart the stack. Settings, in the
@@ -12,8 +12,7 @@
 name: CI/CD
 
 on:
-    push:
-        branches: [main, system-de-vote-geolocalisation]
+    push: # every branch, so renaming the deploy branch needs no change here
     pull_request:
 
 permissions:
