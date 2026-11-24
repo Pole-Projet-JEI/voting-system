@@ -5,6 +5,7 @@ import HomePage from "./pages/home/HomePage";
 import "./app.css";
 import RegisterPage from "./pages/register/RegisterPage";
 import JoinPage from "./pages/join/JoinPage";
+import EmailsPage from "./pages/admin/EmailsPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 
@@ -28,6 +29,14 @@ function App() {
                 <AdminPage />
               </ProtectedRoute>
 
+            }
+          />
+          <Route
+            path="/jvaFHT7xvivJPJqc1QBRWhfayoj/emails"
+            element={
+              <ProtectedRoute>
+                <EmailsPage />
+              </ProtectedRoute>
             }
           />
           <Route element={<GlobalLayout />}>

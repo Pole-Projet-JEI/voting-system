@@ -3,6 +3,7 @@ import jeiLogo from "../../assets/jei2.png";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { checkConnection, joinVoting } from "../../service/userApi";
+import { t } from "../../i18n";
 
 const RETRY_MS = 5000;
 
@@ -14,7 +15,7 @@ export const VoterBrand = () => (
       <span className="title-G">Hackathon AI Éthique</span>{" "}
       <span className="title-2">360</span>
     </h1>
-    <span className="fie-label register-subtitle">Voting system</span>
+    <span className="fie-label register-subtitle">{t("Voting system")}</span>
   </div>
 );
 
@@ -54,8 +55,8 @@ export default function RegisterPage() {
         setState("error");
         setError(
           result.networkError
-            ? "Unable to connect to the server. Retrying..."
-            : result.error
+            ? t("Unable to connect to the server. Retrying...")
+            : t(result.error)
         );
       }
       timer = window.setTimeout(attempt, RETRY_MS);
@@ -71,16 +72,15 @@ export default function RegisterPage() {
   return (
     <div className="register-form-container fie-panel">
       <VoterBrand />
-      {state === "joining" && <p className="fie-info">Joining the vote...</p>}
+      {state === "joining" && <p className="fie-info">{t("Joining the vote...")}</p>}
       {state === "closed" && (
         <p className="register-closed">
-          The vote is not open yet. Keep this page open: you will join automatically
-          as soon as the organizers open it.
+          {t("The vote is not open yet. Keep this page open: you will join automatically as soon as the organizers open it.")}
         </p>
       )}
       {state === "scan" && (
         <p className="register-closed">
-          To vote, scan the QR code shown on the screen with your phone camera.
+          {t("To vote, scan the QR code shown on the screen with your phone camera.")}
         </p>
       )}
       {state === "error" && (

@@ -17,6 +17,7 @@ import {
 } from "../../service/voteSubmission";
 import { routes } from "../../service/apiRoutes";
 import { createSseConnection } from "../../service/sseConnection";
+import { t } from "../../i18n";
 
 axios.defaults.withCredentials = true;
 
@@ -121,7 +122,7 @@ export default function HomePage() {
     } else if (getPendingVote()) {
       showThankYou();
     } else {
-      setPageError("Unable to load voting status. Please try again.");
+      setPageError(t("Unable to load voting status. Please try again."));
       dispatch({ type: "SET_MODE", payload: "voteError" });
     }
   };
@@ -151,7 +152,7 @@ export default function HomePage() {
       } else if (!teamResult.success && getPendingVote()) {
         showThankYou();
       } else if (!teamResult.success) {
-        setPageError("Unable to load voting status. Please try again.");
+        setPageError(t("Unable to load voting status. Please try again."));
         dispatch({ type: "SET_MODE", payload: "voteError" });
       }
     }
@@ -162,7 +163,7 @@ export default function HomePage() {
     setVoteError("");
 
     if (!state.userVote) {
-      setVoteError("Please select Yes or No before submitting.");
+      setVoteError(t("Please select Yes or No before submitting."));
       return;
     }
 
@@ -207,13 +208,13 @@ export default function HomePage() {
       setLocationState("error");
       return;
     }
-    setVoteError(outcome.message);
+    setVoteError(t(outcome.message));
   };
 
   const LocationStep =
     geofenceEnabled && locationState !== "ready" && locationState !== "unknown" ? (
       <div className="location-step" role={locationState === "error" ? "alert" : undefined}>
-        <span className="fie-label">Location check</span>
+        <span className="fie-label">{t("Location check")}</span>
         <p className="fie-info">
           Votes are only accepted from inside the room. Allow your location once, and
           turn on <strong>precise location</strong> if your phone asks.
@@ -232,10 +233,10 @@ export default function HomePage() {
           disabled={locationState === "checking"}
         >
           {locationState === "checking"
-            ? "Checking your location..."
+            ? t("Checking your location...")
             : locationState === "error"
-              ? "Try again"
-              : "Allow location"}
+              ? t("Try again")
+              : t("Allow location")}
         </button>
       </div>
     ) : null;
@@ -343,7 +344,7 @@ export default function HomePage() {
   const VoteOpen = (
     <div className="home-container vote-form-container fie-panel">
       <h1 className="vote-open-title">
-        Your vote for <span className="team-name">{state.teamName}</span>
+        {t("Your vote for")} <span className="team-name">{state.teamName}</span>
       </h1>
       {LocationStep}
       {!LocationStep && (
@@ -363,7 +364,7 @@ export default function HomePage() {
             }
             onClick={() => dispatch({ type: "SET_USER_VOTE", payload: "yes" })}
           >
-            Yes
+            {t("Yes")}
           </button>
           <button
             name="vote-no"
@@ -374,7 +375,7 @@ export default function HomePage() {
             }
             onClick={() => dispatch({ type: "SET_USER_VOTE", payload: "no" })}
           >
-            No
+            {t("No")}
           </button>
         </div>
         <button
@@ -383,14 +384,14 @@ export default function HomePage() {
           disabled={!state.userVote || Boolean(submitStatus)}
         >
           {submitStatus === "locating"
-            ? "Checking your location..."
+            ? t("Checking your location...")
             : submitStatus === "sending"
-              ? "Submitting..."
-              : "Submit Vote"}
+              ? t("Submitting...")
+              : t("Submit Vote")}
         </button>
         {submitStatus === "locating" && (
           <p className="home-vote-progress">
-            Finding a precise position. This can take up to 20 seconds indoors.
+            {t("Finding a precise position. This can take up to 20 seconds indoors.")}
           </p>
         )}
       </form>
@@ -401,9 +402,9 @@ export default function HomePage() {
 
   const VoteClosed = (
     <div className="home-container fie-panel">
-      <span className="fie-label">Waiting</span>
+      <span className="fie-label">{t("Waiting")}</span>
       <div className="home-vote-closed-message">
-        <p>Voting is now closed - get ready for the next team!</p>
+        <p>{t("Voting is now closed - get ready for the next team!")}</p>
       </div>
       {LocationStep}
     </div>
@@ -411,11 +412,11 @@ export default function HomePage() {
 
   const TeamIsPresenting = (
     <div className="home-container fie-panel">
-      <span className="fie-label">On stage</span>
+      <span className="fie-label">{t("On stage")}</span>
       <h1 className="vote-open-title">
-        <span className="team-name">{state.teamName}</span> is presenting
+        <span className="team-name">{state.teamName}</span> {t("is presenting")}
       </h1>
-      <p className="home-vote-progress">Voting will open shortly.</p>
+      <p className="home-vote-progress">{t("Voting will open shortly.")}</p>
       {LocationStep}
     </div>
   );
@@ -435,7 +436,7 @@ export default function HomePage() {
           <path d="M5 12.5l4.5 4.5L19 7.5" />
         </svg>
       </span>
-      <h1>Thank you for your vote</h1>
+      <h1>{t("Thank you for your vote")}</h1>
     </div>
   );
 

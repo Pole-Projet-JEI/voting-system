@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import rateLimit from "express-rate-limit";
 import Voter from "../mongodb/voterSchema.mjs";
 import Team from "../mongodb/teamSchema.mjs";
+import { OPENED_TEAM_FILTER } from "../admin/services/officialResultsService.mjs";
 import { requireAdmin } from "../admin/middleware/requireAdmin.mjs";
 import {
   createParticipantToken,
@@ -275,17 +276,22 @@ route.get("/api/admin/voters/summary", requireAdmin, async (req, res) => {
 });
 
 // Per-voter list (email and how many teams they voted for), for the admin.
+// Same rule as the official results: only teams whose voting has opened
+// count, so totalTeams is that number and teamsVoted counts votes on them.
 route.get("/api/admin/voters", requireAdmin, async (req, res) => {
   try {
-    const [voters, totalTeams] = await Promise.all([
+    const [voters, openedTeams] = await Promise.all([
       Voter.find({}, { email: 1, votes: 1, createdAt: 1 }).sort({ createdAt: 1 }).lean(),
-      Team.countDocuments(),
+      Team.find(OPENED_TEAM_FILTER, { _id: 1 }).lean(),
     ]);
+    const opened = new Set(openedTeams.map((team) => String(team._id)));
     res.set("Cache-Control", "no-store");
     return res.json({
-      totalTeams,
+      totalTeams: opened.size,
       voters: voters.map((voter) => {
-        const votes = Object.values(voter.votes || {});
+        const votes = Object.entries(voter.votes || {})
+          .filter(([teamId]) => opened.has(teamId))
+          .map(([, vote]) => vote);
         return {
           id: String(voter._id),
           email: voter.email || null,

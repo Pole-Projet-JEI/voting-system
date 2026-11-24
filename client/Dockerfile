@@ -14,6 +14,9 @@ COPY --chown=node:node . .
 
 ARG VITE_API_URL=/api/
 ENV VITE_API_URL=${VITE_API_URL}
+# fr = French interface (vote.jeinsat.com); default English.
+ARG VITE_LANG=en
+ENV VITE_LANG=${VITE_LANG}
 
 # Build the app using Vite (this assumes a Vite React project)
 RUN npm run build

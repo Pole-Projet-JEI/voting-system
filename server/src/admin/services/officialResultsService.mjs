@@ -2,7 +2,7 @@ import Team from "../../mongodb/teamSchema.mjs";
 import Voter from "../../mongodb/voterSchema.mjs";
 
 // A team "counts" once its voting has opened (voting now, or ended).
-const OPENED_TEAM_FILTER = {
+export const OPENED_TEAM_FILTER = {
   $or: [{ state: { $in: ["voting", "ended"] } }, { presented: true }],
 };
 

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { checkConnection, joinVoting, scanQr } from "../../service/userApi";
 import { VoterBrand } from "../register/RegisterPage";
+import { t } from "../../i18n";
 
 // qr-email mode. The QR code on the screen opens /join?t=<token>:
 //   1. the token is checked at once (it only lives 25 s + 10 s) and the phone
@@ -23,8 +24,8 @@ export default function JoinPage() {
   const showError = (result) =>
     setError(
       result.networkError
-        ? "Unable to connect to the server. Check your connection and try again."
-        : result.error
+        ? t("Unable to connect to the server. Check your connection and try again.")
+        : t(result.error)
     );
 
   useEffect(() => {
@@ -71,11 +72,11 @@ export default function JoinPage() {
   return (
     <div className="register-form-container fie-panel">
       <VoterBrand />
-      {step === "checking" && <p className="fie-info">Checking the QR code...</p>}
+      {step === "checking" && <p className="fie-info">{t("Checking the QR code...")}</p>}
 
       {step === "email" && (
         <form className="join-email-form" onSubmit={submit} noValidate>
-          <label htmlFor="voter-email" className="join-email-label">Your email</label>
+          <label htmlFor="voter-email" className="join-email-label">{t("Your email")}</label>
           <input
             id="voter-email"
             className="join-email-input"
@@ -84,15 +85,15 @@ export default function JoinPage() {
             autoComplete="email"
             autoCapitalize="none"
             spellCheck="false"
-            placeholder="name@example.com"
+            placeholder={t("name@example.com")}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
           />
           <button type="submit" className="fie-btn join-email-submit" disabled={busy || !email.trim()}>
-            {busy ? "Joining..." : "Start voting"}
+            {busy ? t("Joining...") : t("Start voting")}
           </button>
-          <p className="register-hint">One email per person. Use the same email if you switch phones.</p>
+          <p className="register-hint">{t("One email per person. Use the same email if you switch phones.")}</p>
           {error && <p className="fie-error" role="alert">{error}</p>}
         </form>
       )}
@@ -100,7 +101,7 @@ export default function JoinPage() {
       {step === "scanAgain" && (
         <>
           {error && <p className="fie-error" role="alert">{error}</p>}
-          <p className="fie-info">Scan the QR code shown on the screen again with your phone camera.</p>
+          <p className="fie-info">{t("Scan the QR code shown on the screen again with your phone camera.")}</p>
         </>
       )}
     </div>

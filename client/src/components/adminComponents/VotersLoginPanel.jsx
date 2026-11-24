@@ -1,8 +1,10 @@
+import { t } from "../../i18n";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { Lock, QrCode, Unlock, X } from "lucide-react";
 import { Button } from "../ui/button";
+import { Link } from "react-router-dom";
 import { getAccessQr, getVoters, getVotersSummary, setLoginWindow } from "../../service/adminApi";
 
 const SUMMARY_POLL_MS = 10_000;
@@ -30,7 +32,7 @@ const QrOverlay = ({ onClose }) => {
       >
         <X className="h-8 w-8" />
       </button>
-      <h2 className="text-center text-4xl font-bold text-ink">Scan to vote</h2>
+      <h2 className="text-center text-4xl font-bold text-ink">{t("Scan to vote")}</h2>
       {dataUrl && (
         <img src={dataUrl} alt={`QR code for ${votingLink()}`} className="h-auto w-[min(72vh,90vw)] bg-white" />
       )}
@@ -101,11 +103,11 @@ const RotatingQrOverlay = ({ onClose }) => {
       >
         <X className="h-8 w-8" />
       </button>
-      <h2 className="text-center text-4xl font-bold text-ink">Scan to vote</h2>
+      <h2 className="text-center text-4xl font-bold text-ink">{t("Scan to vote")}</h2>
 
       {qr?.open === false && (
         <p className="max-w-xl text-center text-2xl text-muted">
-          Login is closed. Open login in the dashboard to show the QR code.
+          {t("Login is closed. Open login in the dashboard to show the QR code.")}
         </p>
       )}
 
@@ -124,13 +126,13 @@ const RotatingQrOverlay = ({ onClose }) => {
                 style={{ width: `${fraction * 100}%` }}
               />
             </div>
-            <p className="mt-3 text-center text-xl text-muted">New code in {secondsLeft}s</p>
+            <p className="mt-3 text-center text-xl text-muted">{t("New code in {s}s", { s: secondsLeft })}</p>
           </div>
         </>
       )}
 
-      {!qr && !error && <p className="text-xl text-muted">Loading...</p>}
-      {error && <p className="text-lg text-danger">{error} Retrying...</p>}
+      {!qr && !error && <p className="text-xl text-muted">{t("Loading...")}</p>}
+      {error && <p className="text-lg text-danger">{t(error)} {t("Retrying...")}</p>}
     </div>,
     document.body
   );
@@ -288,6 +290,14 @@ export const VotersLoginPanel = ({ onNotify }) => {
         <div className="text-muted">Voters joined</div>
         <div className="text-2xl font-bold">{summary.voters}</div>
       </div>
+      {qrEmail && (
+        <Link
+          to="/jvaFHT7xvivJPJqc1QBRWhfayoj/emails"
+          className="flex w-full items-center justify-center border border-line-strong px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+        >
+          {t("See all emails")}
+        </Link>
+      )}
       {qrEmail && <VotersTable />}
     </div>
   );
