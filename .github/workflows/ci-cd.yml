@@ -1,0 +1,73 @@
+# Tests every push and pull request; deploys every push to the deploy branch to the event server
+# (https://vote.jeinsat.com, AWS Milan).
+#
+# The deploy branch is the repository variable DEPLOY_BRANCH (default main). During the event it is
+# system-de-vote-qr-code, the branch with the QR + email entry.
+#
+# Deploying is one SSH command. CI's key is a forced command on the server (deploy/ci-deploy.sh):
+# it can only check out a commit of the server's deploy branch and restart the stack. Settings, in the
+# GitHub environment "production" (deployments from the deploy branch only):
+#   secret DEPLOY_SSH_KEY, variables DEPLOY_HOST and DEPLOY_KNOWN_HOSTS.
+# Without DEPLOY_HOST (after the event), the deploy step does nothing.
+name: CI/CD
+
+on:
+    push: # every branch, so renaming the deploy branch needs no change here
+    pull_request:
+
+permissions:
+    contents: read
+
+jobs:
+    test:
+        name: Tests and build
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 22 # same as the Dockerfiles
+                  cache: npm
+                  cache-dependency-path: |
+                      server/package-lock.json
+                      client/package-lock.json
+            - name: Server tests
+              working-directory: server
+              env:
+                  VOTER_CODE_PEPPER: ci-only-test-pepper
+              run: npm ci && npm test
+            - name: Client tests and build
+              working-directory: client
+              run: npm ci && node --test test/*.test.mjs && npm run build
+            - name: Deploy script check
+              run: bash deploy/ci-deploy.test.sh
+
+    deploy:
+        name: Deploy to the server
+        needs: test
+        if: github.event_name == 'push' && github.ref_name == (vars.DEPLOY_BRANCH || 'main')
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        concurrency:
+            group: deploy # one deploy at a time; a second merge waits for the first
+            cancel-in-progress: false
+        environment:
+            name: production
+            url: https://vote.jeinsat.com
+        steps:
+            - name: Deploy
+              env:
+                  SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+                  KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+                  SERVER: ubuntu@${{ vars.DEPLOY_HOST }}
+                  HOST: ${{ vars.DEPLOY_HOST }}
+              run: |
+                  # Environment variables are not visible in the job's if:, so the check is here.
+                  if [ -z "$HOST" ]; then echo "DEPLOY_HOST is not set: nothing to deploy to."; exit 0; fi
+                  install -m 700 -d ~/.ssh
+                  printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+                  chmod 600 ~/.ssh/id_ed25519
+                  printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+                  # shellcheck disable=SC2029 # $GITHUB_SHA is meant to expand here
+                  ssh "$SERVER" "deploy $GITHUB_SHA"
